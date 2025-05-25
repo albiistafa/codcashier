@@ -122,7 +122,8 @@ fun DetailPesananScreenUpdate(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali"
@@ -167,7 +168,7 @@ fun DetailPesananScreenUpdate(
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF6D8E22)
                             ),
-                            enabled = selectedPaymentMethod != null && selectedPaymentMethod != transaction?.payment_method
+                            enabled = selectedPaymentMethod != null
                         ) {
                             Text("Update Pembayaran")
                         }
@@ -294,114 +295,114 @@ fun DetailPesananScreenUpdate(
                             }
 
                             // Payment method section
-                            item {
-                                Divider(
-                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
-                                    color = Color.LightGray
-                                )
+//                            item {
+//                                Divider(
+//                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
+//                                    color = Color.LightGray
+//                                )
+//
+//                                Text(
+//                                    "Pembayaran",
+//                                    modifier = Modifier.padding(horizontal = 16.dp),
+//                                    style = AppTheme.typography.labelMedium
+//                                )
 
-                                Text(
-                                    "Pembayaran",
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    style = AppTheme.typography.labelMedium
-                                )
-
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    PaymentMethodButton(
-                                        text = "Tunai",
-                                        selected = selectedPaymentMethod == "tunai",
-                                        onClick = {
-                                            selectedPaymentMethod = "tunai"
-                                            selectedDepositOption = null
-                                            selectedDepositId = null
-                                        }
-                                    )
-                                    PaymentMethodButton(
-                                        text = "Digital",
-                                        selected = selectedPaymentMethod == "digital",
-                                        onClick = {
-                                            selectedPaymentMethod = "digital"
-                                            selectedDepositOption = null
-                                            selectedDepositId = null
-                                        }
-                                    )
-                                    PaymentMethodButton(
-                                        text = "Deposit",
-                                        selected = selectedPaymentMethod == "deposit",
-                                        onClick = {
-                                            selectedPaymentMethod = "deposit"
-                                            selectedDepositId = selectedDeposit?.customer_id
-                                        }
-                                    )
-                                }
-                            }
-
-                            // Deposit dropdown
-                            item {
-                                if (selectedPaymentMethod == "deposit") {
-                                    ExposedDropdownMenuBox(
-                                        expanded = showDepositDropdown,
-                                        onExpandedChange = { showDepositDropdown = it },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 16.dp)
-                                    ) {
-                                        OutlinedTextField(
-                                            value = selectedDepositOption ?: "",
-                                            placeholder = { Text("Pilih Customer Deposit", style = AppTheme.typography.paragraph2) },
-                                            onValueChange = {},
-                                            readOnly = true,
-                                            trailingIcon = {
-                                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = showDepositDropdown)
-                                            },
-                                            textStyle = AppTheme.typography.paragraph2,
-                                            modifier = Modifier
-                                                .menuAnchor()
-                                                .fillMaxWidth()
-                                                .height(48.dp),
-                                            colors = OutlinedTextFieldDefaults.colors(
-                                                focusedBorderColor = Color(0xFF90C14F),
-                                                unfocusedBorderColor = Color(0xFF90C14F),
-                                                focusedLabelColor = Color(0xFF90C14F),
-                                                unfocusedLabelColor = Color.Black
-                                            ),
-                                            shape = RoundedCornerShape(10.dp)
-                                        )
-                                        ExposedDropdownMenu(
-                                            expanded = showDepositDropdown,
-                                            onDismissRequest = { showDepositDropdown = false },
-                                            modifier = Modifier
-                                                .background(Color.White)
-                                                .exposedDropdownSize(matchTextFieldWidth = true)
-                                        ) {
-                                            depositList.forEach { option ->
-                                                DropdownMenuItem(
-                                                    modifier = Modifier.padding(horizontal = 0.dp),
-                                                    text = {
-                                                        Text(
-                                                            text = option.customer_name,
-                                                            style = AppTheme.typography.paragraph2
-                                                        )
-                                                    },
-                                                    onClick = {
-                                                        selectedDepositOption = option.customer_name
-                                                        selectedDepositId = option.id
-                                                        selectedCustomerId = option.customer_id
-                                                        showDepositDropdown = false
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            item { Spacer(modifier = Modifier.height(16.dp)) }
+//                                Row(
+//                                    modifier = Modifier
+//                                        .fillMaxWidth()
+//                                        .padding(16.dp),
+//                                    horizontalArrangement = Arrangement.SpaceBetween
+//                                ) {
+//                                    PaymentMethodButton(
+//                                        text = "Tunai",
+//                                        selected = selectedPaymentMethod == "tunai",
+//                                        onClick = {
+//                                            selectedPaymentMethod = "tunai"
+//                                            selectedDepositOption = null
+//                                            selectedDepositId = null
+//                                        }
+//                                    )
+//                                    PaymentMethodButton(
+//                                        text = "Digital",
+//                                        selected = selectedPaymentMethod == "digital",
+//                                        onClick = {
+//                                            selectedPaymentMethod = "digital"
+//                                            selectedDepositOption = null
+//                                            selectedDepositId = null
+//                                        }
+//                                    )
+//                                    PaymentMethodButton(
+//                                        text = "Deposit",
+//                                        selected = selectedPaymentMethod == "deposit",
+//                                        onClick = {
+//                                            selectedPaymentMethod = "deposit"
+//                                            selectedDepositId = selectedDeposit?.customer_id
+//                                        }
+//                                    )
+//                                }
+//                            }
+//
+//                            // Deposit dropdown
+//                            item {
+//                                if (selectedPaymentMethod == "deposit") {
+//                                    ExposedDropdownMenuBox(
+//                                        expanded = showDepositDropdown,
+//                                        onExpandedChange = { showDepositDropdown = it },
+//                                        modifier = Modifier
+//                                            .fillMaxWidth()
+//                                            .padding(horizontal = 16.dp)
+//                                    ) {
+//                                        OutlinedTextField(
+//                                            value = selectedDepositOption ?: "",
+//                                            placeholder = { Text("Pilih Customer Deposit", style = AppTheme.typography.paragraph2) },
+//                                            onValueChange = {},
+//                                            readOnly = true,
+//                                            trailingIcon = {
+//                                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = showDepositDropdown)
+//                                            },
+//                                            textStyle = AppTheme.typography.paragraph2,
+//                                            modifier = Modifier
+//                                                .menuAnchor()
+//                                                .fillMaxWidth()
+//                                                .height(48.dp),
+//                                            colors = OutlinedTextFieldDefaults.colors(
+//                                                focusedBorderColor = Color(0xFF90C14F),
+//                                                unfocusedBorderColor = Color(0xFF90C14F),
+//                                                focusedLabelColor = Color(0xFF90C14F),
+//                                                unfocusedLabelColor = Color.Black
+//                                            ),
+//                                            shape = RoundedCornerShape(10.dp)
+//                                        )
+//                                        ExposedDropdownMenu(
+//                                            expanded = showDepositDropdown,
+//                                            onDismissRequest = { showDepositDropdown = false },
+//                                            modifier = Modifier
+//                                                .background(Color.White)
+//                                                .exposedDropdownSize(matchTextFieldWidth = true)
+//                                        ) {
+//                                            depositList.forEach { option ->
+//                                                DropdownMenuItem(
+//                                                    modifier = Modifier.padding(horizontal = 0.dp),
+//                                                    text = {
+//                                                        Text(
+//                                                            text = option.customer_name,
+//                                                            style = AppTheme.typography.paragraph2
+//                                                        )
+//                                                    },
+//                                                    onClick = {
+//                                                        selectedDepositOption = option.customer_name
+//                                                        selectedDepositId = option.id
+//                                                        selectedCustomerId = option.customer_id
+//                                                        showDepositDropdown = false
+//                                                    }
+//                                                )
+//                                            }
+//                                        }
+//                                    }
+//                                }
+//                            }
+//
+//                            item { Spacer(modifier = Modifier.height(16.dp)) }
                         }
                     }
                 }
@@ -516,92 +517,5 @@ fun CartItemRows(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-fun CartItemSwipeToDeletes(
-    item: CartItem,
-    onIncrement: () -> Unit,
-    onDecrement: () -> Unit,
-    onRemove: () -> Unit
-) {
-    val dismissState = rememberDismissState(
-        confirmStateChange = { dismissValue ->
-            when (dismissValue) {
-                DismissValue.DismissedToEnd -> false
-                DismissValue.DismissedToStart -> {
-                    onRemove()
-                    true
-                }
-                else -> false
-            }
-        }
-    )
 
-    // Reset state jika item berubah
-    LaunchedEffect(item.menuId) {
-        if (dismissState.currentValue != DismissValue.Default) {
-            dismissState.reset()
-        }
-    }
-
-    SwipeToDismiss(
-        state = dismissState,
-        directions = setOf(DismissDirection.EndToStart),
-        dismissThresholds = { direction ->
-            FractionalThreshold(0.5f)
-        },
-        background = {
-            val color by animateColorAsState(
-                targetValue = when (dismissState.dismissDirection) {
-                    DismissDirection.EndToStart -> Color.Red
-                    else -> Color.Transparent
-                },
-                label = "Dismiss Background Color"
-            )
-            val iconAlpha by animateFloatAsState(
-                targetValue = if (dismissState.dismissDirection == DismissDirection.EndToStart) 1f else 0f,
-                label = "Dismiss Icon Alpha"
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color, shape = RoundedCornerShape(10.dp))
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Hapus",
-                    tint = Color.White,
-                    modifier = Modifier.alpha(iconAlpha)
-                )
-            }
-        },
-        dismissContent = {
-            val itemAlpha by animateFloatAsState(
-                targetValue = if (dismissState.isDismissed(DismissDirection.EndToStart)) 0f else 1f,
-                label = "Item Alpha"
-            )
-            val itemScale by animateFloatAsState(
-                targetValue = if (dismissState.isDismissed(DismissDirection.EndToStart)) 0.8f else 1f,
-                label = "Item Scale"
-            )
-            CartItemRow(
-                item = item,
-                onIncrement = onIncrement,
-                onDecrement = onDecrement,
-                onRemove = onRemove,
-                modifier = Modifier.graphicsLayer {
-                    alpha = itemAlpha
-                    scaleX = itemScale
-                    scaleY = itemScale
-                }
-            )
-        }
-    )
-}
-
-fun Modifier.visibles(): Modifier = this.then(Modifier.alpha(1f))
-fun Modifier.gones(): Modifier = this.then(Modifier.alpha(0f))
 

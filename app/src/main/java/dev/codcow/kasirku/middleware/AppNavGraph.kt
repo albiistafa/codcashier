@@ -323,17 +323,20 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
                 )
             }
         }
-//        composable(
-//            route = Screen.Detail.route,
-//            arguments = listOf(navArgument("transactionId") { type = NavType.IntType })
-//        ) { backStackEntry ->
-//            val transactionId = backStackEntry.arguments?.getInt("transactionId")
-//            transactionId?.let {
-//                DetailPesananScreenUpdate(
-//                    navController = navController,
-//                    transactionId = it
-//                )
-//            }
-//        }
+        composable(
+            route = Screen.Detail.route,
+            arguments = listOf(navArgument("transactionId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val transactionId = backStackEntry.arguments?.getInt("transactionId")
+            transactionId?.let {
+                DetailPesananScreenUpdate(
+                    navController = navController,
+                    transactionId = it,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+        }
     }
 }

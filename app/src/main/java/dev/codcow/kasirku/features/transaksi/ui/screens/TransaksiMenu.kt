@@ -616,7 +616,12 @@ fun TransaksiManager(
                                             showDeleteDialog = true
                                         },
                                         onItemClick = { id ->
-                                            navController.navigate(Screen.Detail.createRoute(id))
+                                            if (transaksi.status == "pending"){
+                                                navController.navigate(Screen.Detail.createRoute(id))
+                                            } else {
+
+                                            }
+//                                            navController.navigate(Screen.Detail.createRoute(id))
                                         }
                                     )
                                 }

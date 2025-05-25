@@ -262,6 +262,9 @@ fun MenuAdmin(
         }
 
         Box(modifier = Modifier.fillMaxHeight().align(Alignment.TopEnd)) {
+            val subCategoryToCategoryMap = viewModel.subCategories.collectAsState().value.associate {
+                it.id to it.category_id
+            }
             FilterSidebarMenu(
                 isVisible = showFilter,
                 onDismiss = { showFilter = false },
@@ -270,6 +273,7 @@ fun MenuAdmin(
                     FilterChipItem(it.id, it.name) },
                 subCategories = viewModel.subCategories.collectAsState().value.map {
                     FilterChipItem(it.id, it.name) },
+                subCategoryToCategoryMap = subCategoryToCategoryMap,
                 onResetFilter = {
                     viewModel.filterMenuItems(emptyList(), emptyList()) },
                 onApplyFilter = { categoryIds, subCategoryIds ->

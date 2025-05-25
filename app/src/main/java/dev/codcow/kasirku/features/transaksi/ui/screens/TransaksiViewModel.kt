@@ -601,7 +601,6 @@ class TransaksiViewModel @Inject constructor(
             transaksiRepository.updateStatus(id, updateStatus)
                 .onSuccess {
                     _isSuccess.value = true
-
                     fetchAllTransaksiNoFilter()
                 }
                 .onFailure { exception ->
@@ -631,7 +630,7 @@ class TransaksiViewModel @Inject constructor(
                         }
                     }
                 }
-
+            _isSuccess.value = true
             _isLoading.value = false
         }
     }

@@ -192,7 +192,7 @@ fun TransaksiScreen(
                 },
                 text = {
                     Text(
-                        "Apakah Anda yakin ingin menyelesaikan transaksi ini? Pastikan pesanan telah diterima oleh pelanggan.",
+                        "Apakah Anda yakin ingin menyelesaikan transaksi ini? Pastikan pesanan telah sesuai.",
                         style = AppTheme.typography.paragraph2
                     )
                 },

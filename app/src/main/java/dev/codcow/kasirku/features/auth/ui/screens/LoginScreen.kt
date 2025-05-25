@@ -18,7 +18,10 @@ import androidx.compose.ui.unit.dp
 import dev.codcow.kasirku.ui.theme.AppTheme
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 
@@ -30,6 +33,7 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
     val password by viewModel.password.collectAsState()
     val rememberMe by viewModel.rememberMe.collectAsState()
     val isFormValid = phoneNumber.isNotBlank() && password.isNotBlank()
+    var passwordVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadSavedCredentials(context, viewModel)
@@ -112,14 +116,27 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
                     onValueChange = { viewModel.onPasswordChange(it) },
                     placeholder = { Text("Masukkan password", style = AppTheme.typography.paragraph2) },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                    visualTransformation = PasswordVisualTransformation(),
+                    trailingIcon = {
+                        val image = if (passwordVisible)
+                            Icons.Filled.Visibility
+                        else Icons.Filled.VisibilityOff
+
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = image,
+                                contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                                tint = AppTheme.colors.surface// Warna sesuai tema
+                            )
+                        }
+                    },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = RoundedCornerShape(30.dp),
                     textStyle = AppTheme.typography.paragraph2,
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = AppTheme.colors.surface, // Ganti dengan warna yang diinginkan
-                        unfocusedBorderColor = Color.Gray // Ganti dengan warna untuk border saat tidak fokus
+                        focusedBorderColor = AppTheme.colors.surface,
+                        unfocusedBorderColor = Color.Gray
                     )
                 )
 

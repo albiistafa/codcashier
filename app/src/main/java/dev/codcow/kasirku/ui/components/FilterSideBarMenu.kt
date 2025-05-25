@@ -51,6 +51,7 @@ fun FilterSidebarMenu(
     onResetFilter: () -> Unit = {},
     categories: List<FilterChipItem> = emptyList(),
     subCategories: List<FilterChipItem> = emptyList(),
+    subCategoryToCategoryMap: Map<Int, Int> = emptyMap(),
     onApplyFilter: (categoryIds: List<Int>, subCategoryIds: List<Int>) -> Unit = { _, _ -> },
     shadowElevation: Dp = 8.dp
 ) {
@@ -64,6 +65,20 @@ fun FilterSidebarMenu(
     // Derived state untuk mengecek apakah ada kategori yang terpilih
     val isCategorySelected by remember {
         derivedStateOf { selectedCategoryIds.value.isNotEmpty() }
+    }
+
+    val filteredSubCategories by remember {
+        derivedStateOf {
+            if (selectedCategoryIds.value.isEmpty()) {
+                emptyList()
+            } else {
+                // Filter berdasarkan mapping subCategoryId -> categoryId
+                subCategories.filter { subCategory ->
+                    val categoryId = subCategoryToCategoryMap[subCategory.id]
+                    categoryId != null && selectedCategoryIds.value.contains(categoryId)
+                }
+            }
+        }
     }
 
     AnimatedVisibility(
@@ -97,12 +112,20 @@ fun FilterSidebarMenu(
                                     FilterChip(
                                         selected = selectedCategoryIds.value.contains(category.id),
                                         onClick = {
+                                            val previousSelectedCategories = selectedCategoryIds.value
                                             selectedCategoryIds.value = selectedCategoryIds.value.let { set ->
                                                 if (set.contains(category.id)) set - category.id else set + category.id
                                             }
-                                            // Reset selected sub categories when categories change
-                                            if (!selectedCategoryIds.value.contains(category.id)) {
-                                                selectedSubCategoryIds.value = emptySet()
+
+                                            // Reset sub categories ketika ada perubahan kategori
+                                            // atau ketika tidak ada kategori yang terpilih
+                                            if (selectedCategoryIds.value.isEmpty() ||
+                                                previousSelectedCategories != selectedCategoryIds.value) {
+                                                // Filter sub categories yang masih valid berdasarkan kategori yang tersisa
+                                                selectedSubCategoryIds.value = selectedSubCategoryIds.value.filter { subCatId ->
+                                                    val categoryId = subCategoryToCategoryMap[subCatId]
+                                                    categoryId != null && selectedCategoryIds.value.contains(categoryId)
+                                                }.toSet()
                                             }
                                         },
                                         label = {
@@ -150,14 +173,14 @@ fun FilterSidebarMenu(
                 AnimatedVisibility(visible = isCategorySelected) {
                     Column {
                         Text("Sub Kategori", style = AppTheme.typography.paragraph2)
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         LazyColumn(
                             content = {
-                                val displayedSubCategories = subCategories.take(9)
+                                val displayedSubCategories = filteredSubCategories.take(9)
                                 items(displayedSubCategories.chunked(2)) { rowSubCategories ->
                                     Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp), // Konsisten dengan kategori
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         rowSubCategories.forEach { subCategory ->
@@ -204,6 +227,7 @@ fun FilterSidebarMenu(
                                             Spacer(modifier = Modifier.weight(1f))
                                         }
                                     }
+                                    Spacer(modifier = Modifier.height(8.dp)) // Tambahkan spacing antar row
                                 }
                             }
                         )
