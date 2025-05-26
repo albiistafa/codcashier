@@ -46,15 +46,76 @@ fun DetailPembayaran(
     val transaction by transaksiViewModel.currentTransaction.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(warungName) {
-        Log.d("WARUNG_DEBUG", "Warung name: ${warungName?.name ?: "null"}")
-    }
+    // Debug logging
     LaunchedEffect(Unit) {
-        warungViewModel.fetchWarung()
+        Log.d("DetailPembayaran", "Screen initialized with transactionId: $transactionId")
+    }
+
+    LaunchedEffect(warungName) {
+        Log.d("DetailPembayaran", "Warung name: ${warungName?.name ?: "null"}")
     }
 
     LaunchedEffect(transactionId) {
+        Log.d("DetailPembayaran", "Fetching transaction with ID: $transactionId")
         transaksiViewModel.getTransactionById(transactionId)
+    }
+
+    LaunchedEffect(transaction) {
+        Log.d("DetailPembayaran", "Transaction updated: ${transaction != null}")
+        transaction?.let {
+            Log.d("DetailPembayaran", "Transaction details: id=${it.id}, total=${it.total_amount}, method=${it.payment_method}")
+        }
+    }
+
+    LaunchedEffect(error) {
+        error?.let {
+            Log.e("DetailPembayaran", "Error occurred: $it")
+            Toast.makeText(context, "Error: $it", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    LaunchedEffect(isLoading) {
+        Log.d("DetailPembayaran", "Loading state changed: $isLoading")
+    }
+
+    // Prevent auto-navigation when loading
+    if (isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color(0xFF90C14F))
+        }
+        return
+    }
+
+    // Show error state
+    if (error != null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Error: $error",
+                    color = Color.Red,
+                    style = AppTheme.typography.paragraph1
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { navController.navigateUp() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF6D8E22)
+                    )
+                ) {
+                    Text("Kembali")
+                }
+            }
+        }
+        return
     }
 
     Scaffold(

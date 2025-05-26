@@ -45,7 +45,7 @@ import javax.inject.Singleton
 import okhttp3.logging.HttpLoggingInterceptor
 
 
-const val BASE_URL = "https://ecashier-stg-production.up.railway.app/"
+const val BASE_URL = "https://e-cashier-prod-production.up.railway.app/"
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app_preferences")
 
 @InstallIn(SingletonComponent::class)

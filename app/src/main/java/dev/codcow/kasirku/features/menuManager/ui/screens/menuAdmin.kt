@@ -262,21 +262,44 @@ fun MenuAdmin(
         }
 
         Box(modifier = Modifier.fillMaxHeight().align(Alignment.TopEnd)) {
-            val subCategoryToCategoryMap = viewModel.subCategories.collectAsState().value.associate {
-                it.id to it.category_id
+            val categories by viewModel.categories.collectAsState()
+            val subCategories by viewModel.subCategories.collectAsState()
+
+            // Debug: Log untuk melihat data categories dan subCategories
+            LaunchedEffect(categories, subCategories) {
+                println("MenuPegawaiDebug: Categories and SubCategories Updated")
+                println("MenuPegawaiDebug: Categories count: ${categories.size}")
+                println("MenuPegawaiDebug: Categories: ${categories.map { "${it.id}-${it.name}" }}")
+                println("MenuPegawaiDebug: SubCategories count: ${subCategories.size}")
+                println("MenuPegawaiDebug: SubCategories: ${subCategories.map { "${it.id}-${it.name}-category_id:${it.category_id}" }}")
             }
+
+            // Pastikan mapping subkategori ke kategori benar
+            val subCategoryToCategoryMap = remember(subCategories) {
+                val mapping = subCategories.associate { subCategory ->
+                    subCategory.id to subCategory.category_id
+                }
+                println("MenuPegawaiDebug: Created subCategoryToCategoryMap")
+                println("MenuPegawaiDebug: Mapping size: ${mapping.size}")
+                println("MenuPegawaiDebug: Mapping content: $mapping")
+                mapping
+            }
+
             FilterSidebarMenu(
                 isVisible = showFilter,
                 onDismiss = { showFilter = false },
                 modifier = Modifier.align(Alignment.TopEnd),
-                categories = viewModel.categories.collectAsState().value.map {
-                    FilterChipItem(it.id, it.name) },
-                subCategories = viewModel.subCategories.collectAsState().value.map {
-                    FilterChipItem(it.id, it.name) },
+                categories = categories.map { FilterChipItem(it.id, it.name) },
+                subCategories = subCategories.map { FilterChipItem(it.id, it.name) },
                 subCategoryToCategoryMap = subCategoryToCategoryMap,
                 onResetFilter = {
-                    viewModel.filterMenuItems(emptyList(), emptyList()) },
+                    println("MenuPegawaiDebug: Reset filter called")
+                    viewModel.filterMenuItems(emptyList(), emptyList())
+                },
                 onApplyFilter = { categoryIds, subCategoryIds ->
+                    println("MenuPegawaiDebug: Apply filter called")
+                    println("MenuPegawaiDebug: Selected categoryIds: $categoryIds")
+                    println("MenuPegawaiDebug: Selected subCategoryIds: $subCategoryIds")
                     viewModel.filterMenuItems(categoryIds, subCategoryIds)
                 }
             )

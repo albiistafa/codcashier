@@ -24,6 +24,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +56,15 @@ fun FilterSidebarMenu(
     onApplyFilter: (categoryIds: List<Int>, subCategoryIds: List<Int>) -> Unit = { _, _ -> },
     shadowElevation: Dp = 8.dp
 ) {
+    // Debug: Log input parameters
+    LaunchedEffect(Unit) {
+        println("FilterDebug: Initial Parameters")
+        println("FilterDebug: Categories count: ${categories.size}")
+        println("FilterDebug: SubCategories count: ${subCategories.size}")
+        println("FilterDebug: SubCategoryToCategoryMap size: ${subCategoryToCategoryMap.size}")
+        println("FilterDebug: SubCategoryToCategoryMap content: $subCategoryToCategoryMap")
+    }
+
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val sidebarWidth = screenWidth * 3 / 4
     val offsetAnimation by animateDpAsState(targetValue = if (isVisible) 0.dp else sidebarWidth, label = "sidebarOffset")
@@ -62,23 +72,57 @@ fun FilterSidebarMenu(
     val selectedCategoryIds = remember { mutableStateOf(setOf<Int>()) }
     val selectedSubCategoryIds = remember { mutableStateOf(setOf<Int>()) }
 
-    // Derived state untuk mengecek apakah ada kategori yang terpilih
-    val isCategorySelected by remember {
-        derivedStateOf { selectedCategoryIds.value.isNotEmpty() }
+    // Debug: Log state changes
+    LaunchedEffect(selectedCategoryIds.value) {
+        println("FilterDebug: Selected Categories Changed")
+        println("FilterDebug: New selected categories: ${selectedCategoryIds.value}")
     }
 
-    val filteredSubCategories by remember {
+    // Derived state untuk mengecek apakah ada kategori yang terpilih
+    val isCategorySelected by remember {
+        derivedStateOf { 
+            val selected = selectedCategoryIds.value.isNotEmpty()
+            println("FilterDebug: isCategorySelected changed to: $selected")
+            selected 
+        }
+    }
+
+    val filteredSubCategories by remember(selectedCategoryIds.value, subCategories, subCategoryToCategoryMap) {
         derivedStateOf {
             if (selectedCategoryIds.value.isEmpty()) {
+                println("FilterDebug: No categories selected, returning empty subcategories")
                 emptyList()
             } else {
-                // Filter berdasarkan mapping subCategoryId -> categoryId
-                subCategories.filter { subCategory ->
+                // Debug: Log mapping dan filtering
+                println("FilterDebug: Filtering subcategories")
+                println("FilterDebug: Selected categories: ${selectedCategoryIds.value}")
+                println("FilterDebug: SubCategory mapping: $subCategoryToCategoryMap")
+                println("FilterDebug: Available subCategories: ${subCategories.map { "${it.id}-${it.label}" }}")
+
+                // Filter subkategori berdasarkan kategori yang dipilih
+                val filtered = subCategories.filter { subCategory ->
                     val categoryId = subCategoryToCategoryMap[subCategory.id]
-                    categoryId != null && selectedCategoryIds.value.contains(categoryId)
+                    val isIncluded = categoryId != null && selectedCategoryIds.value.contains(categoryId)
+                    println("FilterDebug: SubCategory ${subCategory.id}(${subCategory.label}) -> categoryId: $categoryId, included: $isIncluded")
+                    isIncluded
                 }
+
+                println("FilterDebug: Filtered subCategories count: ${filtered.size}")
+                println("FilterDebug: Filtered subCategories: ${filtered.map { "${it.id}-${it.label}" }}")
+                filtered
             }
         }
+    }
+
+    // Debug: Log visibility changes
+    LaunchedEffect(isVisible) {
+        println("FilterDebug: Sidebar visibility changed to: $isVisible")
+    }
+
+    // Debug: Log filtered subcategories changes
+    LaunchedEffect(filteredSubCategories) {
+        println("FilterDebug: Filtered subcategories updated")
+        println("FilterDebug: New filtered subcategories count: ${filteredSubCategories.size}")
     }
 
     AnimatedVisibility(
@@ -112,21 +156,19 @@ fun FilterSidebarMenu(
                                     FilterChip(
                                         selected = selectedCategoryIds.value.contains(category.id),
                                         onClick = {
-                                            val previousSelectedCategories = selectedCategoryIds.value
-                                            selectedCategoryIds.value = selectedCategoryIds.value.let { set ->
-                                                if (set.contains(category.id)) set - category.id else set + category.id
+                                            val newSelectedCategories = if (selectedCategoryIds.value.contains(category.id)) {
+                                                selectedCategoryIds.value - category.id
+                                            } else {
+                                                selectedCategoryIds.value + category.id
                                             }
 
-                                            // Reset sub categories ketika ada perubahan kategori
-                                            // atau ketika tidak ada kategori yang terpilih
-                                            if (selectedCategoryIds.value.isEmpty() ||
-                                                previousSelectedCategories != selectedCategoryIds.value) {
-                                                // Filter sub categories yang masih valid berdasarkan kategori yang tersisa
-                                                selectedSubCategoryIds.value = selectedSubCategoryIds.value.filter { subCatId ->
-                                                    val categoryId = subCategoryToCategoryMap[subCatId]
-                                                    categoryId != null && selectedCategoryIds.value.contains(categoryId)
-                                                }.toSet()
-                                            }
+                                            selectedCategoryIds.value = newSelectedCategories
+
+                                            // Hapus subkategori yang tidak lagi valid
+                                            selectedSubCategoryIds.value = selectedSubCategoryIds.value.filter { subCatId ->
+                                                val categoryId = subCategoryToCategoryMap[subCatId]
+                                                categoryId != null && newSelectedCategories.contains(categoryId)
+                                            }.toSet()
                                         },
                                         label = {
                                             Box(

@@ -83,9 +83,13 @@ class MenuManagerViewModel @Inject constructor(
 
     fun fetchSubCategories() {
         viewModelScope.launch {
+            println("MenuManagerViewModel: Fetching subcategories...")
             subKategoriRepository.getAllSubKategori().onSuccess { fetchedSubCategories ->
+                println("MenuManagerViewModel: Successfully fetched ${fetchedSubCategories.size} subcategories")
+                println("MenuManagerViewModel: Subcategories: ${fetchedSubCategories.map { "${it.id}-${it.name}-category_id:${it.category_id}" }}")
                 _subCategories.value = fetchedSubCategories
             }.onFailure { exception ->
+                println("MenuManagerViewModel: Failed to fetch subcategories: ${exception.message}")
                 _error.value = "Failed to load subcategories: ${exception.message}"
             }
         }
