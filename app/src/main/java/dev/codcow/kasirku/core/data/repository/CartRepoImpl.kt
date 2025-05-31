@@ -158,6 +158,12 @@ class CartRepository @Inject constructor(private val context: Context) {
         val cart = getCart()
         val currentPaymentMethod = selectedPaymentMethod.value // Pastikan ini diakses dengan benar
 
+        val validPaymentMethod = when {
+            currentPaymentMethod.isNullOrBlank() -> null
+            currentPaymentMethod == "null" -> null
+            else -> currentPaymentMethod
+        }
+
         return TransactionRequest(
             items = cart.items.map { cartItem ->
                 CartItemRequest(
@@ -165,7 +171,7 @@ class CartRepository @Inject constructor(private val context: Context) {
                     quantity = cartItem.quantity
                 )
             },
-            payment_method = currentPaymentMethod ?: "cash", // Default ke cash jika null
+            payment_method = validPaymentMethod, // Default ke cash jika null
             customer_id = customerId, // Menggunakan customerId yang diterima sebagai parameter
             nama_transaksi = namaTransaksi ?: "Transaction-${System.currentTimeMillis()}",
             status = "lunas"
@@ -188,7 +194,7 @@ class CartRepository @Inject constructor(private val context: Context) {
                     quantity = cartItem.quantity
                 )
             },
-            payment_method = currentPaymentMethod ?: "cash", // Default ke cash jika null
+            payment_method = currentPaymentMethod, // Default ke cash jika null
             customer_id = customerIdToSend,
             nama_transaksi = namaTransaksi ?: "Transaction-${System.currentTimeMillis()}",
             status = "pending"

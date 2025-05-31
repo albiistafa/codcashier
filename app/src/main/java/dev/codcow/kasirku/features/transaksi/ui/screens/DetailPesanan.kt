@@ -132,22 +132,6 @@ fun DetailPesananScreen(
         }
     }
 
-    LaunchedEffect(cart) {
-        Log.d("DetailPesananScreen", "Cart Updated: ${cart.items.size} items")
-        // Tunggu sebentar untuk memastikan cart sudah terisi
-        kotlinx.coroutines.delay(500)
-        val hasItems = cart.items.any { it.quantity > 0 }
-        Log.d("DetailPesananScreen", "Has items after delay: $hasItems, items: ${cart.items.map { it.quantity }}")
-        
-        // Hanya navigasi ke menu jika cart kosong dan bukan karena transaksi berhasil
-        if (!hasItems && !isLoading && !shouldPreventAutoNavigation && !isSuccess) {
-            Log.d("DetailPesananScreen", "No items in cart, navigating back to menu")
-            navController.navigate(Screen.Menu.route) {
-                popUpTo(Screen.Menu.route) { inclusive = true }
-            }
-        }
-    }
-
     LaunchedEffect(isSuccess) {
         if (isSuccess) {
             Log.d("DetailPesananScreen", "Transaksi Berhasil, Clearing Cart")
@@ -170,6 +154,36 @@ fun DetailPesananScreen(
                     navController.navigate(Screen.DetailPembayaran.createRoute(currentTransactionId!!)) {
                         popUpTo(Screen.Menu.route) { inclusive = true }
                     }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(cart) {
+        Log.d("DetailPesananScreen", "Cart Updated: ${cart.items.size} items")
+        // Tunggu sebentar untuk memastikan cart sudah terisi
+        kotlinx.coroutines.delay(500)
+        val hasItems = cart.items.any { it.quantity > 0 }
+        Log.d("DetailPesananScreen", "Has items after delay: $hasItems, items: ${cart.items.map { it.quantity }}")
+        
+        // Hanya navigasi ke menu jika cart kosong dan bukan karena transaksi berhasil
+        if (!hasItems && !isLoading && !shouldPreventAutoNavigation) {
+            Log.d("DetailPesananScreen", "No items in cart, navigating back to menu")
+            navController.navigate(Screen.Menu.route) {
+                popUpTo(Screen.Menu.route) { inclusive = true }
+            }
+        }
+    }
+
+    LaunchedEffect(isSuccess) {
+        if (isSuccess) {
+            Log.d("DetailPesananScreen", "Transaction successful, checking cart")
+            kotlinx.coroutines.delay(500)
+            val hasItems = cart.items.any { it.quantity > 0 }
+            if (!hasItems) {
+                Log.d("DetailPesananScreen", "Cart is empty after transaction, navigating back to menu")
+                navController.navigate(Screen.Menu.route) {
+                    popUpTo(Screen.Menu.route) { inclusive = true }
                 }
             }
         }
@@ -292,26 +306,37 @@ fun DetailPesananScreen(
                             if (customerName.isNotBlank()) {
                                 transaksiViewModel.addToCustomerNameHistory(customerName)
                             }
-                            if (selectedPaymentMethod != null) {
-                                // Check if using deposit but has insufficient balance
-                                if (selectedPaymentMethod == "deposit" && insufficientBalance) {
-                                    showBalanceDialog = true
-                                    return@OutlinedButton
-                                }
-                                scope.launch {
-                                    if (customerName.isNotBlank()) {
-                                        transaksiViewModel.addToCustomerNameHistory(customerName)
-                                    }
 
-                                    menuViewModel.setPaymentMethod(selectedPaymentMethod!!)
-                                    val transactionData = if (selectedPaymentMethod == "deposit") { Log.d("TransactionScreen", "Using deposit with Customer ID: $selectedCustomerId")
-                                    menuViewModel.prepareTransactionPending(customerName, customerId = selectedCustomerId)
-                                    } else {
+                            scope.launch {
+                                if (customerName.isNotBlank()) {
+                                    transaksiViewModel.addToCustomerNameHistory(customerName)
+                                }
+
+                                menuViewModel.setPaymentMethod(selectedPaymentMethod)
+
+                                // Handle payment method logic
+                                val transactionData = when {
+                                    selectedPaymentMethod == "deposit" -> {
+                                        // Check if using deposit but has insufficient balance
+                                        if (insufficientBalance) {
+                                            showBalanceDialog = true
+                                            return@launch
+                                        }
+                                        Log.d("TransactionScreen", "Using deposit with Customer ID: $selectedCustomerId")
+                                        menuViewModel.prepareTransactionPending(customerName, customerId = selectedCustomerId)
+                                    }
+                                    selectedPaymentMethod != null -> {
+                                        // Payment method selected but not deposit
                                         menuViewModel.prepareTransactionPending(customerName, customerId = null)
                                     }
-                                    transaksiViewModel.createTransaction(transactionData)
-                                    Log.d("TRANSACTION_DETAILS", "Details: ${transactionData.nama_transaksi}")
+                                    else -> {
+                                        // No payment method selected - send null
+                                        menuViewModel.prepareTransactionPending(customerName, customerId = null)
+                                    }
                                 }
+
+                                transaksiViewModel.createTransaction(transactionData)
+                                Log.d("TRANSACTION_DETAILS", "Details: ${transactionData.nama_transaksi}")
                             }
                         },
                         modifier = Modifier.weight(1f),
@@ -457,7 +482,6 @@ fun DetailPesananScreen(
                                     .onFocusChanged {
                                         isFocused = it.isFocused
                                         if (it.isFocused) {
-                                            // Tampilkan saran saat input mendapat fokus
                                             showCustomerNameSuggestions = true
                                         }
                                     },

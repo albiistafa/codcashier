@@ -9,7 +9,7 @@ data class TransactionRequest(
     val items: List<CartItemRequest>,
 
     @SerialName("payment_method")
-    val payment_method: String,
+    val payment_method: String?,
 
     @SerialName("customer_id")
     val customer_id: Int?,

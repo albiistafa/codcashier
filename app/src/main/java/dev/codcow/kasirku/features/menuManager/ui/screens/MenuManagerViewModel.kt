@@ -276,7 +276,7 @@ class MenuManagerViewModel @Inject constructor(
     }
 
 
-    fun setPaymentMethod(paymentMethod: String) {
+    fun setPaymentMethod(paymentMethod: String?) {
         viewModelScope.launch {
             cartRepository.setSelectedPaymentMethod(paymentMethod)
             _cart.value = cartRepository.getCart()

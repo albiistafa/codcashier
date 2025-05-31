@@ -565,7 +565,7 @@ class TransaksiViewModel @Inject constructor(
         id: Int,
         status: String,
         is_delivered: String,
-        paymentMethod: String
+        paymentMethod: String?
     ) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -584,7 +584,7 @@ class TransaksiViewModel @Inject constructor(
             }
 
             // Jika metode pembayaran adalah deposit, cari customer_id berdasarkan nama transaksi
-            val customerId = if (paymentMethod.lowercase() == "deposit") {
+            val customerId = if (paymentMethod?.lowercase() == "deposit") {
                 val transaction = _allTransactions.value.find { it.id == id }
                 transaction?.let { findCustomerIdByTransactionName(it.nama_transaksi) }
             } else {

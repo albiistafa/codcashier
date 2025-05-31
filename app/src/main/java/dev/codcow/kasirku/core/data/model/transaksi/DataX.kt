@@ -5,7 +5,7 @@ data class DataX(
     val id: Int,
     val items: List<Item>,
     val nama_transaksi: String,
-    val payment_method: String,
+    val payment_method: String?,
     val status: String,
     val is_delivered: String,
     val total_amount: String,
