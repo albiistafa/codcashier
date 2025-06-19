@@ -57,7 +57,8 @@ import java.util.Locale
 fun TransaksiScreen(
     navController: NavController,
     viewModel: TransaksiViewModel = hiltViewModel(),
-    onNavigateToDetail: (Int) -> Unit
+    onNavigateToDetail: (Int) -> Unit,
+    onNavigateToPayment: (Int) -> Unit
 ) {
     val currentSearchQuery by viewModel.currentSearchQuery.collectAsState()
     val currentPaymentMethod by viewModel.currentPaymentMethod.collectAsState()
@@ -383,7 +384,16 @@ fun TransaksiScreen(
                                 TransaksiItemTransaksi(
                                     transaction = transaction,
                                     onFinishTransaction = { selectedTransaction ->
+                                        // Ubah logika disini
                                         if (selectedTransaction.status == "pending") {
+                                            // Ambil data transaksi terlebih dahulu
+                                            viewModel.getTransactionById(selectedTransaction.id)
+
+                                            // Navigasi ke halaman pembayaran untuk update payment method
+                                            Log.d("TransaksiScreen", "Navigating to payment for transaction ID: ${selectedTransaction.id}")
+                                            onNavigateToPayment(selectedTransaction.id)
+                                        } else {
+                                            // Untuk transaksi non-pending, tetap gunakan dialog konfirmasi lama
                                             showFinishTransactionDialog = true
                                             currentSelectedTransaction = selectedTransaction
                                         }

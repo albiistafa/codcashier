@@ -59,7 +59,6 @@ fun FilterSideTransaksi(
     onResetFilter: () -> Unit = {},
     searchQuery: String = "",
     onApplyFilter: (query: String, paymentMethod: String, status: String) -> Unit = { _, _, _ -> },
-
     isPdfLoading: Boolean = false,
     isPdfSuccess: Boolean = false,
     pdfError: String? = null,

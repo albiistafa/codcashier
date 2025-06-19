@@ -19,6 +19,9 @@ import dev.codcow.kasirku.core.data.model.transaksi.Transaction
 import dev.codcow.kasirku.core.data.model.pengeluaran.TransactionPengeluaran
 import dev.codcow.kasirku.ui.theme.AppTheme
 import dev.codcow.kasirku.ui.util.formatRupiah
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun TransaksiItemDelete(
@@ -47,6 +50,12 @@ fun TransaksiItemDelete(
                 Text(
                     text = transaksi.nama_transaksi ,
                     style = AppTheme.typography.paragraph1Semibold,
+                    color = Color.Black
+                )
+
+                Text(
+                    text = formatTanggalSaja(transaksi.created_at),
+                    style = AppTheme.typography.paragraph2,
                     color = Color.Black
                 )
 
@@ -111,6 +120,16 @@ fun TransaksiItemPengeluaran(
                 )
             }
         }
+    }
+}
+
+fun formatTanggalSaja(timestamp: String): String {
+    return try {
+        val offsetDateTime = OffsetDateTime.parse(timestamp)
+        val formatter = DateTimeFormatter.ofPattern("dd MMMM", Locale.getDefault())
+        offsetDateTime.format(formatter)
+    } catch (e: Exception) {
+        "Format Tidak Valid"
     }
 }
 

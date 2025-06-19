@@ -499,6 +499,7 @@ class TransaksiViewModel @Inject constructor(
     fun updateTransaction(
         id: Int,
         status: String,
+        customer_id: Int?,
         is_delivered: String,
         paymentMethod: String,
         items: List<MenuItemUpdate>
@@ -533,18 +534,16 @@ class TransaksiViewModel @Inject constructor(
                 status = status,
                 payment_method = paymentMethod,
                 items = items,
-                customer_id = customerId,
+                customer_id = customer_id,
                 is_delivered = is_delivered
             )
 
             transaksiRepository.updateTransaksi(id, updateRequest)
                 .onSuccess {
                     _isSuccess.value = true
-
                     fetchAllTransaksiNoFilter()
                 }
                 .onFailure { exception ->
-                    // Jika gagal, kembalikan ke state sebelumnya
                     _allTransactions.update { currentList ->
                         currentList.map { transaction ->
                             if (transaction.id == id) {
