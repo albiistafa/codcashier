@@ -65,7 +65,6 @@ import dev.codcow.kasirku.ui.util.formatRupiah
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private const val SERVICE_FEE = 500.00
 
 @SuppressLint("InvalidColorHexValue")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,7 +98,7 @@ fun DetailPesananScreen(
     var showBalanceDialog by remember { mutableStateOf(false) }
 
     val totalItem by remember(cart) { derivedStateOf { cart.totalPrice } }
-    val totalBiaya by remember(cart) { derivedStateOf { cart.totalPrice + SERVICE_FEE } }
+    val totalBiaya by remember(cart) { derivedStateOf { cart.totalPrice } }
 
     val currentBalance = selectedDeposit?.balance?.toDoubleOrNull() ?: 0.0
     val hasEnoughBalance = currentBalance >= totalBiaya
@@ -132,62 +131,90 @@ fun DetailPesananScreen(
         }
     }
 
-    LaunchedEffect(isSuccess) {
-        if (isSuccess) {
-            Log.d("DetailPesananScreen", "Transaksi Berhasil, Clearing Cart")
-            
-            // Set flag untuk mencegah navigasi otomatis
-            shouldPreventAutoNavigation = true
+    // Solusi sederhana: Gabungkan logika dalam satu LaunchedEffect
 
-            // Clear cart dan tunggu sampai selesai
+    var hasNavigated by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isSuccess, currentTransactionId, currentStatusDetail) {
+        if (isSuccess && !hasNavigated && currentTransactionId != null) {
+            Log.d("DetailPesananScreen", "Transaksi Berhasil")
+
+            hasNavigated = true // Prevent multiple navigation
+
+            // Clear cart
             menuViewModel.clearCartAndWait()
 
-            // Tunggu sampai currentTransactionId tersedia
-            if (currentTransactionId != null) {
-                if (currentStatusDetail == "pending") {
-                    Log.d("DetailPesananScreen", "Transaksi Pending, Kembali ke Menu")
-                    navController.navigate(Screen.Menu.route) {
-                        popUpTo(Screen.Menu.route) { inclusive = true }
-                    }
-                } else {
-                    Log.d("DetailPesananScreen", "Navigating to DetailPembayaran with ID: $currentTransactionId")
-                    navController.navigate(Screen.DetailPembayaran.createRoute(currentTransactionId!!)) {
-                        popUpTo(Screen.Menu.route) { inclusive = true }
-                    }
+            // Add longer delay to ensure everything is processed
+            delay(300)
+
+            if (currentStatusDetail == "pending") {
+                Log.d("DetailPesananScreen", "Navigating to Menu")
+                navController.navigate(Screen.Menu.route) {
+                    popUpTo(0) { inclusive = true } // Clear entire stack
+                }
+            } else {
+                Log.d("DetailPesananScreen", "Navigating to DetailPembayaran")
+                navController.navigate(Screen.DetailPembayaran.createRoute(currentTransactionId!!)) {
+                    popUpTo(0) { inclusive = true } // Clear entire stack
                 }
             }
         }
     }
 
-    LaunchedEffect(cart) {
-        Log.d("DetailPesananScreen", "Cart Updated: ${cart.items.size} items")
-        // Tunggu sebentar untuk memastikan cart sudah terisi
-        kotlinx.coroutines.delay(500)
-        val hasItems = cart.items.any { it.quantity > 0 }
-        Log.d("DetailPesananScreen", "Has items after delay: $hasItems, items: ${cart.items.map { it.quantity }}")
-        
-        // Hanya navigasi ke menu jika cart kosong dan bukan karena transaksi berhasil
-        if (!hasItems && !isLoading && !shouldPreventAutoNavigation) {
-            Log.d("DetailPesananScreen", "No items in cart, navigating back to menu")
-            navController.navigate(Screen.Menu.route) {
-                popUpTo(Screen.Menu.route) { inclusive = true }
-            }
-        }
-    }
-
-    LaunchedEffect(isSuccess) {
-        if (isSuccess) {
-            Log.d("DetailPesananScreen", "Transaction successful, checking cart")
-            kotlinx.coroutines.delay(500)
+// Simplify cart monitoring - only check when not in transaction process
+    LaunchedEffect(cart.items.size) {
+        if (!isLoading && !isSuccess && !hasNavigated) {
+            delay(300) // Shorter delay
             val hasItems = cart.items.any { it.quantity > 0 }
+
             if (!hasItems) {
-                Log.d("DetailPesananScreen", "Cart is empty after transaction, navigating back to menu")
+                Log.d("DetailPesananScreen", "No items, returning to menu")
                 navController.navigate(Screen.Menu.route) {
                     popUpTo(Screen.Menu.route) { inclusive = true }
                 }
             }
         }
     }
+
+//    LaunchedEffect(isSuccess) {
+//        if (isSuccess) {
+//            Log.d("DetailPesananScreen", "Transaksi Berhasil, Clearing Cart")
+//
+//            // Clear cart dan tunggu sampai selesai
+//            menuViewModel.clearCartAndWait()
+//
+//            // Tunggu sampai currentTransactionId tersedia
+//            if (currentTransactionId != null) {
+//                if (currentStatusDetail == "pending") {
+//                    Log.d("DetailPesananScreen", "Transaksi Pending, Kembali ke Menu")
+//                    navController.navigate(Screen.Menu.route) {
+//                        popUpTo(Screen.Menu.route) { inclusive = true }
+//                    }
+//                } else {
+//                    Log.d("DetailPesananScreen", "Navigating to DetailPembayaran with ID: $currentTransactionId")
+//                    navController.navigate(Screen.DetailPembayaran.createRoute(currentTransactionId!!)) {
+//                        popUpTo(Screen.Menu.route) { inclusive = true }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//
+//    LaunchedEffect(cart) {
+//        Log.d("DetailPesananScreen", "Cart Updated: ${cart.items.size} items")
+//        // Tunggu sebentar untuk memastikan cart sudah terisi
+//        kotlinx.coroutines.delay(500)
+//        val hasItems = cart.items.any { it.quantity > 0 }
+//        Log.d("DetailPesananScreen", "Has items after delay: $hasItems, items: ${cart.items.map { it.quantity }}")
+//
+//        // Hanya navigasi ke menu jika cart kosong dan bukan karena transaksi berhasil
+//        if (!hasItems && !isLoading && !shouldPreventAutoNavigation) {
+//            Log.d("DetailPesananScreen", "No items in cart, navigating back to menu")
+//            navController.navigate(Screen.Menu.route) {
+//                popUpTo(Screen.Menu.route) { inclusive = true }
+//            }
+//        }
+//    }
 
     if (showBalanceDialog) {
         AlertDialog(
@@ -558,24 +585,6 @@ fun DetailPesananScreen(
                             }
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            if (cart.totalPrice >= 10000) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text("Biaya Layanan", style = AppTheme.typography.paragraph1)
-                                    Text(formatRupiah(SERVICE_FEE.toString()), style = AppTheme.typography.paragraph1)
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-
-                            // Total Cost - menambahkan SERVICE_FEE jika total cart price >= 10000
-                            val totalCost = if (cart.totalPrice >= 10000) {
-                                cart.totalPrice + SERVICE_FEE
-                            } else {
-                                cart.totalPrice
-                            }
-
                             // Total Cost
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -586,7 +595,7 @@ fun DetailPesananScreen(
                                     style = AppTheme.typography.paragraph1Bold
                                 )
                                 Text(
-                                    formatRupiah(totalCost.toString()),
+                                    formatRupiah(totalBiaya.toString()),
                                     style = AppTheme.typography.paragraph1Bold
                                 )
                             }

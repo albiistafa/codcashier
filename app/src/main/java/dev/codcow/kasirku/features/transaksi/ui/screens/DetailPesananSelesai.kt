@@ -40,8 +40,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.Result
 
-private const val SERVICE_FEE = 500.00
-
 @SuppressLint("InvalidColorHexValue")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -189,22 +187,6 @@ fun DetailPesananScreenSelesai(
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
 
-                                    // Biaya Layanan - tampilkan hanya jika total >= 10000
-                                    val totalAmount = currentTransaction.total_amount.toDoubleOrNull() ?: 0.0
-                                    if (totalAmount >= 10000) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Text("Biaya Layanan", style = AppTheme.typography.paragraph1)
-                                            Text(formatRupiah(SERVICE_FEE.toString()), style = AppTheme.typography.paragraph1)
-                                        }
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                    }
-
-                                    // Total Cost - menambahkan SERVICE_FEE jika total >= 10000
-                                    val totalCost = totalAmount
-
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween
@@ -214,7 +196,7 @@ fun DetailPesananScreenSelesai(
                                             style = AppTheme.typography.paragraph1Bold
                                         )
                                         Text(
-                                            formatRupiah(totalCost.toString()),
+                                            formatRupiah(currentTransaction.total_amount.toString()),
                                             style = AppTheme.typography.paragraph1Bold
                                         )
                                     }

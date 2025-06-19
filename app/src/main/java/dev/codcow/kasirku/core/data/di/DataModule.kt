@@ -45,7 +45,7 @@ import javax.inject.Singleton
 import okhttp3.logging.HttpLoggingInterceptor
 
 
-const val BASE_URL = "https://e-cashier-prod-production.up.railway.app/"
+const val BASE_URL = "https://codcashier.codcowdigital.site"
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app_preferences")
 
 @InstallIn(SingletonComponent::class)
@@ -86,9 +86,9 @@ object DataModule {
 
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(60, TimeUnit.SECONDS) // Contoh: 30 detik untuk connect
-            .readTimeout(60, TimeUnit.SECONDS)    // Contoh: 60 detik untuk read
-            .writeTimeout(60, TimeUnit.SECONDS)   // Contoh: 30 detik untuk write
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 

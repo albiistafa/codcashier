@@ -38,6 +38,7 @@ import dev.codcow.kasirku.features.transaksi.ui.screens.TransaksiManager
 import dev.codcow.kasirku.features.transaksi.ui.screens.TransaksiScreen
 import dev.codcow.kasirku.features.warung.ui.screens.EditWarung
 import dev.codcow.kasirku.features.transaksi.ui.screens.DetailPesananScreenUpdate
+import dev.codcow.kasirku.features.transaksi.ui.screens.PaymentUpdateScreen
 
 sealed class Screen(val route: String) {
     object Splash : Screen("splash")
@@ -79,6 +80,11 @@ sealed class Screen(val route: String) {
     object DetailSelesai : Screen("detail_selesai/{transactionId}") {
         fun createRoute(transactionId: Int): String {
             return "detail_selesai/$transactionId"
+        }
+    }
+    object PaymentUpdate : Screen("paymentupdate/{transactionId}") {
+        fun createRoute(transactionId: Int): String {
+            return "paymentupdate/$transactionId"
         }
     }
 
@@ -182,6 +188,9 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
                 navController = navController,
                 onNavigateToDetail = { transactionId ->
                     navController.navigate(Screen.DetailSelesai.createRoute(transactionId))
+                },
+                onNavigateToPayment = { transactionId ->
+                    navController.navigate(Screen.PaymentUpdate.createRoute(transactionId))
                 }
             )
         }
@@ -195,6 +204,18 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
                     navController = navController,
                     transactionId = it,
                     onNavigateBack = { navController.popBackStack() }
+                )
+            }
+        }
+        composable(
+            route = Screen.PaymentUpdate.route,
+            arguments = listOf(navArgument("transactionId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val transactionId = backStackEntry.arguments?.getInt("transactionId")
+            transactionId?.let {
+                PaymentUpdateScreen(
+                    navController = navController,
+                    transactionId = it
                 )
             }
         }
