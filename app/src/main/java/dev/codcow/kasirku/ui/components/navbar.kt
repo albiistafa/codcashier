@@ -31,53 +31,60 @@ fun CustomBottomNavigation(
 
     val items = listOf("Beranda", "Transaksi", "Rekap")
     val icons = listOf(R.drawable.navbarhome, R.drawable.navbarshop, R.drawable.navbarrekap)
-    val routes = listOf(Screen.Menu.route, Screen.Transaksi.route, Screen.Rekap.route) // Assuming you have these routes defined
+    val routes = listOf(Screen.Menu.route, Screen.Transaksi.route, Screen.Rekap.route)
 
     val selectedIndex = remember(currentRoute) {
         routes.indexOf(currentRoute)
     }
 
-    Box(
-        modifier = Modifier
+    // SOLUSI: Tambahkan windowInsetsPadding untuk navigation bars
+    Column(
+        modifier = modifier
             .fillMaxWidth()
-            .height(82.dp)
-            .shadow(
-                elevation = 24.dp, // bisa kamu atur sesuai selera
-                shape = RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp),
-                clip = false // jangan di-clip biar bayangannya keliatan
-            )
-            .background(Color(0xFFF3F7FC), shape = RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))
+            .windowInsetsPadding(WindowInsets.navigationBars) // PENTING: Tambahkan ini
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(82.dp)
+                .shadow(
+                    elevation = 24.dp,
+                    shape = RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp),
+                    clip = false
+                )
+                .background(Color(0xFFF3F7FC), shape = RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))
         ) {
-            items.forEachIndexed { index, label ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .weight(1f)
-                        .clickable {
-                            when (index) {
-                                0 -> onNavigateToHome()
-                                1 -> onNavigateToTransaksi()
-                                2 -> onNavigateToRekap()
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items.forEachIndexed { index, label ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .weight(1f)
+                            .clickable {
+                                when (index) {
+                                    0 -> onNavigateToHome()
+                                    1 -> onNavigateToTransaksi()
+                                    2 -> onNavigateToRekap()
+                                }
                             }
-                        }
-                ) {
-                    Icon(
-                        painter = painterResource(id = icons[index]),
-                        contentDescription = label,
-                        tint = if (selectedIndex == index) Color(0xFF5F7C1E) else Color.Gray,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        text = label,
-                        style = AppTheme.typography.paragraph2,
-                        color = if (selectedIndex == index) Color(0xFF5F7C1E) else Color.Gray
-                    )
+                    ) {
+                        Icon(
+                            painter = painterResource(id = icons[index]),
+                            contentDescription = label,
+                            tint = if (selectedIndex == index) Color(0xFF5F7C1E) else Color.Gray,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = label,
+                            style = AppTheme.typography.paragraph2,
+                            color = if (selectedIndex == index) Color(0xFF5F7C1E) else Color.Gray
+                        )
+                    }
                 }
             }
         }
@@ -89,4 +96,3 @@ fun currentRoute(navController: NavController): String? {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     return navBackStackEntry?.destination?.route
 }
-

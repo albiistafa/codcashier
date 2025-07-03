@@ -30,6 +30,7 @@ fun BerandaPegawai(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .systemBarsPadding()
             .background(AppTheme.colors.onSurface)
         ) {
 

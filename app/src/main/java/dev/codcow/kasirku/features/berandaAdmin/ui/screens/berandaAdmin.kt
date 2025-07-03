@@ -21,7 +21,6 @@ import dev.codcow.kasirku.ui.components.UserRole
 import dev.codcow.kasirku.ui.components.WelcomeTopBar
 import dev.codcow.kasirku.ui.theme.AppTheme
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun beranda(
@@ -54,76 +53,77 @@ fun beranda(
     // Set title based on role
     val roleTitle = if (role == UserRole.ADMIN) "Admin Menu" else "Pegawai Menu"
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(AppTheme.colors.onSurface)
-    ) {
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(30.dp)
-        ) {
-            WelcomeTopBar(navController = navController)
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Text(
-                roleTitle,
-                style = AppTheme.typography.paragraph1Bold
-            )
-
-            MenuScreen(
-                onMenuSelected = { menu ->
-                    when (menu) {
-                        "Pegawai" -> onNavigateToPegawai()
-                        "Menu Manager" -> onNavigateToMenu()
-                        "Kategori" -> onNavigateToKategori()
-                        "Sub-kategori" -> onNavigateToSubKategori()
-                        "Deposit" -> onNavigateToDeposit()
-                        "Transaksi Manager" -> onNavigateToTransaksi()
-                        "Warung" -> onNavigateToWarung()
+    // FINAL SOLUTION: Simple Scaffold implementation
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        bottomBar = {
+            // CustomBottomNavigation sudah menangani navigationBars insets sendiri
+            CustomBottomNavigation(
+                currentRoute = currentRoute(navController = navController),
+                onNavigateToHome = {
+                    navController.navigate(Screen.Menu.route) {
+                        popUpTo(Screen.Menu.route) { inclusive = true }
                     }
                 },
-                onLogoutSelected = {
-                    loginViewModel.logout()
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(navController.graph.id) { inclusive = true } // Optional: Hapus semua backstack
+                onNavigateToRekap = {
+                    navController.navigate(Screen.Rekap.route) {
+                        popUpTo(Screen.Rekap.route) { inclusive = true }
                     }
                 },
-                userRole = role
+                onNavigateToTransaksi = {
+                    navController.navigate(Screen.Transaksi.route) {
+                        popUpTo(Screen.Transaksi.route) { inclusive = true}
+                    }
+                }
             )
         }
+    ) { paddingValues ->
+        // Content dengan padding dari Scaffold
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .statusBarsPadding() // Hanya status bar padding
+                .background(AppTheme.colors.onSurface)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(30.dp)
+            ) {
+                WelcomeTopBar(navController = navController)
 
-    }
+                Spacer(modifier = Modifier.height(14.dp))
 
-    Column (modifier = Modifier
-        .fillMaxSize(),
-        verticalArrangement = Arrangement.Bottom
-    ){
-        CustomBottomNavigation(
-            currentRoute = currentRoute(navController = navController),
-            onNavigateToHome = {
-                // Navigasi ke home dengan menghapus backstack
-                navController.navigate(Screen.Menu.route) {
-                    popUpTo(Screen.Menu.route) { inclusive = true }
-                }
-            },
-            onNavigateToRekap = {
-                navController.navigate(Screen.Rekap.route) {
-                    popUpTo(Screen.Rekap.route) { inclusive = true }
-                }
-            },
-            onNavigateToTransaksi = {
-                navController.navigate(Screen.Transaksi.route) {
-                    popUpTo(Screen.Transaksi.route) { inclusive = true}
-                }
+                Text(
+                    roleTitle,
+                    style = AppTheme.typography.paragraph1Bold
+                )
+
+                MenuScreen(
+                    onMenuSelected = { menu ->
+                        when (menu) {
+                            "Pegawai" -> onNavigateToPegawai()
+                            "Menu Manager" -> onNavigateToMenu()
+                            "Kategori" -> onNavigateToKategori()
+                            "Sub-kategori" -> onNavigateToSubKategori()
+                            "Deposit" -> onNavigateToDeposit()
+                            "Transaksi Manager" -> onNavigateToTransaksi()
+                            "Warung" -> onNavigateToWarung()
+                        }
+                    },
+                    onLogoutSelected = {
+                        loginViewModel.logout()
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    },
+                    userRole = role
+                )
             }
-        )
+        }
     }
 }
-
 @Composable
 fun currentRoute(navController: NavController): String? {
     val navBackStackEntry by navController.currentBackStackEntryAsState()

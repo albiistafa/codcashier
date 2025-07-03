@@ -71,6 +71,12 @@ fun DetailPembayaran(
         error?.let {
             Log.e("DetailPembayaran", "Error occurred: $it")
             Toast.makeText(context, "Error: $it", Toast.LENGTH_LONG).show()
+            if (it.contains("404")) {
+                Toast.makeText(context, "Transaksi tidak ditemukan", Toast.LENGTH_LONG).show()
+                navController.navigate(Screen.Menu.route) {
+                    popUpTo(Screen.Menu.route) { inclusive = true }
+                }
+            }
         }
     }
 
@@ -136,7 +142,17 @@ fun DetailPembayaran(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = {
+                        Log.d("Navigation", "Kembali button clicked")
+                        if (navController.previousBackStackEntry != null) {
+                            navController.navigateUp()
+                        } else {
+                            navController.navigate(Screen.Menu.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    }
+                    ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Kembali",
@@ -275,7 +291,16 @@ fun DetailPembayaran(
                     Spacer(modifier = Modifier.width(16.dp))
 
                     Button(
-                        onClick = { navController.navigate(Screen.Menu.route) },
+                        onClick = {
+                            Log.d("Navigation", "Kembali button clicked")
+                            if (navController.previousBackStackEntry != null) {
+                                navController.navigateUp()
+                            } else {
+                                navController.navigate(Screen.Menu.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        },
                         shape = RoundedCornerShape(50),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF6D8E22),

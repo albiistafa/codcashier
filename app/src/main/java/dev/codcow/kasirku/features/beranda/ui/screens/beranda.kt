@@ -25,6 +25,7 @@ fun beranda() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .systemBarsPadding()
                 .background(AppTheme.colors.onSurface)
         ) {
             Column(

@@ -114,19 +114,21 @@ fun MenuAdmin(
             CustomBottomNavigation(
                 currentRoute = currentRoute(navController = navController),
                 onNavigateToHome = {
-                    // Navigasi ke home dengan menghapus backstack
                     navController.navigate(Screen.Menu.route) {
-                        popUpTo(Screen.Menu.route) { inclusive = true }
+                        popUpTo(0)
+                        launchSingleTop = true
                     }
                 },
                 onNavigateToRekap = {
                     navController.navigate(Screen.Rekap.route) {
-                        popUpTo(Screen.Rekap.route) { inclusive = true }
+                        popUpTo(0)
+                        launchSingleTop = true
                     }
                 },
                 onNavigateToTransaksi = {
                     navController.navigate(Screen.Transaksi.route) {
-                        popUpTo(Screen.Transaksi.route) { inclusive = true}
+                        popUpTo(0)
+                        launchSingleTop = true
                     }
                 }
             )
@@ -252,7 +254,11 @@ fun MenuAdmin(
             AnimatedCartIndicator(
                 cartItems = cart.items.filter { it.quantity > 0 },
                 totalPrice = cart.totalPrice,
-                onClick = { navController.navigate("detail") },
+                onClick = {
+                    navController.navigate("detail") {
+                        launchSingleTop = true
+                    }
+                },
                 isVisible = showCartIndicator,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

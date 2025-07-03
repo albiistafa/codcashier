@@ -62,6 +62,7 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .systemBarsPadding()
             .background(AppTheme.colors.primaryGradient),
         contentAlignment = Alignment.Center
     ) {
