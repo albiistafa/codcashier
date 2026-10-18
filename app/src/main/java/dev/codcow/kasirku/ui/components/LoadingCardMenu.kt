@@ -1,4 +1,6 @@
 import androidx.compose.animation.core.*
+import dev.codcow.kasirku.ui.util.rememberReduceMotion
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,20 +16,19 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun LoadingMenuCard() {
-    val transition = rememberInfiniteTransition()
-    val translateAnim by transition.animateFloat(
+    val translateAnim = if (rememberReduceMotion()) 400f else rememberInfiniteTransition().animateFloat(
         initialValue = 0f,
-        targetValue = 400f, // Sesuaikan nilai ini
+        targetValue = 400f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 1000, easing = FastOutLinearInEasing),
             repeatMode = RepeatMode.Restart
         )
-    )
+    ).value
 
     val shimmerColors = listOf(
-        Color.LightGray.copy(alpha = 0.6f),
-        Color.LightGray.copy(alpha = 0.9f),
-        Color.LightGray.copy(alpha = 0.6f),
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.23f),
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
     )
 
     val brush = Brush.linearGradient(

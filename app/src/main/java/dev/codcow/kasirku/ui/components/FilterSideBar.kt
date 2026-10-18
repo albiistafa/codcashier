@@ -1,5 +1,8 @@
 package dev.codcow.kasirku.ui.components
 
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.EnterTransition
+import dev.codcow.kasirku.ui.util.rememberReduceMotion
 import android.app.DatePickerDialog
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
@@ -23,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -73,7 +77,6 @@ fun RecapFilterSidebar(
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val sidebarWidth = screenWidth * 3 / 4
-    val offsetAnimation = animateDpAsState(targetValue = if (isVisible) 0.dp else sidebarWidth, label = "sidebarOffset")
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
 
@@ -125,18 +128,18 @@ fun RecapFilterSidebar(
         ).show()
     }
 
+    val reduceMotion = rememberReduceMotion()
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInHorizontally(initialOffsetX = { it }),
-        exit = slideOutHorizontally(targetOffsetX = { it })
+        enter = if (reduceMotion) EnterTransition.None else slideInHorizontally(initialOffsetX = { it }),
+        exit = if (reduceMotion) ExitTransition.None else slideOutHorizontally(targetOffsetX = { it })
     ) {
         Box(
             modifier = modifier
                 .fillMaxHeight()
                 .width(sidebarWidth)
-                .offset(x = offsetAnimation.value)
                 .graphicsLayer(shadowElevation = shadowElevation.value)
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(16.dp)
         ) {
             Column {
@@ -209,9 +212,9 @@ fun RecapFilterSidebar(
                         shape = RoundedCornerShape(25.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = Color.Transparent,
-                            contentColor = Color(0xFF6D8E22)
+                            contentColor = MaterialTheme.colorScheme.primary
                         ),
-                        border = BorderStroke(1.dp, color = Color(0xFF6D8E22))
+                        border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary)
                     ) {
                         Text("Atur Ulang", style = AppTheme.typography.paragraph2)
                     }
@@ -232,8 +235,8 @@ fun RecapFilterSidebar(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(25.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color(0xFF6D8E22),
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
                         Text("Pakai", style = AppTheme.typography.paragraph2)
@@ -261,15 +264,15 @@ fun RecapFilterSidebar(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(25.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color(0xFF6D8E22),
-                        contentColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     enabled = !isPdfLoading
                 ) {
                     if (isPdfLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             strokeWidth = 2.dp
                         )
                     } else {
@@ -283,7 +286,7 @@ fun RecapFilterSidebar(
                 AnimatedVisibility(visible = isPdfSuccess) {
                     Text(
                         "PDF berhasil diunduh!",
-                        color = Color(0xFF6D8E22),
+                        color = MaterialTheme.colorScheme.primary,
                         style = AppTheme.typography.paragraph2,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
@@ -293,7 +296,7 @@ fun RecapFilterSidebar(
                 AnimatedVisibility(visible = pdfError != null) {
                     Text(
                         pdfError ?: "",
-                        color = Color.Red,
+                        color = MaterialTheme.colorScheme.error,
                         style = AppTheme.typography.paragraph2,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
@@ -303,6 +306,5 @@ fun RecapFilterSidebar(
         }
     }
 }
-
 
 

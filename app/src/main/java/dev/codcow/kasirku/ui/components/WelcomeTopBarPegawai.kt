@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,75 +64,33 @@ fun WelcomeTopBarPegawai(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 "Selamat Datang ${userRole}!",
                 style = AppTheme.typography.paragraph1
             )
             if (isLoading) {
-                ShimmerAnimationn()
+                ShimmerAnimation()
             } else {
                 Text(
-                    text = if ((warungNameChaced?.length ?: 0) > 14) {
-                        warungNameChaced?.substring(0, 14) + "..."
-                    } else {
-                        warungNameChaced ?: "Nama Warung"
-                    },
+                    text = warungNameChaced ?: "Nama Warung",
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = AppTheme.typography.heading3Bold,
-                    color = AppTheme.colors.surface
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
-        Box(
-            modifier = Modifier.height(52.dp)
-        ) {
+        Box(modifier = Modifier.size(52.dp)) {
             IconButton(
                 onClick = { navController.navigate("home") }
             ) {
                 Icon(
                     Icons.Default.Person,
-                    contentDescription = "",
-                    modifier = Modifier.size(52.dp)
+                    contentDescription = "Pengaturan usaha",
+                    modifier = Modifier.size(28.dp)
                 )
             }
         }
     }
-}
-
-@Composable
-fun ShimmerAnimationn() {
-    val shimmerColors = listOf(
-        Color.LightGray.copy(alpha = 0.6f),
-        Color.LightGray.copy(alpha = 0.2f),
-        Color.LightGray.copy(alpha = 0.6f),
-    )
-
-    val transition = rememberInfiniteTransition()
-    val translateAnimation = transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f, // Adjust the target value as needed for the shimmer effect
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1000, // Adjust the duration for the shimmer speed
-                easing = LinearEasing
-            ),
-            repeatMode = RepeatMode.Restart
-        )
-    )
-
-    val shimmerBrush = Brush.linearGradient(
-        colors = shimmerColors,
-        start = Offset(translateAnimation.value, 0f),
-        end = Offset(translateAnimation.value + 200f, 0f)
-    )
-
-    Box(
-        modifier = Modifier
-            .width(150.dp) // Width of the shimmer box
-            .height(30.dp) // Height of the shimmer box
-            .clip(RoundedCornerShape(6.dp)) // Clip the shimmer box
-            .background(shimmerBrush)
-    )
 }

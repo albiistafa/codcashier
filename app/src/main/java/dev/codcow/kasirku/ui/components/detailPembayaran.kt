@@ -44,7 +44,7 @@ fun TransactionReceipt(
                 .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 20.dp)),
             elevation = CardDefaults.cardElevation(8.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFFFFFFF) // Light Green background
+                containerColor = MaterialTheme.colorScheme.surface
             )
         ) {
             Column(
@@ -55,7 +55,7 @@ fun TransactionReceipt(
                 Text(
                     text = "Transaksi Berhasil",
                     style = AppTheme.typography.labelBold,
-                    color = Color(0xFF228B22), // Green color
+                    color = AppTheme.colors.success,
                     modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -69,10 +69,10 @@ fun TransactionReceipt(
                 Text(
                     text = "Kode transaksi #${System.currentTimeMillis().toString().takeLast(6)}", // Contoh kode transaksi
                     style = AppTheme.typography.paragraph1Medium,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
                 )
-                Divider(modifier = Modifier.padding(vertical = 12.dp), thickness = 1.dp, color = Color.LightGray)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 // Detail Transaksi
                 val currentDateTime = LocalDateTime.now()
                 val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy | HH.mm")
@@ -84,7 +84,7 @@ fun TransactionReceipt(
                     Text(currentDateTime.format(formatter), style = AppTheme.typography.paragraph2Medium)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Items", style = AppTheme.typography.paragraph2, color = Color.Gray)
+                Text("Items", style = AppTheme.typography.paragraph2, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(4.dp))
                 cartItems.forEach { item ->
                     Row(
@@ -121,14 +121,14 @@ fun TransactionReceipt(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Pembayaran", style = AppTheme.typography.paragraph2, color = Color.Gray)
+                    Text("Pembayaran", style = AppTheme.typography.paragraph2, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         text = paymentMethod ?: "Tidak Diketahui",
                         style = AppTheme.typography.paragraph2Semibold
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Divider(thickness = 1.dp, color = Color.LightGray)
+                HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),

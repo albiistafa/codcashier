@@ -1,5 +1,8 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import CustomBottomNavigation
 import android.R
 import android.app.DatePickerDialog
@@ -9,14 +12,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,7 +43,7 @@ import java.util.Locale
 import java.text.SimpleDateFormat
 import dev.codcow.kasirku.ui.components.TransaksiItemPengeluaran
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransaksiManager(
     navController: NavController,
@@ -232,16 +231,16 @@ fun TransaksiManager(
 
 
 
-    val pullRefreshState = rememberPullRefreshState(refreshing, ::refresh)
+    val pullRefreshState = rememberPullToRefreshState()
 
     // Delete confirmation dialog
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            containerColor = AppTheme.colors.onSurface,
-            textContentColor = AppTheme.colors.surface,
+            containerColor = MaterialTheme.colorScheme.surface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             title = { Text("Konfirmasi Hapus", style = AppTheme.typography.heading5Bold,
-                color = AppTheme.colors.surface) },
+                color = MaterialTheme.colorScheme.primary) },
             text = { Text("Apakah Anda yakin ingin menghapus transaksi ini?", style = AppTheme.typography.paragraph2) },
             confirmButton = {
                 TextButton(
@@ -261,13 +260,13 @@ fun TransaksiManager(
                     }
                 ) {
                     Text("Ya", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.onHighlightSurface)
+                        color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
                     Text("Tidak", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.surface)
+                        color = MaterialTheme.colorScheme.primary)
                 }
             }
         )
@@ -276,10 +275,10 @@ fun TransaksiManager(
     if (showDeletePeriodeDialog) {
         AlertDialog(
             onDismissRequest = { showDeletePeriodeDialog = false },
-            containerColor = AppTheme.colors.onSurface,
-            textContentColor = AppTheme.colors.surface,
+            containerColor = MaterialTheme.colorScheme.surface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             title = { Text("Hapus Periode", style = AppTheme.typography.heading5Bold,
-                color = AppTheme.colors.surface) },
+                color = MaterialTheme.colorScheme.primary) },
             text = {
                 Column {
                     OutlinedTextField(
@@ -324,13 +323,13 @@ fun TransaksiManager(
                     }
                 ) {
                     Text("Hapus", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.onHighlightSurface)
+                        color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeletePeriodeDialog = false }) {
                     Text("Batal", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.surface)
+                        color = MaterialTheme.colorScheme.primary)
                 }
             }
         )
@@ -345,7 +344,7 @@ fun TransaksiManager(
                     .fillMaxWidth()
                     .padding(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = AppTheme.colors.onSurface
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
                 Column(
@@ -354,7 +353,7 @@ fun TransaksiManager(
                     Text(
                         text = "Pilih Rentang Tanggal",
                         style = AppTheme.typography.heading5Bold,
-                        color = AppTheme.colors.surface,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
@@ -398,7 +397,7 @@ fun TransaksiManager(
                             Text(
                                 "Batal",
                                 style = AppTheme.typography.paragraph2Bold,
-                                color = AppTheme.colors.surface
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
 
@@ -416,7 +415,7 @@ fun TransaksiManager(
                             Text(
                                 "Terapkan",
                                 style = AppTheme.typography.paragraph2Bold,
-                                color = AppTheme.colors.onHighlightSurface
+                                color = MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -427,36 +426,19 @@ fun TransaksiManager(
 
     Scaffold(
         bottomBar = {
-            CustomBottomNavigation(
-                currentRoute = currentRoute(navController = navController),
-                onNavigateToHome = {
-                    navController.navigate(Screen.Menu.route) {
-                        popUpTo(Screen.Menu.route) { inclusive = true }
-                    }
-                },
-                onNavigateToRekap = {
-                    navController.navigate(Screen.Rekap.route) {
-                        popUpTo(Screen.Rekap.route) { inclusive = true }
-                    }
-                },
-                onNavigateToTransaksi = {
-                    navController.navigate(Screen.Transaksi.route) {
-                        popUpTo(Screen.Transaksi.route) { inclusive = true}
-                    }
-                }
-            )
+            CustomBottomNavigation(navController = navController)
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showDeletePeriodeDialog = true },
                 shape = CircleShape,
-                containerColor = AppTheme.colors.onHighlightSurface,
+                containerColor = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(bottom = 16.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Hapus Periode",
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onError
                 )
             }
         }
@@ -464,8 +446,8 @@ fun TransaksiManager(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(AppTheme.colors.onSurface)
-                .padding(bottom = paddingValues.calculateBottomPadding())
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues) // Scaffold insets include the status bar
         ) {
             Column(
                 modifier = Modifier
@@ -497,8 +479,8 @@ fun TransaksiManager(
                         },
                         modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AppTheme.colors.surface,
-                            selectedLabelColor = Color.White
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )
 
@@ -519,8 +501,8 @@ fun TransaksiManager(
                         },
                         modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AppTheme.colors.surface,
-                            selectedLabelColor = Color.White
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )
 
@@ -558,8 +540,8 @@ fun TransaksiManager(
                         },
                         modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AppTheme.colors.surface,
-                            selectedLabelColor = Color.White
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )
                 }
@@ -567,33 +549,31 @@ fun TransaksiManager(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pullRefresh(pullRefreshState)
+                        .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
                     if (isLoading) {
                         Box(
-                            modifier = Modifier.fillMaxSize()
-                                .pullRefresh(pullRefreshState),
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
 
                         }
                     } else if (error != null) {
                         Box(
-                            modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
-                                .pullRefresh(pullRefreshState),
+                            modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "$error",
                                 style = AppTheme.typography.paragraph1,
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     } else {
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(AppTheme.colors.onSurface),
+                                .background(MaterialTheme.colorScheme.background),
                             contentPadding = PaddingValues(bottom = 80.dp, top = 10.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
@@ -602,7 +582,7 @@ fun TransaksiManager(
                                     Text(
                                         text = "Semua Transaksi",
                                         style = AppTheme.typography.paragraph1Semibold,
-                                        color = AppTheme.colors.surface,
+                                        color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.padding(bottom = 8.dp)
                                     )
                                 }
@@ -636,7 +616,7 @@ fun TransaksiManager(
                                     Text(
                                         text = "Semua Pengeluaran",
                                         style = AppTheme.typography.paragraph1Semibold,
-                                        color = AppTheme.colors.surface,
+                                        color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.padding(bottom = 8.dp)
                                     )
                                 }
@@ -665,7 +645,7 @@ fun TransaksiManager(
                                         Text(
                                             text = "Tidak ada transaksi",
                                             style = AppTheme.typography.paragraph1,
-                                            color = AppTheme.colors.surface
+                                            color = MaterialTheme.colorScheme.primary
                                         )
                                     }
                                 }
@@ -673,12 +653,12 @@ fun TransaksiManager(
                         }
                     }
 
-                    PullRefreshIndicator(
-                        refreshing = refreshing,
+                    PullToRefreshDefaults.Indicator(
+                        isRefreshing = refreshing,
                         state = pullRefreshState,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        backgroundColor = AppTheme.colors.surface,
-                        contentColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }

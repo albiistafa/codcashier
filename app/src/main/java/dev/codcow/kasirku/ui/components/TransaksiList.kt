@@ -1,6 +1,7 @@
 package dev.codcow.kasirku.ui.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,10 +33,10 @@ fun TransaksiItemDelete(
     Card(
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onItemClick(transaksi.id) }
+            .clickable(onClickLabel = "Lihat detail transaksi", role = Role.Button) { onItemClick(transaksi.id) }
     ) {
         Row(
             modifier = Modifier
@@ -50,19 +51,19 @@ fun TransaksiItemDelete(
                 Text(
                     text = transaksi.nama_transaksi ,
                     style = AppTheme.typography.paragraph1Semibold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
                     text = formatTanggalSaja(transaksi.created_at),
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
                     text = formatRupiah(transaksi.total_amount),
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -71,7 +72,7 @@ fun TransaksiItemDelete(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = Color.Red
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }
@@ -86,7 +87,7 @@ fun TransaksiItemPengeluaran(
     Card(
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
     ) {
@@ -102,13 +103,13 @@ fun TransaksiItemPengeluaran(
                 Text(
                     text = pengeluaran.nama_transaksi,
                     style = AppTheme.typography.paragraph1Semibold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
                     text = formatRupiah(pengeluaran.total_amount),
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -116,7 +117,7 @@ fun TransaksiItemPengeluaran(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = Color.Red
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }

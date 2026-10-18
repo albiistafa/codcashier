@@ -58,24 +58,7 @@ fun beranda(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             // CustomBottomNavigation sudah menangani navigationBars insets sendiri
-            CustomBottomNavigation(
-                currentRoute = currentRoute(navController = navController),
-                onNavigateToHome = {
-                    navController.navigate(Screen.Menu.route) {
-                        popUpTo(Screen.Menu.route) { inclusive = true }
-                    }
-                },
-                onNavigateToRekap = {
-                    navController.navigate(Screen.Rekap.route) {
-                        popUpTo(Screen.Rekap.route) { inclusive = true }
-                    }
-                },
-                onNavigateToTransaksi = {
-                    navController.navigate(Screen.Transaksi.route) {
-                        popUpTo(Screen.Transaksi.route) { inclusive = true}
-                    }
-                }
-            )
+            CustomBottomNavigation(navController = navController)
         }
     ) { paddingValues ->
         // Content dengan padding dari Scaffold
@@ -84,7 +67,7 @@ fun beranda(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .statusBarsPadding() // Hanya status bar padding
-                .background(AppTheme.colors.onSurface)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             Column(
                 modifier = Modifier

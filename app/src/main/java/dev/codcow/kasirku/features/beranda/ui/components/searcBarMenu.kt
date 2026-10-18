@@ -25,7 +25,7 @@ fun SearchBarMenu(
     query: String,
     onQueryChange: (String) -> Unit,
     placeholder: String,
-    onFilterClick: () -> Unit
+    onFilterClick: (() -> Unit)? = null // null hides the filter button
 ) {
     Row (
         modifier = Modifier.fillMaxWidth(),
@@ -35,20 +35,20 @@ fun SearchBarMenu(
             value = query,
             onValueChange = onQueryChange,
             modifier = Modifier
-                .height(48.dp)
-                ,
+                .weight(1f)
+                .heightIn(min = 56.dp),
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Default.Search,
-                    contentDescription = "Search Icon",
-                    tint = AppTheme.colors.surface,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(end = 8.dp)
                 )
             },
             placeholder = {
                 Text(
                     placeholder,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = AppTheme.typography.paragraph2
                 )
             },
@@ -56,23 +56,23 @@ fun SearchBarMenu(
             shape = RoundedCornerShape(30.dp),
             textStyle = AppTheme.typography.paragraph2,
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = Color(0xFF6D8E22),
-                focusedBorderColor = Color(0xFF6D8E22),
-                unfocusedContainerColor = Color.White,
-                focusedContainerColor = Color(0xFFEEF5D2),
-                unfocusedTextColor = Color.Gray,
-                focusedTextColor = Color(0xFF6D8E22)
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface
             )
         )
 
-        IconButton(
-            onClick =  onFilterClick ,
+        if (onFilterClick != null) IconButton(
+            onClick = onFilterClick,
             modifier = Modifier.size(48.dp)
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.mi_filter),
-                contentDescription = "Filter Icon",
-                tint = Color.Black,
+                contentDescription = "Saring menu",
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(24.dp)
             )
         }

@@ -24,19 +24,19 @@ fun SearchBar(
         onValueChange = onQueryChange,
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp),
+            .heightIn(min = 56.dp),
         trailingIcon = {
             Icon(
                 imageVector = Icons.Default.Search,
-                contentDescription = "Search Icon",
-                tint = Color.Gray,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(end = 8.dp)
             )
         },
         placeholder = {
             Text(
                 placeholder,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = AppTheme.typography.paragraph2
             )
         },
@@ -44,12 +44,12 @@ fun SearchBar(
         shape = RoundedCornerShape(30.dp),
         textStyle = AppTheme.typography.paragraph2,
         colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = Color(0xFF6D8E22),
-            focusedBorderColor = Color(0xFF6D8E22),
-            unfocusedContainerColor = Color.White,
-            focusedContainerColor = Color(0xFFEEF5D2),
-            unfocusedTextColor = Color.Gray,
-            focusedTextColor = Color(0xFF6D8E22)
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface
         )
     )
 }

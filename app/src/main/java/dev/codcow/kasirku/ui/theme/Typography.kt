@@ -290,22 +290,22 @@ val extendedTypography = AppTypography (
     ),
     paragraph2 = TextStyle(
         fontFamily = PoppinsFamily,
-        fontSize = 12.sp,
+        fontSize = 14.sp,
         fontWeight = FontWeight.Normal
     ),
     paragraph2Medium = TextStyle(
         fontFamily = PoppinsFamily,
-        fontSize = 12.sp,
+        fontSize = 14.sp,
         fontWeight = FontWeight.Medium
     ),
     paragraph2Semibold = TextStyle(
         fontFamily = PoppinsFamily,
-        fontSize = 12.sp,
+        fontSize = 14.sp,
         fontWeight = FontWeight.SemiBold
     ),
     paragraph2Bold = TextStyle(
         fontFamily = PoppinsFamily,
-        fontSize = 12.sp,
+        fontSize = 14.sp,
         fontWeight = FontWeight.Bold
     )
 )

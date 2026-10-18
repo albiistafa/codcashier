@@ -1,5 +1,6 @@
 package dev.codcow.kasirku.ui.components
 
+import dev.codcow.kasirku.ui.util.rememberReduceMotion
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,7 +65,7 @@ fun WelcomeTopBar(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 "Selamat Datang ${userRole}!",
                 style = AppTheme.typography.paragraph1
@@ -72,28 +74,22 @@ fun WelcomeTopBar(
                 ShimmerAnimation()
             } else {
                 Text(
-                    text = if ((warungNameChaced?.length ?: 0) > 14) {
-                        warungNameChaced?.substring(0, 14) + "..."
-                    } else {
-                        warungNameChaced ?: "Nama Warung"
-                    },
+                    text = warungNameChaced ?: "Nama Warung",
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = AppTheme.typography.heading3Bold,
-                    color = AppTheme.colors.surface
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
-        Box(
-            modifier = Modifier.height(52.dp)
-        ) {
+        Box(modifier = Modifier.size(52.dp)) {
             IconButton(
                 onClick = { navController.navigate("home") }
             ) {
                 Icon(
                     Icons.Default.Person,
-                    contentDescription = "",
-                    modifier = Modifier.size(52.dp)
+                    contentDescription = "Pengaturan usaha",
+                    modifier = Modifier.size(28.dp)
                 )
             }
         }
@@ -103,28 +99,24 @@ fun WelcomeTopBar(
 @Composable
 fun ShimmerAnimation() {
     val shimmerColors = listOf(
-        Color.LightGray.copy(alpha = 0.6f),
-        Color.LightGray.copy(alpha = 0.2f),
-        Color.LightGray.copy(alpha = 0.6f),
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
     )
 
-    val transition = rememberInfiniteTransition()
-    val translateAnimation = transition.animateFloat(
+    val x = if (rememberReduceMotion()) 0f else rememberInfiniteTransition().animateFloat(
         initialValue = 0f,
-        targetValue = 1000f, // Adjust the target value as needed for the shimmer effect
+        targetValue = 1000f,
         animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1000, // Adjust the duration for the shimmer speed
-                easing = LinearEasing
-            ),
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         )
-    )
+    ).value
 
     val shimmerBrush = Brush.linearGradient(
         colors = shimmerColors,
-        start = Offset(translateAnimation.value, 0f),
-        end = Offset(translateAnimation.value + 200f, 0f)
+        start = Offset(x, 0f),
+        end = Offset(x + 200f, 0f)
     )
 
     Box(

@@ -1,5 +1,8 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import CustomBottomNavigation
 import LoadingMenuCard
 import android.util.Log
@@ -7,10 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,8 +31,9 @@ import dev.codcow.kasirku.features.kategoriManager.ui.screens.KategoriManagerVie
 import dev.codcow.kasirku.features.menuManager.component.AnimatedCartIndicator
 import dev.codcow.kasirku.ui.components.FilterSidebarMenu
 import dev.codcow.kasirku.ui.components.MenuCardPemesanan
+import dev.codcow.kasirku.ui.components.MenuLoadState
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuAdmin(
     navController: NavController,
@@ -104,46 +104,26 @@ fun MenuAdmin(
     }
 
     // Set up pull refresh state
-    val pullRefreshState = rememberPullRefreshState(refreshing, ::refresh)
+    val pullRefreshState = rememberPullToRefreshState()
 
     Box(modifier = Modifier.fillMaxSize()) {
 
 
     Scaffold(
         bottomBar = {
-            CustomBottomNavigation(
-                currentRoute = currentRoute(navController = navController),
-                onNavigateToHome = {
-                    navController.navigate(Screen.Menu.route) {
-                        popUpTo(0)
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateToRekap = {
-                    navController.navigate(Screen.Rekap.route) {
-                        popUpTo(0)
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateToTransaksi = {
-                    navController.navigate(Screen.Transaksi.route) {
-                        popUpTo(0)
-                        launchSingleTop = true
-                    }
-                }
-            )
+            CustomBottomNavigation(navController = navController)
         }
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(AppTheme.colors.onSurface)
-                .padding(bottom = paddingValues.calculateBottomPadding())
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues) // Scaffold insets include the status bar
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 30.dp, vertical = 30.dp)
+                    .padding(horizontal = 16.dp, vertical = 24.dp)
             ) {
                 WelcomeTopBar(navController = navController)
                 Spacer(modifier = Modifier.height(14.dp))
@@ -151,28 +131,8 @@ fun MenuAdmin(
                 SearchBarMenu(
                     query = query,
                     onQueryChange = { newQuery ->
-                        // Tambahkan log untuk debugging
-                        Log.d("SearchDebug", "Query Changed: $newQuery")
-                        // Update query state
                         query = newQuery
-
-                        // Cek apakah string pencarian benar-benar kosong
-                        if (newQuery.isEmpty()) {
-                            // Jika query kosong, gunakan filter kategori dan subkategori yang aktif
-                            val selectedCategoryIds = viewModel.selectedCategoryIds.value
-                            val selectedSubCategoryIds = viewModel.selectedSubCategoryIds.value
-
-                            if (selectedCategoryIds.isEmpty() && selectedSubCategoryIds.isEmpty()) {
-                                // Jika tidak ada filter yang aktif, fetch semua item menu
-                                viewModel.fetchMenuItems()
-                            } else {
-                                // Jika ada filter aktif, terapkan filter tanpa query pencarian
-                                viewModel.filterMenuItems(selectedCategoryIds, selectedSubCategoryIds)
-                            }
-                        } else {
-                            // Jika query tidak kosong, lakukan pencarian dengan mempertimbangkan filter aktif
-                            viewModel.searchMenuItems(newQuery)
-                        }
+                        viewModel.searchMenuItems(newQuery)
                     },
                     placeholder = "Cari Menu",
                     onFilterClick = { showFilter = true }
@@ -184,11 +144,11 @@ fun MenuAdmin(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pullRefresh(pullRefreshState)
+                        .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
                     if (isLoading) {
                         LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
+                            columns = GridCells.Adaptive(minSize = 150.dp),
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -198,20 +158,29 @@ fun MenuAdmin(
                                 LoadingMenuCard()
                             }
                         }
-                    } else if (error != null) {
-                        // Tampilkan pesan error
-                        Text(text = "Error: $error", color = Color.Red)
+                    } else if (error != null || menuItems.isEmpty()) {
+                        MenuLoadState(hasError = error != null, onRetry = {
+                            if (query.isNotEmpty()) {
+                                viewModel.searchMenuItems(query)
+                            } else {
+                                viewModel.filterMenuItems(
+                                    viewModel.selectedCategoryIds.value,
+                                    viewModel.selectedSubCategoryIds.value
+                                )
+                            }
+                            viewModel.fetchCategories()
+                            viewModel.fetchSubCategories()
+                        })
                     } else {
                         LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
+                            columns = GridCells.Adaptive(minSize = 150.dp),
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .pullRefresh(pullRefreshState),
+                                .fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             contentPadding = PaddingValues(top = 20.dp, bottom = 50.dp)
                         ) {
-                            items(menuItems) { menu ->
+                            items(menuItems, key = { it.id }) { menu ->
                                 val quantity = itemQuantities.getOrPut(menu.id) { 0 }
                                 Box(
                                     modifier = Modifier
@@ -231,7 +200,7 @@ fun MenuAdmin(
                                         onDecrement = { selectedMenu ->
                                             if (quantity > 0) {
                                                 itemQuantities[selectedMenu.id] = quantity - 1
-                                                viewModel.removeFromCart(selectedMenu.id) // Kurangi satu item dari cart
+                                                viewModel.updateCartItemQuantity(selectedMenu.id, quantity - 1)
                                             }
                                         },
                                     )
@@ -241,12 +210,12 @@ fun MenuAdmin(
                     }
 
                     // Pull refresh indicator
-                    PullRefreshIndicator(
-                        refreshing = refreshing,
+                    PullToRefreshDefaults.Indicator(
+                        isRefreshing = refreshing,
                         state = pullRefreshState,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        backgroundColor = AppTheme.colors.surface,
-                        contentColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
 
                 }
@@ -254,11 +223,9 @@ fun MenuAdmin(
             AnimatedCartIndicator(
                 cartItems = cart.items.filter { it.quantity > 0 },
                 totalPrice = cart.totalPrice,
-                onClick = {
-                    navController.navigate("detail") {
-                        launchSingleTop = true
-                    }
-                },
+                // "detail" alone matched no route; the cart screen is CartDetail
+                onOpen = { navController.navigate(Screen.CartDetail.route) { launchSingleTop = true } },
+                onPay = { navController.navigate(Screen.CartDetail.route) { launchSingleTop = true } },
                 isVisible = showCartIndicator,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -273,11 +240,6 @@ fun MenuAdmin(
 
             // Debug: Log untuk melihat data categories dan subCategories
             LaunchedEffect(categories, subCategories) {
-                println("MenuPegawaiDebug: Categories and SubCategories Updated")
-                println("MenuPegawaiDebug: Categories count: ${categories.size}")
-                println("MenuPegawaiDebug: Categories: ${categories.map { "${it.id}-${it.name}" }}")
-                println("MenuPegawaiDebug: SubCategories count: ${subCategories.size}")
-                println("MenuPegawaiDebug: SubCategories: ${subCategories.map { "${it.id}-${it.name}-category_id:${it.category_id}" }}")
             }
 
             // Pastikan mapping subkategori ke kategori benar
@@ -285,9 +247,6 @@ fun MenuAdmin(
                 val mapping = subCategories.associate { subCategory ->
                     subCategory.id to subCategory.category_id
                 }
-                println("MenuPegawaiDebug: Created subCategoryToCategoryMap")
-                println("MenuPegawaiDebug: Mapping size: ${mapping.size}")
-                println("MenuPegawaiDebug: Mapping content: $mapping")
                 mapping
             }
 
@@ -299,13 +258,9 @@ fun MenuAdmin(
                 subCategories = subCategories.map { FilterChipItem(it.id, it.name) },
                 subCategoryToCategoryMap = subCategoryToCategoryMap,
                 onResetFilter = {
-                    println("MenuPegawaiDebug: Reset filter called")
                     viewModel.filterMenuItems(emptyList(), emptyList())
                 },
                 onApplyFilter = { categoryIds, subCategoryIds ->
-                    println("MenuPegawaiDebug: Apply filter called")
-                    println("MenuPegawaiDebug: Selected categoryIds: $categoryIds")
-                    println("MenuPegawaiDebug: Selected subCategoryIds: $subCategoryIds")
                     viewModel.filterMenuItems(categoryIds, subCategoryIds)
                 }
             )

@@ -1,6 +1,7 @@
 package dev.codcow.kasirku.ui.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,10 +28,10 @@ fun DepositItem(
     Card(
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable{onItemClick(deposit.customer_id)}
+            .clickable(onClickLabel = "Ubah deposit ${deposit.customer_name}", role = Role.Button) { onItemClick(deposit.customer_id) }
     ) {
         Row(
             modifier = Modifier
@@ -45,13 +46,13 @@ fun DepositItem(
                 Text(
                     text = deposit.customer_name ,
                     style = AppTheme.typography.paragraph1Semibold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
                     text = deposit.phone_number,
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -63,7 +64,7 @@ fun DepositItem(
                 Icon(
                     imageVector = Icons.Default.AddCircleOutline,
                     contentDescription = "Edit",
-                    tint = AppTheme.colors.surface
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -72,7 +73,7 @@ fun DepositItem(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = Color.Red
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }

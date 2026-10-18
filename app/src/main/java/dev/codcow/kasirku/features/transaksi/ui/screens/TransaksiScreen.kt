@@ -1,5 +1,8 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import CustomBottomNavigation
 import android.content.Intent
 import android.util.Log
@@ -9,14 +12,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -52,7 +52,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransaksiScreen(
     navController: NavController,
@@ -106,7 +106,7 @@ fun TransaksiScreen(
         }
     }
 
-    val pullRefreshState = rememberPullRefreshState(refreshing, ::refresh)
+    val pullRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(pdfFile, pdfError, isPdfSuccess) {
         pdfFile?.let { file ->
@@ -182,13 +182,13 @@ fun TransaksiScreen(
         if (currentSelectedTransaction?.status == "pending") {
             AlertDialog(
                 onDismissRequest = { showFinishTransactionDialog = false },
-                containerColor = AppTheme.colors.onSurface,
-                textContentColor = AppTheme.colors.surface,
+                containerColor = MaterialTheme.colorScheme.surface,
+                textContentColor = MaterialTheme.colorScheme.onSurface,
                 title = {
                     Text(
                         "Konfirmasi Pembayaran",
                         style = AppTheme.typography.heading5Bold,
-                        color = AppTheme.colors.surface
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 text = {
@@ -218,7 +218,7 @@ fun TransaksiScreen(
                         Text(
                             "Ya",
                             style = AppTheme.typography.paragraph2Bold,
-                            color = AppTheme.colors.onHighlightSurface
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -227,7 +227,7 @@ fun TransaksiScreen(
                         Text(
                             "Tidak",
                             style = AppTheme.typography.paragraph2Bold,
-                            color = AppTheme.colors.surface
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -239,13 +239,13 @@ fun TransaksiScreen(
         if (currentSelectedTransaction?.is_delivered == "no") {
             AlertDialog(
                 onDismissRequest = { showAntarTransactionDialog = false },
-                containerColor = AppTheme.colors.onSurface,
-                textContentColor = AppTheme.colors.surface,
+                containerColor = MaterialTheme.colorScheme.surface,
+                textContentColor = MaterialTheme.colorScheme.onSurface,
                 title = {
                     Text(
                         "Tandai sebagai diantar",
                         style = AppTheme.typography.heading5Bold,
-                        color = AppTheme.colors.surface
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 text = {
@@ -275,7 +275,7 @@ fun TransaksiScreen(
                         Text(
                             "Ya",
                             style = AppTheme.typography.paragraph2Bold,
-                            color = AppTheme.colors.onHighlightSurface
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -284,7 +284,7 @@ fun TransaksiScreen(
                         Text(
                             "Tidak",
                             style = AppTheme.typography.paragraph2Bold,
-                            color = AppTheme.colors.surface
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -296,14 +296,15 @@ fun TransaksiScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFFFFFFF))
+                .background(MaterialTheme.colorScheme.background)
+                .statusBarsPadding()
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 20.dp)
                     .weight(1f)
-                    .background(Color(0xFFFFFFFF)),
+                    .background(MaterialTheme.colorScheme.background),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -341,20 +342,19 @@ fun TransaksiScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Divider()
+                HorizontalDivider()
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pullRefresh(pullRefreshState)
+                        .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
                     if (isLoading) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .pullRefresh(pullRefreshState)
                                 .padding(horizontal = 22.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -362,25 +362,37 @@ fun TransaksiScreen(
                         }
                     } else if (error != null) {
                         Box(
-                            modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
-                                .pullRefresh(pullRefreshState),
+                            modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "$error",
+                                text = if (error == "Tidak ada data transaksi") "Belum ada transaksi" else "$error. Tarik ke bawah untuk mencoba lagi.",
                                 style = AppTheme.typography.paragraph1,
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
                             )
                         }
                     } else {
+                        val visibleTransactions = allTransactions.filter {
+                            it.nama_transaksi?.contains(query, ignoreCase = true) ?: false
+                        }
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(start = 16.dp, end = 16.dp)
                         ) {
-                            items(allTransactions.filter {
-                                it.nama_transaksi?.contains(query, ignoreCase = true) ?: false
-                            }) { transaction ->
+                            if (visibleTransactions.isEmpty()) {
+                                item {
+                                    Text(
+                                        text = if (query.isBlank()) "Belum ada transaksi" else "Tidak ada transaksi untuk \"$query\"",
+                                        style = AppTheme.typography.paragraph1,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
+                                    )
+                                }
+                            }
+                            items(visibleTransactions) { transaction ->
                                 TransaksiItemTransaksi(
                                     transaction = transaction,
                                     onFinishTransaction = { selectedTransaction ->
@@ -415,35 +427,18 @@ fun TransaksiScreen(
                     }
 
                     // Place the PullRefreshIndicator inside the Box that has pullRefresh modifier
-                    PullRefreshIndicator(
-                        refreshing = refreshing,
+                    PullToRefreshDefaults.Indicator(
+                        isRefreshing = refreshing,
                         state = pullRefreshState,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        backgroundColor = AppTheme.colors.surface,
-                        contentColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
 
             // Bottom navigation stays outside the refreshable content
-            CustomBottomNavigation(
-                currentRoute = currentRoute(navController = navController),
-                onNavigateToHome = {
-                    navController.navigate(Screen.Menu.route) {
-                        popUpTo(Screen.Menu.route) { inclusive = true }
-                    }
-                },
-                onNavigateToRekap = {
-                    navController.navigate(Screen.Rekap.route) {
-                        popUpTo(Screen.Rekap.route) { inclusive = true }
-                    }
-                },
-                onNavigateToTransaksi = {
-                    navController.navigate(Screen.Transaksi.route) {
-                        popUpTo(Screen.Transaksi.route) { inclusive = true }
-                    }
-                }
-            )
+            CustomBottomNavigation(navController = navController)
         }
 
         // Filter sidebar should be outside the main layout

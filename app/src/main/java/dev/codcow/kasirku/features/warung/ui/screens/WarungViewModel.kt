@@ -98,15 +98,12 @@ class warungViewModel @Inject constructor(
             try {
                 warungRepository.postWarung(name)
                     .onSuccess { updatedName ->
-                        println("Menu created successfully: $updatedName")
                         _isSuccess.value = true
                     }
                     .onFailure { exception ->
-                        println("Failed to create nameWarung: ${exception.message}")
                         _error.value = exception.message ?: "Gagal membuat nama warung"
                     }
             } catch (e: Exception) {
-                println("Exception in updatedWarung: ${e.message}")
                 _error.value = "Terjadi kesalahan: ${e.message}"
             } finally {
                 _isLoading.value = false

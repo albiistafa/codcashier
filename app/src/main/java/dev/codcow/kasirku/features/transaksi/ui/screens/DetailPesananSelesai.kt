@@ -9,10 +9,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -73,25 +72,14 @@ fun DetailPesananScreenSelesai(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali"
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
-                ),
-                actions = {
-                    IconButton(
-                        onClick = { /* Shopping cart action */ }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ShoppingCart,
-                            contentDescription = "Cart",
-                            tint = AppTheme.colors.surface
-                        )
-                    }
-                }
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         }
     ) { paddingValues ->
@@ -100,7 +88,7 @@ fun DetailPesananScreenSelesai(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxWidth()
-                .background(AppTheme.colors.onSurface)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // Make entire content scrollable
             Box(
@@ -113,7 +101,7 @@ fun DetailPesananScreenSelesai(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = Color(0xFF90C14F))
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 } else if (error != null) {
                     Box(
@@ -121,8 +109,8 @@ fun DetailPesananScreenSelesai(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Error: ${error ?: "Unknown error"}",
-                            color = Color.Red,
+                            text = "Detail transaksi gagal dimuat. Coba lagi.",
+                            color = MaterialTheme.colorScheme.error,
                             style = AppTheme.typography.paragraph1
                         )
                     }
@@ -132,7 +120,7 @@ fun DetailPesananScreenSelesai(
                         LazyColumn(
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            item { Divider() }
+                            item { HorizontalDivider() }
 
                             item { Spacer(modifier = Modifier.height(16.dp)) }
 
@@ -162,8 +150,8 @@ fun DetailPesananScreenSelesai(
                                         .padding(16.dp)
                                         .height(48.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = Color(0xFF90C14F),
-                                        focusedLabelColor = Color(0xFF90C14F)
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        focusedLabelColor = MaterialTheme.colorScheme.primary
                                     ),
                                     readOnly = true
                                 )
@@ -205,9 +193,9 @@ fun DetailPesananScreenSelesai(
 
                             // Payment method section
                             item {
-                                Divider(
+                                HorizontalDivider(
                                     modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
-                                    color = Color.LightGray
+                                    color = MaterialTheme.colorScheme.outlineVariant
                                 )
 
                                 Row(
@@ -221,12 +209,12 @@ fun DetailPesananScreenSelesai(
                                     )
                                     Surface(
                                         shape = RoundedCornerShape(50), // membuat bentuk pill
-                                        color = Color(0xFFEAF5C9), // warna hijau muda seperti di gambar
-                                        border = BorderStroke(1.dp, Color(0xFF2E4700)), // warna hijau tua
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                                     ) {
                                         Text(
                                             text = "${currentTransaction.payment_method ?: ""}",
-                                            color = Color(0xFF2E4700),
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                                             modifier = Modifier.padding(horizontal = 8.dp),
                                             style = AppTheme.typography.labelMedium
                                         )
@@ -249,33 +237,15 @@ fun TransactionItemRow(
     item: TransactionDetailX,
     menuViewModel: MenuManagerViewModel = hiltViewModel()
 ) {
-    val menuPhoto = rememberSaveable(item.menu_id) { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(item.menu_id) {
-        item.menu_id?.let { menuId ->
-            scope.launch {
-                try {
-                    menuViewModel.getMenuById(menuId)
-                    // Tunggu sebentar untuk memastikan data sudah diupdate
-                    delay(100)
-                    menuViewModel.selectedMenu.collect { menu ->
-                        if (menu?.id == menuId) {
-                            menuPhoto.value = menu.photo
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e("TransactionItemRow", "Error fetching menu: ${e.message}")
-                }
-            }
-        }
+    val menuPhoto by produceState<String?>(initialValue = null, key1 = item.menu_id) {
+        value = item.menu_id?.let { menuViewModel.photoForMenu(it) }
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -285,10 +255,8 @@ fun TransactionItemRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Menu Image
-            AsyncImage(
-                model = menuPhoto.value,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
+            dev.codcow.kasirku.ui.components.MenuPhoto(
+                photo = menuPhoto,
                 modifier = Modifier
                     .size(50.dp)
                     .clip(shape = RoundedCornerShape(10.dp))

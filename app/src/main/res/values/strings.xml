@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Cod Cashier</string>
+    <string name="nav_home">Beranda</string>
+    <string name="nav_transactions">Transaksi</string>
+    <string name="nav_recap">Rekap</string>
+    <string name="menu_load_failed">Menu belum dapat dimuat. Periksa koneksi internet, lalu coba lagi.</string>
+    <string name="menu_empty">Belum ada menu yang ditampilkan. Coba ubah pencarian atau filter.</string>
+    <string name="retry">Coba lagi</string>
 </resources>

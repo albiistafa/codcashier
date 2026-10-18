@@ -1,13 +1,12 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
 
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -18,6 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.text.style.TextAlign
+import kotlinx.coroutines.launch
+import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import captureComposableToBitmap
@@ -30,12 +32,14 @@ import dev.codcow.kasirku.features.warung.ui.screens.warungViewModel
 import dev.codcow.kasirku.middleware.Screen
 import dev.codcow.kasirku.ui.components.TransactionReceipt
 import dev.codcow.kasirku.ui.theme.AppTheme
+import dev.codcow.kasirku.ui.util.formatRupiah
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailPembayaran(
     navController: NavController,
     transactionId: Int,
+    received: Long? = null,
     transaksiViewModel: TransaksiViewModel = hiltViewModel(),
     warungViewModel: warungViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {}
@@ -45,6 +49,12 @@ fun DetailPembayaran(
     val error by transaksiViewModel.error.collectAsState()
     val transaction by transaksiViewModel.currentTransaction.collectAsState()
     val context = LocalContext.current
+
+    // This screen is the stack root after checkout; Back always lands on the menu
+    fun backToMenu() {
+        navController.navigate(Screen.Menu.route) { popUpTo(0) { inclusive = true } }
+    }
+    BackHandler { backToMenu() }
 
     // Debug logging
     LaunchedEffect(Unit) {
@@ -67,15 +77,25 @@ fun DetailPembayaran(
         }
     }
 
-    LaunchedEffect(error) {
-        error?.let {
-            Log.e("DetailPembayaran", "Error occurred: $it")
-            Toast.makeText(context, "Error: $it", Toast.LENGTH_LONG).show()
-            if (it.contains("404")) {
-                Toast.makeText(context, "Transaksi tidak ditemukan", Toast.LENGTH_LONG).show()
-                navController.navigate(Screen.Menu.route) {
-                    popUpTo(Screen.Menu.route) { inclusive = true }
-                }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    fun downloadReceipt() {
+        val current = transaction ?: run {
+            scope.launch { snackbarHostState.showSnackbar("Data transaksi belum tersedia") }
+            return
+        }
+        val saved = runCatching {
+            saveBitmapAsPdf(context, createReceiptBitmap(context, current, warungName))
+        }.onFailure { Log.e("PDF_DEBUG", "Receipt PDF failed", it) }.getOrNull()
+        scope.launch {
+            if (saved != null) {
+                snackbarHostState.showSnackbar("Struk berhasil diunduh")
+            } else if (snackbarHostState.showSnackbar(
+                    "Gagal mengunduh struk", actionLabel = "Coba lagi", duration = SnackbarDuration.Long
+                ) == SnackbarResult.ActionPerformed
+            ) {
+                downloadReceipt()
             }
         }
     }
@@ -90,7 +110,7 @@ fun DetailPembayaran(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = Color(0xFF90C14F))
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         }
         return
     }
@@ -106,16 +126,16 @@ fun DetailPembayaran(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Error: $error",
-                    color = Color.Red,
+                    text = if (error?.contains("404") == true) "Transaksi tidak ditemukan."
+                        else "Struk belum bisa dimuat. Transaksi tetap tersimpan dan bisa dilihat di menu Transaksi.",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                    color = MaterialTheme.colorScheme.error,
                     style = AppTheme.typography.paragraph1
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
-                    onClick = { navController.navigateUp() },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF6D8E22)
-                    )
+                    onClick = ::backToMenu
                 ) {
                     Text("Kembali")
                 }
@@ -125,6 +145,7 @@ fun DetailPembayaran(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -137,31 +158,21 @@ fun DetailPembayaran(
                         Text(
                             text = "Detail Pembayaran",
                             style = AppTheme.typography.labelBold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        Log.d("Navigation", "Kembali button clicked")
-                        if (navController.previousBackStackEntry != null) {
-                            navController.navigateUp()
-                        } else {
-                            navController.navigate(Screen.Menu.route) {
-                                popUpTo(0) { inclusive = true }
-                            }
-                        }
-                    }
-                    ) {
+                    IconButton(onClick = ::backToMenu) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF6D8E22)
+                    containerColor = MaterialTheme.colorScheme.primary
                 )
             )
         }
@@ -170,14 +181,35 @@ fun DetailPembayaran(
             Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(color = Color(0xFF6D8E22))
+                .background(color = MaterialTheme.colorScheme.primary)
         ) {
+            // Change first: it's what the cashier hands back next
+            val total = transaction?.total_amount?.toDoubleOrNull()?.toLong()
+            val change = if (received != null && total != null) received - total else null
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
+                    .height(176.dp)
+                    .padding(top = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // You might want to display some header information here based on the transaction
+                Text(
+                    if (change != null && change > 0) "Kembalian" else "Lunas",
+                    style = AppTheme.typography.paragraph1,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+                Text(
+                    formatRupiah(((if (change != null && change > 0) change else total) ?: 0L).toDouble().toString()),
+                    style = AppTheme.typography.heading2Bold,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+                if (received != null) {
+                    Text(
+                        "Diterima " + formatRupiah(received.toDouble().toString()),
+                        style = AppTheme.typography.paragraph2,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                    )
+                }
             }
             Box(
                 modifier = Modifier
@@ -193,11 +225,11 @@ fun DetailPembayaran(
                     contentAlignment = Alignment.Center // Center content when loading/error
                 ) {
                     if (isLoading) {
-                        CircularProgressIndicator(color = Color(0xFF90C14F))
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     } else if (error != null) {
                         Text(
                             text = "Error: ${error}",
-                            color = Color.Red,
+                            color = MaterialTheme.colorScheme.error,
                             style = AppTheme.typography.paragraph1
                         )
                     } else {
@@ -223,7 +255,8 @@ fun DetailPembayaran(
                 Card(
                     modifier = Modifier
                         .fillMaxSize()
-//                        .background(Color(0xFFFFFFFF))
+//                        .background(MaterialTheme.colorScheme.surface)
+                    .navigationBarsPadding()
                     ,
                     shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
 //                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -237,7 +270,8 @@ fun DetailPembayaran(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFFFFFFFF))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .navigationBarsPadding()
                     .padding(horizontal = 24.dp, vertical = 16.dp)
             ) {
                 Row(
@@ -245,33 +279,8 @@ fun DetailPembayaran(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     OutlinedButton(
-                        onClick = {
-                            transaction?.let { currentTransaction ->
-                                try {
-                                    Log.d("PDF_DEBUG", "Creating receipt bitmap directly")
-                                    // Use the alternative approach without Compose
-                                    val bitmap = createReceiptBitmap(context, currentTransaction, warungName
-                                    )
-
-                                    val savedUri = saveBitmapAsPdf(context, bitmap)
-                                    if (savedUri != null) {
-                                        Log.d("PDF_DEBUG", "PDF saved successfully: $savedUri")
-                                        Toast.makeText(context, "Struk berhasil diunduh", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        Log.e("PDF_DEBUG", "Failed to save PDF, URI is null")
-                                        Toast.makeText(context, "Gagal mengunduh struk", Toast.LENGTH_SHORT).show()
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("PDF_DEBUG", "Exception during PDF creation: ${e.message}", e)
-                                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-                                }
-                            } ?: run {
-                                Log.e("PDF_DEBUG", "transaction is null")
-                                Toast.makeText(context, "Data transaksi tidak tersedia", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                        ,
-                        border = BorderStroke(1.dp, Color(0xFF6D8E22)),
+                        onClick = ::downloadReceipt,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(50),
                         modifier = Modifier.weight(1f),
                         enabled = !isLoading && transaction != null // Enable button only when data is loaded
@@ -279,37 +288,23 @@ fun DetailPembayaran(
                         Icon(
                             imageVector = Icons.Default.Download,
                             contentDescription = "Unduh",
-                            tint = Color(0xFF6D8E22),
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(end = 8.dp)
                         )
                         Text(
-                            text = "Print",
-                            color = Color(0xFF6D8E22)
+                            text = "Unduh Struk",
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))
 
                     Button(
-                        onClick = {
-                            Log.d("Navigation", "Kembali button clicked")
-                            if (navController.previousBackStackEntry != null) {
-                                navController.navigateUp()
-                            } else {
-                                navController.navigate(Screen.Menu.route) {
-                                    popUpTo(0) { inclusive = true }
-                                }
-                            }
-                        },
+                        onClick = ::backToMenu,
                         shape = RoundedCornerShape(50),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF6D8E22),
-                            contentColor = Color.White
-                        ),
                         modifier = Modifier.weight(1f),
-                        enabled = !isLoading && transaction != null // Enable button only when data is loaded
                     ) {
-                        Text("Kembali")
+                        Text("Pesanan baru")
                     }
                 }
             }

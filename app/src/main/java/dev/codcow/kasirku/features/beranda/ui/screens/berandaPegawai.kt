@@ -31,7 +31,7 @@ fun BerandaPegawai(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding()
-            .background(AppTheme.colors.onSurface)
+            .background(MaterialTheme.colorScheme.background)
         ) {
 
         Column(
@@ -66,25 +66,7 @@ fun BerandaPegawai(
         .fillMaxSize(),
         verticalArrangement = Arrangement.Bottom
     ){
-        CustomBottomNavigation(
-            currentRoute = currentRoute(navController = navController),
-            onNavigateToHome = {
-                // Navigasi ke home dengan menghapus backstack
-                navController.navigate(Screen.Menu.route) {
-                    popUpTo(Screen.Menu.route) { inclusive = true }
-                }
-            },
-            onNavigateToRekap = {
-                navController.navigate(Screen.Rekap.route) {
-                    popUpTo(Screen.Rekap.route) { inclusive = true }
-                }
-            },
-            onNavigateToTransaksi = {
-                navController.navigate(Screen.Transaksi.route) {
-                    popUpTo(Screen.Transaksi.route) { inclusive = true}
-                }
-            }
-        )
+        CustomBottomNavigation(navController = navController)
     }
 }
 

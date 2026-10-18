@@ -22,6 +22,7 @@ import dev.codcow.kasirku.core.data.model.transaksi.TransactionGetByIdResponse
 import dev.codcow.kasirku.core.data.model.transaksi.TransactionUpdateRequest
 import dev.codcow.kasirku.core.data.model.transaksi.TransactionX
 import dev.codcow.kasirku.core.data.model.transaksi.TransactionDetailX
+import dev.codcow.kasirku.core.data.model.transaksi.toPaymentUpdate
 import dev.codcow.kasirku.core.data.model.transaksi.TransactionUpdateStatus
 import dev.codcow.kasirku.core.domain.repository.TransaksiRepository
 import dev.codcow.kasirku.core.domain.repository.DepositRepository
@@ -107,6 +108,19 @@ class TransaksiViewModel @Inject constructor(
 
     private val _currentStatusDetail = MutableStateFlow<String?>(null)
     val currentStatusDetail = _currentStatusDetail.asStateFlow()
+
+    // Unpaid ("pending") orders, shown as a shortcut on the cashier screen.
+    // Own flow, so it never flips the checkout's isLoading/error.
+    private val _pendingCount = MutableStateFlow(0)
+    val pendingCount: StateFlow<Int> = _pendingCount.asStateFlow()
+
+    fun refreshPendingCount() {
+        viewModelScope.launch {
+            transaksiRepository.getTransaksiByStatus("pending").onSuccess { data ->
+                _pendingCount.value = data.pagination.total.toIntOrNull() ?: data.transactions.size
+            }
+        }
+    }
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
@@ -496,66 +510,27 @@ class TransaksiViewModel @Inject constructor(
         }
     }
 
-    fun updateTransaction(
-        id: Int,
-        status: String,
-        customer_id: Int?,
-        is_delivered: String,
-        paymentMethod: String,
-        items: List<MenuItemUpdate>
-    ) {
+    fun payTransaction(paymentMethod: String, customerId: Int?) {
+        if (_isLoading.value) return
+        val transaction = _currentTransaction.value ?: return
+        val request = try {
+            transaction.toPaymentUpdate(paymentMethod, customerId)
+        } catch (e: IllegalArgumentException) {
+            _error.value = e.message
+            return
+        }
+        _isLoading.value = true
+        _error.value = null
+        _isSuccess.value = false
         viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            _isSuccess.value = false
-
-            // Update state lokal terlebih dahulu
-            _allTransactions.update { currentList ->
-                currentList.map { transaction ->
-                    if (transaction.id == id) {
-                        transaction.copy(status = status)
-                    } else {
-                        transaction
-                    }
-                }
-            }
-
-            // Jika metode pembayaran adalah deposit, cari customer_id berdasarkan nama transaksi
-            val customerId = if (paymentMethod.lowercase() == "deposit") {
-                val transaction = _allTransactions.value.find { it.id == id }
-                transaction?.let { findCustomerIdByTransactionName(it.nama_transaksi) }
-            } else {
-                null
-            }
-
-            Log.d("TransaksiViewModel", "Found customer_id: $customerId for transaction $id")
-
-            val updateRequest = TransactionUpdateRequest(
-                status = status,
-                payment_method = paymentMethod,
-                items = items,
-                customer_id = customer_id,
-                is_delivered = is_delivered
-            )
-
-            transaksiRepository.updateTransaksi(id, updateRequest)
-                .onSuccess {
+            transaksiRepository.updateTransaksi(transaction.id, request)
+                .onSuccess { response ->
+                    _currentTransaction.value = response.data
                     _isSuccess.value = true
-                    fetchAllTransaksiNoFilter()
                 }
                 .onFailure { exception ->
-                    _allTransactions.update { currentList ->
-                        currentList.map { transaction ->
-                            if (transaction.id == id) {
-                                transaction.copy(status = "pending")
-                            } else {
-                                transaction
-                            }
-                        }
-                    }
-                    _error.value = exception.message ?: "Gagal update transaksi"
+                    _error.value = exception.message ?: "Pembayaran belum tersimpan. Coba lagi."
                 }
-
             _isLoading.value = false
         }
     }
@@ -566,75 +541,27 @@ class TransaksiViewModel @Inject constructor(
         is_delivered: String,
         paymentMethod: String?
     ) {
+        if (_isLoading.value) return
+        _isLoading.value = true
+        _error.value = null
+        _isSuccess.value = false
         viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            _isSuccess.value = false
-
-            _allTransactions.update { currentList ->
-                currentList.map { transaction ->
-                    if (transaction.id == id) {
-                        transaction.copy(status = status)
-                        transaction.copy(is_delivered = is_delivered)
-                    } else {
-                        transaction
-                    }
-                }
-            }
-
-            // Jika metode pembayaran adalah deposit, cari customer_id berdasarkan nama transaksi
-            val customerId = if (paymentMethod?.lowercase() == "deposit") {
-                val transaction = _allTransactions.value.find { it.id == id }
-                transaction?.let { findCustomerIdByTransactionName(it.nama_transaksi) }
-            } else {
-                null
-            }
-
-            Log.d("TransaksiViewModel", "Found customer_id: $customerId for transaction $id")
-
-            val updateStatus = TransactionUpdateStatus(
-                status = status,
-                is_delivered = is_delivered
-            )
-
-            transaksiRepository.updateStatus(id, updateStatus)
+            transaksiRepository.updateStatus(id, TransactionUpdateStatus(status, is_delivered))
                 .onSuccess {
+                    _allTransactions.update { transactions ->
+                        transactions.map { transaction ->
+                            if (transaction.id == id) transaction.copy(status = status, is_delivered = is_delivered)
+                            else transaction
+                        }
+                    }
                     _isSuccess.value = true
-                    fetchAllTransaksiNoFilter()
                 }
                 .onFailure { exception ->
-                    _allTransactions.update { currentList ->
-                        currentList.map { transaction ->
-                            if (transaction.id == id) {
-                                transaction.copy(status = "pending")
-                                transaction.copy(is_delivered = "no")
-                            } else {
-                                transaction
-                            }
-                        }
-                    }
-                    when (exception) {
-                        is JsonSyntaxException -> {
-                            _error.value = null
-                        }
-
-                        is IOException,
-                        is UnknownHostException -> {
-                            _error.value = "Periksa koneksi internet Anda"
-                        }
-
-                        else -> {
-                            _error.value =
-                                exception.message ?: "Terjadi kesalahan, silahkan coba lagi"
-                        }
-                    }
+                    _error.value = exception.message ?: "Status belum tersimpan. Coba lagi."
                 }
-            _isSuccess.value = true
             _isLoading.value = false
         }
     }
-
-
 
     private val _currentTransaction = MutableStateFlow<Data?>(null)
     val currentTransaction = _currentTransaction.asStateFlow()

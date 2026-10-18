@@ -35,7 +35,7 @@ fun MenuCard(
     onDeleteClick: (Int) -> Unit) {
     Card(
         shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -47,10 +47,8 @@ fun MenuCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Gambar
-            Image(
-                painter = rememberAsyncImagePainter(menu.photo),
-                contentDescription = menu.name,
-                contentScale = ContentScale.Crop,
+            MenuPhoto(
+                photo = menu.photo,
                 modifier = Modifier
                     .size(102.dp)
                     .clip(RoundedCornerShape(10.dp))
@@ -65,26 +63,21 @@ fun MenuCard(
                 Row (modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically){
                     Column (modifier = Modifier.weight(1f)) {
-                        val displayName = if (menu.name.length > 10) {
-                            menu.name.substring(0, 10) + "..."
-                        } else {
-                            menu.name
-                        }
                         Text(
-                            text = displayName,
+                            text = menu.name,
                             style = AppTheme.typography.labelSemibold,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(text = formatRupiah(menu.price), style = AppTheme.typography.paragraph1)
                     }
                     Row () {
                         IconButton(onClick = { onEditClick(menu.id) }) {
-                            Icon(Icons.Filled.Mode, contentDescription = "Edit", tint = AppTheme.colors.surface)
+                            Icon(Icons.Filled.Mode, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
                         }
                         IconButton(
                             onClick = { onDeleteClick(menu.id) }) {
-                            Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Color.Red)
+                            Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -112,18 +105,16 @@ fun MenuCard(
 fun Chip(text: String) {
     Surface(
         shape = RoundedCornerShape(10.dp),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = Modifier
-            .border(1.dp, Color(0xFFABCE4D), RoundedCornerShape(10.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
             .padding(2.dp)
     ) {
         Text(
             text = text,
             style = AppTheme.typography.paragraph2,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
         )
     }
 }
-
-

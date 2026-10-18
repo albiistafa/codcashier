@@ -26,7 +26,7 @@ fun KategoriListItem(
     Card(
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
     ) {
@@ -40,7 +40,7 @@ fun KategoriListItem(
             Text(
                 text = kategori.name,
                 style = AppTheme.typography.paragraph1Semibold,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
 
@@ -49,7 +49,7 @@ fun KategoriListItem(
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = "Edit",
-                    tint = AppTheme.colors.surface
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -58,7 +58,7 @@ fun KategoriListItem(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = Color.Red
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }

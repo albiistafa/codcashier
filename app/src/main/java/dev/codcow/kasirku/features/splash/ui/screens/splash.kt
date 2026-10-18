@@ -1,8 +1,10 @@
 package dev.codcow.kasirku.features.splash.ui.screens
 
+import dev.codcow.kasirku.ui.util.rememberReduceMotion
 import android.content.Context
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.snap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,7 +12,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,17 +29,15 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import dev.codcow.kasirku.features.auth.ui.screens.LoginViewModel
 import dev.codcow.kasirku.ui.theme.AppTheme
-import kotlinx.coroutines.delay
 
 @Composable
 fun Splash(navController: NavController, viewModel: LoginViewModel, context: Context) {
     var animationStarted by remember { mutableStateOf(false) }
+    val reduceMotion = rememberReduceMotion()
 
     // Mulai animasi setelah composable pertama kali muncul
     LaunchedEffect(Unit) {
-        delay(300) // Delay sebelum animasi dimulai
         animationStarted = true
-        delay(1000) // Tunggu hingga animasi selesai (1 detik)
 
         if (viewModel.hasValidToken(context)) {
             // Navigasi langsung ke home jika token valid
@@ -53,7 +55,7 @@ fun Splash(navController: NavController, viewModel: LoginViewModel, context: Con
     // Animasi alpha (fade-in)
     val alpha by animateFloatAsState(
         targetValue = if (animationStarted) 1f else 0f,
-        animationSpec = tween(durationMillis = 1000) // Durasi animasi 1 detik
+        animationSpec = if (reduceMotion) snap() else tween(durationMillis = 1000)
     )
 
     Box(
@@ -69,22 +71,19 @@ fun Splash(navController: NavController, viewModel: LoginViewModel, context: Con
             Text(
                 "Cod Cashier",
                 style = AppTheme.typography.heading1Bold,
-                color = AppTheme.colors.surface,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.alpha(alpha) // Terapkan animasi alpha
             )
         }
-        Column(
+        Text(
+            "by Codcow Digital",
+            style = AppTheme.typography.paragraph2,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            textAlign = TextAlign.Center,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 710.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Bottom
-        ) {
-            Text(
-                "by Codcow Digital",
-                style = AppTheme.typography.paragraph2,
-                textAlign = TextAlign.Center
-            )
-        }
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 32.dp)
+        )
     }
 }

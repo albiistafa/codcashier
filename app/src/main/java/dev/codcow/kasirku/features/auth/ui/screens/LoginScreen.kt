@@ -1,8 +1,9 @@
 package dev.codcow.kasirku.features.auth.ui.screens
 
 import android.content.Context
-import androidx.compose.compiler.plugins.kotlin.inference.Token
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -62,22 +63,24 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(AppTheme.colors.primaryGradient)
             .systemBarsPadding()
-            .background(AppTheme.colors.primaryGradient),
+            .imePadding(),
         contentAlignment = Alignment.Center
     ) {
         Column(
+            modifier = Modifier.verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "Masuk",
                 style = AppTheme.typography.heading1Bold,
-                color = AppTheme.colors.surface
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
                 text = "Masukkan nomor telepon dan password untuk mulai menggunakan Kasirku",
                 style = AppTheme.typography.paragraph1,
-                color = AppTheme.colors.surface,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 45.dp)
             )
@@ -86,7 +89,7 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
                 horizontalAlignment = Alignment.Start,
                 modifier = Modifier
                     .padding(21.dp)
-                    .background(Color.White, shape = RoundedCornerShape(30.dp))
+                    .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(30.dp))
                     .padding(16.dp)
             ) {
                 Text("No. Telepon",
@@ -98,13 +101,13 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
                     onValueChange = { viewModel.onPhoneNumberChange(it) },
                     placeholder = { Text("Masukkan nomor telepon", style = AppTheme.typography.paragraph2) },
                     leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                     shape = RoundedCornerShape(30.dp),
                     textStyle = AppTheme.typography.paragraph2,
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = AppTheme.colors.surface, // Ganti dengan warna yang diinginkan
-                        unfocusedBorderColor = Color.Gray // Ganti dengan warna untuk border saat tidak fokus
+                        focusedBorderColor = MaterialTheme.colorScheme.primary, // Ganti dengan warna yang diinginkan
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline // Ganti dengan warna untuk border saat tidak fokus
                     )
                 )
 
@@ -125,19 +128,19 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
                                 imageVector = image,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                tint = AppTheme.colors.surface// Warna sesuai tema
+                                contentDescription = if (passwordVisible) "Sembunyikan password" else "Tampilkan password",
+                                tint = MaterialTheme.colorScheme.primary// Warna sesuai tema
                             )
                         }
                     },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                     shape = RoundedCornerShape(30.dp),
                     textStyle = AppTheme.typography.paragraph2,
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = AppTheme.colors.surface,
-                        unfocusedBorderColor = Color.Gray
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     )
                 )
 
@@ -148,11 +151,10 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
                     Checkbox(
                         checked = rememberMe,
                         onCheckedChange = { viewModel.onRememberMeChange(it) },
-                        modifier = Modifier.scale(0.75f),
                         colors = CheckboxDefaults.colors(
-                            checkedColor = AppTheme.colors.surface, // Warna ketika Checkbox terpilih
-                            uncheckedColor = Color.Gray, // Warna ketika Checkbox tidak terpilih
-                            checkmarkColor = Color.White // Warna checkmark
+                            checkedColor = MaterialTheme.colorScheme.primary, // Warna ketika Checkbox terpilih
+                            uncheckedColor = MaterialTheme.colorScheme.outline, // Warna ketika Checkbox tidak terpilih
+                            checkmarkColor = MaterialTheme.colorScheme.onPrimary // Warna checkmark
                         )
                     )
                     Text("Ingat saya", style = AppTheme.typography.paragraph2)
@@ -165,18 +167,18 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(30.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isFormValid) AppTheme.colors.surface else Color.Gray
+                        containerColor = MaterialTheme.colorScheme.primary
                     ),
-                    enabled = isFormValid
+                    enabled = isFormValid && uiState !is LoginState.Loading
                 ) {
                     if (uiState is LoginState.Loading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Selanjutnya", color = Color.White, style = AppTheme.typography.paragraph1)
+                        Text("Masuk", color = MaterialTheme.colorScheme.onPrimary, style = AppTheme.typography.paragraph1)
                     }
                 }
 
@@ -184,7 +186,7 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = (uiState as LoginState.Error).message,
-                        color = Color.Red,
+                        color = MaterialTheme.colorScheme.error,
                         style = AppTheme.typography.paragraph2
                     )
                 }

@@ -1,5 +1,9 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import dev.codcow.kasirku.ui.util.rememberReduceMotion
 import CustomBottomNavigation
 import android.content.Intent
 import android.util.Log
@@ -20,12 +24,10 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
@@ -63,14 +65,11 @@ import kotlinx.coroutines.flow.compose
 import java.text.SimpleDateFormat
 import java.time.OffsetDateTime
 import java.util.Calendar
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.ui.text.style.TextOverflow
 import dev.codcow.kasirku.ui.util.formatRupiahMines
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
-    ExperimentalMaterialApi::class
+    ExperimentalMaterial3Api::class
 )
 @Composable
 fun RekapScreen(
@@ -121,7 +120,7 @@ fun RekapScreen(
         viewModel.closeFilterSidebar()
     }
 
-    val pullRefreshState = rememberPullRefreshState(refreshing, ::refresh)
+    val pullRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(isLoading) { // Observe perubahan pada isLoading
         refreshing = isLoading // Set refreshing true saat isLoading true
@@ -194,12 +193,12 @@ fun RekapScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFFFFF))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFFFFFFF))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             Column(
                 modifier = Modifier
@@ -212,9 +211,10 @@ fun RekapScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(top = 20.dp)
                     .weight(1f)
-                    .background(Color(0xFFFFFFFF)),
+                    .background(MaterialTheme.colorScheme.background),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -228,12 +228,12 @@ fun RekapScreen(
 
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
-                    containerColor = Color.White,
-                    contentColor = AppTheme.colors.surface,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
                     indicator = { tabPositions ->
                         TabRowDefaults.Indicator(
                             modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                            color = Color(0xFF6D8E22) // Warna indikator yang Anda inginkan
+                            color = MaterialTheme.colorScheme.primary // Warna indikator yang Anda inginkan
                         )
                     }
                 ) {
@@ -245,7 +245,7 @@ fun RekapScreen(
                             }
                         },
                         content = {
-                            val contentColor = if (selectedTabIndex == 0) AppTheme.colors.surface else Color.Gray
+                            val contentColor = if (selectedTabIndex == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             CompositionLocalProvider(LocalContentColor provides contentColor) {
                                 Row(
                                     modifier = Modifier.padding(vertical = 3.dp),
@@ -253,7 +253,7 @@ fun RekapScreen(
                                 ) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.stash_article_duotone__1_),
-                                        contentDescription = "",
+                                        contentDescription = null,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
@@ -274,7 +274,7 @@ fun RekapScreen(
                             }
                         },
                         content = {
-                            val contentColor = if (selectedTabIndex == 1) AppTheme.colors.surface else Color.Gray
+                            val contentColor = if (selectedTabIndex == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             CompositionLocalProvider(LocalContentColor provides contentColor) {
                                 Row(
                                     modifier = Modifier.padding(vertical = 3.dp),
@@ -282,7 +282,7 @@ fun RekapScreen(
                                 ) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.hugeicons_chart_down),
-                                        contentDescription = "",
+                                        contentDescription = null,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
@@ -351,24 +351,7 @@ fun RekapScreen(
                 }
             }
 
-            CustomBottomNavigation(
-                currentRoute = currentRoute(navController = navController),
-                onNavigateToHome = {
-                    navController.navigate(Screen.Menu.route) {
-                        popUpTo(Screen.Menu.route) { inclusive = true }
-                    }
-                },
-                onNavigateToRekap = {
-                    navController.navigate(Screen.Rekap.route) {
-                        popUpTo(Screen.Rekap.route) { inclusive = true }
-                    }
-                },
-                onNavigateToTransaksi = {
-                    navController.navigate(Screen.Transaksi.route) {
-                        popUpTo(Screen.Transaksi.route) { inclusive = true }
-                    }
-                }
-            )
+            CustomBottomNavigation(navController = navController)
         }
 
 
@@ -435,9 +418,9 @@ fun RekapScreen(
                 modifier = Modifier
                     .padding(bottom = 120.dp, end = 16.dp)
                     .align(Alignment.BottomEnd), // Tetap di pojok kanan bawah saat filter tidak terlihat
-                containerColor = AppTheme.colors.surface,
+                containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape,
-                contentColor = Color.White
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -448,7 +431,7 @@ fun RekapScreen(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RekapTransaksiContent(
     totalPemasukanFormatted: String,
@@ -465,7 +448,7 @@ fun RekapTransaksiContent(
     val infiniteTransition = rememberInfiniteTransition(label = "Gradient Animation")
     val errorPemasukan by viewModel.errorPemasukan.collectAsState()
 
-    val animatedOffset by infiniteTransition.animateFloat(
+    val animatedOffset = if (rememberReduceMotion()) 1000f else infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1000f, // besar nilai ini mempengaruhi kecepatan
         animationSpec = infiniteRepeatable(
@@ -473,10 +456,10 @@ fun RekapTransaksiContent(
             repeatMode = RepeatMode.Reverse
         ),
         label = "Offset Animation"
-    )
+    ).value
 
     val animatedBrush = Brush.linearGradient(
-        colors = listOf(Color(0xFF97AD56), Color(0xFF6D8E22), Color(0xFF97AD56)),
+        colors = AppTheme.colors.hero,
         start = Offset(0f, 0f),
         end = Offset(animatedOffset, animatedOffset)
     )
@@ -493,7 +476,7 @@ fun RekapTransaksiContent(
             refreshing = false
         }
     }
-    val pullRefreshState = rememberPullRefreshState(refreshing, ::refresh)
+    val pullRefreshState = rememberPullToRefreshState()
 
 
     LaunchedEffect(isLoading) {
@@ -539,7 +522,7 @@ fun RekapTransaksiContent(
                         Text(
                             text = "Total Pemasukan",
                             style = AppTheme.typography.paragraph2,
-                            color = Color.White
+                            color = AppTheme.colors.onHero
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -549,28 +532,25 @@ fun RekapTransaksiContent(
                             Text(
                                 text = if (isAmountVisible) totalPemasukanFormatted else "Rp ●●●●●●●",
                                 style = AppTheme.typography.heading4Bold,
-                                color = Color.White
+                                color = AppTheme.colors.onHero
                             )
                             IconButton(
                                 onClick = onToggleAmountVisibility,
-                                modifier = Modifier
-                                    .size(40.dp) // ukuran lingkaran
-                                    .background(
-                                        color = Color.White.copy(alpha = 0.2f), // latar bulat transparan
-                                        shape = CircleShape
-                                    )
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = AppTheme.colors.onHero.copy(alpha = 0.2f)
+                                )
                             ) {
                                 Icon(
                                     imageVector = if (isAmountVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
-                                    contentDescription = "Toggle amount visibility",
-                                    tint = Color.White
+                                    contentDescription = if (isAmountVisible) "Sembunyikan jumlah" else "Tampilkan jumlah",
+                                    tint = AppTheme.colors.onHero
                                 )
                             }
                         }
                         Text(
                             text = "Terakhir diperbarui: ${getCurrentDateTime()}",
                             style = AppTheme.typography.paragraph2,
-                            color = Color.Black
+                            color = AppTheme.colors.onHero.copy(alpha = 0.85f)
                         )
                     }
             }
@@ -602,7 +582,7 @@ fun RekapTransaksiContent(
                     .weight(1f)
                     .padding(end = 4.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(
                     modifier = Modifier
@@ -613,12 +593,12 @@ fun RekapTransaksiContent(
                     Text(
                         text = "Tunai",
                         style = AppTheme.typography.paragraph2,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = if (isAmountVisible) "Rp ${NumberFormat.getNumberInstance(Locale("id")).format(tunaiTotal)}" else "Rp ●●●",
                         style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.surface
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -629,7 +609,7 @@ fun RekapTransaksiContent(
                     .weight(1f)
                     .padding(horizontal = 2.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(
                     modifier = Modifier
@@ -640,12 +620,12 @@ fun RekapTransaksiContent(
                     Text(
                         text = "Digital",
                         style = AppTheme.typography.paragraph2,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = if (isAmountVisible) "Rp ${NumberFormat.getNumberInstance(Locale("id")).format(digitalTotal)}" else "Rp ●●●",
                         style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.surface
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -656,7 +636,7 @@ fun RekapTransaksiContent(
                     .weight(1f)
                     .padding(start = 4.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(
                     modifier = Modifier
@@ -667,12 +647,12 @@ fun RekapTransaksiContent(
                     Text(
                         text = "Deposit",
                         style = AppTheme.typography.paragraph2,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = if (isAmountVisible) "Rp ${NumberFormat.getNumberInstance(Locale("id")).format(depositTotal)}" else "Rp ●●●",
                         style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.surface
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -701,26 +681,24 @@ fun RekapTransaksiContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pullRefresh(pullRefreshState)
+                .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
         ){
             if (isLoading) {
                 Box(
-                    modifier = Modifier.fillMaxWidth()
-                        .pullRefresh(pullRefreshState),
+                    modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
 
                 }
             } else if (errorPemasukan != null) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
-                        .pullRefresh(pullRefreshState),
+                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "$errorPemasukan",
                         style = AppTheme.typography.paragraph1,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             } else if (displayPemasukan.isEmpty()) {
@@ -731,7 +709,7 @@ fun RekapTransaksiContent(
                     Text(
                         text = "Tidak ada data pemasukan",
                         style = AppTheme.typography.paragraph1,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             } else {
@@ -744,19 +722,19 @@ fun RekapTransaksiContent(
                     }
                 }
             }
-            PullRefreshIndicator(
-                refreshing = refreshing,
+            PullToRefreshDefaults.Indicator(
+                isRefreshing = refreshing,
                 state = pullRefreshState,
                 modifier = Modifier.align(Alignment.TopCenter),
-                backgroundColor = AppTheme.colors.surface,
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onPrimary
             )
         }
     }
 }
 
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PengeluaranContent(
     totalPengeluaranFormatted: String,
@@ -773,7 +751,7 @@ fun PengeluaranContent(
     val infiniteTransition = rememberInfiniteTransition(label = "Gradient Animation")
     val errorPengeluaran by viewModel.errorPengeluaran.collectAsState()
 
-    val animatedOffset by infiniteTransition.animateFloat(
+    val animatedOffset = if (rememberReduceMotion()) 1000f else infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1000f, // besar nilai ini mempengaruhi kecepatan
         animationSpec = infiniteRepeatable(
@@ -781,10 +759,10 @@ fun PengeluaranContent(
             repeatMode = RepeatMode.Reverse
         ),
         label = "Offset Animation"
-    )
+    ).value
 
     val animatedBrush = Brush.linearGradient(
-        colors = listOf(Color(0xFF97AD56), Color(0xFF6D8E22), Color(0xFF97AD56)),
+        colors = AppTheme.colors.hero,
         start = Offset(0f, 0f),
         end = Offset(animatedOffset, animatedOffset)
     )
@@ -801,7 +779,7 @@ fun PengeluaranContent(
             refreshing = false
         }
     }
-    val pullRefreshState = rememberPullRefreshState(refreshing, ::refresh)
+    val pullRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(isLoading) {
         refreshing = isLoading
@@ -849,7 +827,7 @@ fun PengeluaranContent(
                     Text(
                         text = "Total Pengeluaran",
                         style = AppTheme.typography.paragraph2,
-                        color = Color.White
+                        color = AppTheme.colors.onHero
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -859,28 +837,25 @@ fun PengeluaranContent(
                         Text(
                             text = if (isAmountVisible) totalPengeluaranFormatted else "Rp ●●●●●●●",
                             style = AppTheme.typography.heading4Bold,
-                            color = Color.White
+                            color = AppTheme.colors.onHero
                         )
                         IconButton(
-                            onClick = onToggleAmountVisibility,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(
-                                    color = Color.White.copy(alpha = 0.2f), // latar bulat transparan
-                                    shape = CircleShape
+                                onClick = onToggleAmountVisibility,
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = AppTheme.colors.onHero.copy(alpha = 0.2f)
                                 )
-                        ) {
+                            ) {
                             Icon(
                                 imageVector = if (isAmountVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
-                                contentDescription = "Toggle amount visibility",
-                                tint = Color.White
+                                contentDescription = if (isAmountVisible) "Sembunyikan jumlah" else "Tampilkan jumlah",
+                                tint = AppTheme.colors.onHero
                             )
                         }
                     }
                     Text(
                         text = "Terakhir diperbarui: ${getCurrentDateTime()}",
                         style = AppTheme.typography.paragraph2,
-                        color = Color.Black
+                        color = AppTheme.colors.onHero.copy(alpha = 0.85f)
                     )
                 }
             }
@@ -907,26 +882,24 @@ fun PengeluaranContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pullRefresh(pullRefreshState)
+                .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
         ){
             if (isLoading) {
                 Box(
-                    modifier = Modifier.fillMaxWidth()
-                        .pullRefresh(pullRefreshState),
+                    modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
 
                 }
             } else if (errorPengeluaran != null) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
-                        .pullRefresh(pullRefreshState),
+                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "$errorPengeluaran",
                         style = AppTheme.typography.paragraph1,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             } else if (displayPengeluaran.isEmpty()) {
@@ -937,7 +910,7 @@ fun PengeluaranContent(
                     Text(
                         text = "Tidak ada data pengeluaran",
                         style = AppTheme.typography.paragraph1,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             } else {
@@ -950,12 +923,12 @@ fun PengeluaranContent(
                     }
                 }
             }
-            PullRefreshIndicator(
-                refreshing = refreshing,
+            PullToRefreshDefaults.Indicator(
+                isRefreshing = refreshing,
                 state = pullRefreshState,
                 modifier = Modifier.align(Alignment.TopCenter),
-                backgroundColor = AppTheme.colors.surface,
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onPrimary
             )
         }
     }
@@ -965,7 +938,7 @@ fun PengeluaranContent(
 fun TransaksiItem(transaction: TransactionPemasukan) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row (
             modifier = Modifier
@@ -976,14 +949,14 @@ fun TransaksiItem(transaction: TransactionPemasukan) {
                 modifier = Modifier
                     .size(50.dp)
                     .background(
-                        Color(0x33ADADAD),
+                        AppTheme.colors.onHero.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(percent = 50),
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.maki_arrow),
-                    contentDescription = "",
+                    contentDescription = null,
                     modifier = Modifier.size(30.dp)
                 )
             }
@@ -997,7 +970,7 @@ fun TransaksiItem(transaction: TransactionPemasukan) {
             ) {
                 Column {
                     val transactionName = transaction.nama_transaksi.takeIf { !it.isNullOrEmpty() }
-                        ?: "No Transaction Name"
+                        ?: "Tanpa nama"
                     val shortenedName = if (transactionName.length > 14) {
                         transactionName.take(10) + "…"
                     } else {
@@ -1007,26 +980,26 @@ fun TransaksiItem(transaction: TransactionPemasukan) {
                     Text(
                         text = shortenedName,
                         style = AppTheme.typography.paragraph2Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Clip
                     )
                     Text(
                         text = formatJamSaja(transaction.created_at),
                         style = AppTheme.typography.paragraph2,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = formatRupiah(transaction.total_amount),
                         style = AppTheme.typography.paragraph1Bold,
-                        color = AppTheme.colors.surface
+                        color = MaterialTheme.colorScheme.primary
                     )
                     Text(
                         text = "#${transaction.payment_method}",
                         style = AppTheme.typography.paragraph2,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -1038,7 +1011,7 @@ fun TransaksiItem(transaction: TransactionPemasukan) {
 fun PengeluaranItem(transaction: TransactionPengeluaran) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row (
             modifier = Modifier
@@ -1049,14 +1022,14 @@ fun PengeluaranItem(transaction: TransactionPengeluaran) {
                 modifier = Modifier
                     .size(50.dp)
                     .background(
-                        Color(0x33ADADAD),
+                        AppTheme.colors.onHero.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(percent = 50),
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.maki_arrowpengeluaran),
-                    contentDescription = "",
+                    contentDescription = null,
                     modifier = Modifier.size(30.dp)
                 )
             }
@@ -1070,7 +1043,7 @@ fun PengeluaranItem(transaction: TransactionPengeluaran) {
             ) {
                 Column {
                     val transactionName = transaction.nama_transaksi.takeIf { !it.isNullOrEmpty() }
-                        ?: "No Transaction Name"
+                        ?: "Tanpa nama"
                     val shortenedName = if (transactionName.length > 14) {
                         transactionName.take(10) + "…"
                     } else {
@@ -1079,26 +1052,26 @@ fun PengeluaranItem(transaction: TransactionPengeluaran) {
                     Text(
                         text = shortenedName,
                         style = AppTheme.typography.paragraph2Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Clip
                     )
                     Text(
                         text = formatTanggalSaja(transaction.created_at),
                         style = AppTheme.typography.paragraph2,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = formatRupiahMines(transaction.total_amount),
                         style = AppTheme.typography.paragraph1Bold,
-                        color = AppTheme.colors.onHighlightSurface
+                        color = MaterialTheme.colorScheme.error
                     )
                     Text(
                         text = "#${transaction.payment_method}",
                         style = AppTheme.typography.paragraph2,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

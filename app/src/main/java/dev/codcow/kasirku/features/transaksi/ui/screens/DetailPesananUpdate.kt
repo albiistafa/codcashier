@@ -11,15 +11,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.DismissDirection
-import androidx.compose.material.DismissValue
-import androidx.compose.material.Divider
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.FractionalThreshold
-import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -28,9 +22,12 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.RemoveCircleOutline
-import androidx.compose.material.rememberDismissState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -82,27 +79,34 @@ fun DetailPesananScreenUpdate(
     val error by transaksiViewModel.error.collectAsState()
     val isSuccess by transaksiViewModel.isSuccess.collectAsState()
     val transaction by transaksiViewModel.currentTransaction.collectAsState()
-    val selectedMenu by menuViewModel.selectedMenu.collectAsState()
-    val scope = rememberCoroutineScope()
 
-    var selectedPaymentMethod by remember { mutableStateOf<String?>(null) }
+    var selectedPaymentMethod by rememberSaveable(transactionId) { mutableStateOf<String?>(null) }
+    var selectedCustomerId by rememberSaveable(transactionId) { mutableStateOf<Int?>(null) }
+    var selectionInitialized by rememberSaveable(transactionId) { mutableStateOf(false) }
     var showDepositDropdown by remember { mutableStateOf(false) }
-    var selectedDepositOption by remember { mutableStateOf<String?>(null) }
-    var selectedDepositId by remember { mutableStateOf<Int?>(null) }
-    var selectedCustomerId by remember { mutableStateOf<Int?>(null) }
     val depositList by depositViewModel.depositItem.collectAsState()
-    val selectedDeposit = depositList.find { it.id == selectedDepositId }
+    val depositLoading by depositViewModel.isLoading.collectAsState()
+    val depositError by depositViewModel.error.collectAsState()
+    val selectedDeposit = depositList.find { it.customer_id == selectedCustomerId }
+    val amount = transaction?.total_amount?.toBigDecimalOrNull()
+    val balance = selectedDeposit?.balance?.toBigDecimalOrNull()
+    val depositReady = selectedDeposit != null && amount != null && balance != null && balance >= amount
 
-    // Fetch transaction details when the screen is composed
     LaunchedEffect(transactionId) {
+        transaksiViewModel.resetState()
         transaksiViewModel.getTransactionById(transactionId)
     }
-
-    // Update payment method when transaction is loaded
-    LaunchedEffect(transaction) {
+    LaunchedEffect(transaction?.id) {
         transaction?.let {
-            selectedPaymentMethod = it.payment_method
+            if (!selectionInitialized) {
+                selectedPaymentMethod = it.payment_method?.takeIf { method -> method in listOf("tunai", "digital", "deposit") }
+                selectedCustomerId = it.customer_id
+                selectionInitialized = true
+            }
         }
+    }
+    LaunchedEffect(selectedPaymentMethod) {
+        if (selectedPaymentMethod == "deposit") depositViewModel.getAllDeposits()
     }
 
     // Handle success state
@@ -125,13 +129,13 @@ fun DetailPesananScreenUpdate(
                     IconButton(
                         onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali"
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         },
@@ -140,9 +144,10 @@ fun DetailPesananScreenUpdate(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(AppTheme.colors.onSurface)
+                        .background(MaterialTheme.colorScheme.background)
+                        .navigationBarsPadding()
                 ) {
-                    Divider()
+                    HorizontalDivider()
 
                     Row(
                         modifier = Modifier
@@ -152,25 +157,18 @@ fun DetailPesananScreenUpdate(
                     ) {
                         Button(
                             onClick = {
-                                selectedPaymentMethod?.let { paymentMethod ->
-                                    scope.launch {
-                                        transaksiViewModel.updateStatus(
-
-                                            status = "lunas",
-                                            paymentMethod = paymentMethod,
-                                            is_delivered = "yes",
-                                            id = transactionId
-                                        )
-                                    }
+                                selectedPaymentMethod?.let { method ->
+                                    transaksiViewModel.payTransaction(method, selectedCustomerId)
                                 }
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF6D8E22)
+                                containerColor = MaterialTheme.colorScheme.primary
                             ),
-                            enabled = selectedPaymentMethod != null
+                            enabled = !isLoading && transaction?.status != "lunas" && selectedPaymentMethod != null &&
+                                (selectedPaymentMethod != "deposit" || (!depositLoading && depositError == null && depositReady))
                         ) {
-                            Text("Update Pembayaran")
+                            Text(if (isLoading) "Menyimpan…" else if (transaction?.status == "lunas") "Sudah dibayar" else "Bayar")
                         }
                     }
                 }
@@ -181,7 +179,7 @@ fun DetailPesananScreenUpdate(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxWidth()
-                .background(AppTheme.colors.onSurface)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             Box(
                 modifier = Modifier
@@ -193,25 +191,25 @@ fun DetailPesananScreenUpdate(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = Color(0xFF90C14F))
-                    }
-                } else if (error != null) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Error: ${error ?: "Unknown error"}",
-                            color = Color.Red,
-                            style = AppTheme.typography.paragraph1
-                        )
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 } else {
+                    if (transaction == null) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text(error ?: "Transaksi belum tersedia", color = MaterialTheme.colorScheme.onSurface)
+                            Button(onClick = { transaksiViewModel.getTransactionById(transactionId) }) { Text("Coba lagi") }
+                        }
+                    }
                     transaction?.let { currentTransaction ->
                         LazyColumn(
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            item { Divider() }
+                            if (error != null) {
+                                item {
+                                    Text(error.orEmpty(), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
+                                }
+                            }
+                            item { HorizontalDivider() }
                             item { Spacer(modifier = Modifier.height(16.dp)) }
 
                             // Transaction Items List
@@ -240,8 +238,8 @@ fun DetailPesananScreenUpdate(
                                         .padding(16.dp)
                                         .height(48.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = Color(0xFF90C14F),
-                                        focusedLabelColor = Color(0xFF90C14F)
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        focusedLabelColor = MaterialTheme.colorScheme.primary
                                     ),
                                     readOnly = true
                                 )
@@ -294,115 +292,65 @@ fun DetailPesananScreenUpdate(
                                 }
                             }
 
-                            // Payment method section
-//                            item {
-//                                Divider(
-//                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
-//                                    color = Color.LightGray
-//                                )
-//
-//                                Text(
-//                                    "Pembayaran",
-//                                    modifier = Modifier.padding(horizontal = 16.dp),
-//                                    style = AppTheme.typography.labelMedium
-//                                )
+                            item {
+                                Column(Modifier.fillMaxWidth().padding(16.dp).selectableGroup()) {
+                                    Text("Metode pembayaran", style = AppTheme.typography.labelMedium)
+                                    listOf("tunai" to "Tunai", "digital" to "Digital", "deposit" to "Deposit").forEach { (method, label) ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                                                .selectable(
+                                                    selected = selectedPaymentMethod == method,
+                                                    enabled = currentTransaction.status != "lunas",
+                                                    role = Role.RadioButton,
+                                                    onClick = { selectedPaymentMethod = method }
+                                                ),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            RadioButton(selected = selectedPaymentMethod == method, onClick = null)
+                                            Text(label, modifier = Modifier.padding(start = 12.dp))
+                                        }
+                                    }
+                                    if (selectedPaymentMethod == "deposit") {
+                                        ExposedDropdownMenuBox(
+                                            expanded = showDepositDropdown,
+                                            onExpandedChange = { if (!depositLoading) showDepositDropdown = it }
+                                        ) {
+                                            OutlinedTextField(
+                                                value = selectedDeposit?.customer_name.orEmpty(),
+                                                onValueChange = {},
+                                                readOnly = true,
+                                                label = { Text("Pelanggan deposit") },
+                                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(showDepositDropdown) },
+                                                modifier = Modifier.menuAnchor().fillMaxWidth()
+                                            )
+                                            ExposedDropdownMenu(expanded = showDepositDropdown, onDismissRequest = { showDepositDropdown = false }) {
+                                                depositList.forEach { deposit ->
+                                                    DropdownMenuItem(
+                                                        text = { Text(deposit.customer_name) },
+                                                        onClick = {
+                                                            selectedCustomerId = deposit.customer_id
+                                                            showDepositDropdown = false
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        when {
+                                            depositLoading -> Text("Memuat pelanggan deposit…")
+                                            depositError != null -> {
+                                                Text("Pelanggan deposit belum dapat dimuat.", color = MaterialTheme.colorScheme.error)
+                                                TextButton(onClick = { depositViewModel.getAllDeposits() }) { Text("Coba lagi") }
+                                            }
+                                            depositList.isEmpty() -> Text("Belum ada pelanggan deposit. Pilih metode pembayaran lain.")
+                                            selectedDeposit != null -> {
+                                                Text("Saldo: ${formatRupiah(selectedDeposit.balance)}")
+                                                if (!depositReady) Text("Saldo tidak mencukupi atau nilai transaksi tidak valid.", color = MaterialTheme.colorScheme.error)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
 
-//                                Row(
-//                                    modifier = Modifier
-//                                        .fillMaxWidth()
-//                                        .padding(16.dp),
-//                                    horizontalArrangement = Arrangement.SpaceBetween
-//                                ) {
-//                                    PaymentMethodButton(
-//                                        text = "Tunai",
-//                                        selected = selectedPaymentMethod == "tunai",
-//                                        onClick = {
-//                                            selectedPaymentMethod = "tunai"
-//                                            selectedDepositOption = null
-//                                            selectedDepositId = null
-//                                        }
-//                                    )
-//                                    PaymentMethodButton(
-//                                        text = "Digital",
-//                                        selected = selectedPaymentMethod == "digital",
-//                                        onClick = {
-//                                            selectedPaymentMethod = "digital"
-//                                            selectedDepositOption = null
-//                                            selectedDepositId = null
-//                                        }
-//                                    )
-//                                    PaymentMethodButton(
-//                                        text = "Deposit",
-//                                        selected = selectedPaymentMethod == "deposit",
-//                                        onClick = {
-//                                            selectedPaymentMethod = "deposit"
-//                                            selectedDepositId = selectedDeposit?.customer_id
-//                                        }
-//                                    )
-//                                }
-//                            }
-//
-//                            // Deposit dropdown
-//                            item {
-//                                if (selectedPaymentMethod == "deposit") {
-//                                    ExposedDropdownMenuBox(
-//                                        expanded = showDepositDropdown,
-//                                        onExpandedChange = { showDepositDropdown = it },
-//                                        modifier = Modifier
-//                                            .fillMaxWidth()
-//                                            .padding(horizontal = 16.dp)
-//                                    ) {
-//                                        OutlinedTextField(
-//                                            value = selectedDepositOption ?: "",
-//                                            placeholder = { Text("Pilih Customer Deposit", style = AppTheme.typography.paragraph2) },
-//                                            onValueChange = {},
-//                                            readOnly = true,
-//                                            trailingIcon = {
-//                                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = showDepositDropdown)
-//                                            },
-//                                            textStyle = AppTheme.typography.paragraph2,
-//                                            modifier = Modifier
-//                                                .menuAnchor()
-//                                                .fillMaxWidth()
-//                                                .height(48.dp),
-//                                            colors = OutlinedTextFieldDefaults.colors(
-//                                                focusedBorderColor = Color(0xFF90C14F),
-//                                                unfocusedBorderColor = Color(0xFF90C14F),
-//                                                focusedLabelColor = Color(0xFF90C14F),
-//                                                unfocusedLabelColor = Color.Black
-//                                            ),
-//                                            shape = RoundedCornerShape(10.dp)
-//                                        )
-//                                        ExposedDropdownMenu(
-//                                            expanded = showDepositDropdown,
-//                                            onDismissRequest = { showDepositDropdown = false },
-//                                            modifier = Modifier
-//                                                .background(Color.White)
-//                                                .exposedDropdownSize(matchTextFieldWidth = true)
-//                                        ) {
-//                                            depositList.forEach { option ->
-//                                                DropdownMenuItem(
-//                                                    modifier = Modifier.padding(horizontal = 0.dp),
-//                                                    text = {
-//                                                        Text(
-//                                                            text = option.customer_name,
-//                                                            style = AppTheme.typography.paragraph2
-//                                                        )
-//                                                    },
-//                                                    onClick = {
-//                                                        selectedDepositOption = option.customer_name
-//                                                        selectedDepositId = option.id
-//                                                        selectedCustomerId = option.customer_id
-//                                                        showDepositDropdown = false
-//                                                    }
-//                                                )
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//                            }
-//
-//                            item { Spacer(modifier = Modifier.height(16.dp)) }
                         }
                     }
                 }
@@ -423,7 +371,7 @@ fun CartItemRows(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -467,12 +415,12 @@ fun CartItemRows(
             ) {
                 IconButton(
                     onClick = onDecrement,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         Icons.Outlined.RemoveCircleOutline,
                         contentDescription = "Kurangi",
-                        tint = Color(0xFF90C14F)
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -483,12 +431,12 @@ fun CartItemRows(
 
                 IconButton(
                     onClick = onIncrement,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         Icons.Outlined.AddCircleOutline,
                         contentDescription = "Tambah",
-                        tint = Color(0xFF90C14F)
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -505,17 +453,15 @@ fun CartItemRows(
     OutlinedButton(
         onClick = onClick,
         shape = RoundedCornerShape(10.dp),
-        modifier = Modifier.height(40.dp),
+        modifier = Modifier.heightIn(min = 48.dp),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (selected) Color(0xFFEEF5D2) else Color.Transparent,
-            contentColor = if (selected) Color(0xFF546D1E) else Color.Black
+            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+            contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
         ),
-        border = if (selected) BorderStroke(1.dp, Color(0xFF90C14F)) else BorderStroke(1.dp, Color.Black)
+        border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
     )
         {
         Text(text, style = AppTheme.typography.paragraph2)
     }
 }
-
-
 

@@ -1,5 +1,8 @@
 package dev.codcow.kasirku.ui.components
 
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.EnterTransition
+import dev.codcow.kasirku.ui.util.rememberReduceMotion
 import android.util.Log
 import android.util.Log.e
 import androidx.compose.animation.AnimatedVisibility
@@ -23,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -68,7 +72,6 @@ fun FilterSideTransaksi(
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val sidebarWidth = screenWidth * 3 / 4
-    val offsetAnimation by animateDpAsState(targetValue = if (isVisible) 0.dp else sidebarWidth, label = "sidebarOffset")
 
     // Define payment statuses
     val paymentStatuses = listOf(
@@ -101,18 +104,18 @@ fun FilterSideTransaksi(
         }
     }
 
+    val reduceMotion = rememberReduceMotion()
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInHorizontally(initialOffsetX = { it }),
-        exit = slideOutHorizontally(targetOffsetX = { it })
+        enter = if (reduceMotion) EnterTransition.None else slideInHorizontally(initialOffsetX = { it }),
+        exit = if (reduceMotion) ExitTransition.None else slideOutHorizontally(targetOffsetX = { it })
     ) {
         Box(
             modifier = modifier
                 .fillMaxHeight()
                 .width(sidebarWidth)
-                .offset(x = offsetAnimation)
                 .graphicsLayer(shadowElevation = shadowElevation.value)
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(16.dp)
         ) {
             Column {
@@ -155,10 +158,10 @@ fun FilterSideTransaksi(
                                         },
                                         modifier = Modifier.weight(1f),
                                         colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = Color(0xFF6D8E22),
-                                            selectedLabelColor = Color.White,
-                                            containerColor = Color(0xFFECECEC),
-                                            labelColor = Color.Black
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                         ),
                                         border = FilterChipDefaults.filterChipBorder(
                                             borderColor = Color.Transparent,
@@ -212,10 +215,10 @@ fun FilterSideTransaksi(
                                         },
                                         modifier = Modifier.weight(1f),
                                         colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = Color(0xFF6D8E22),
-                                            selectedLabelColor = Color.White,
-                                            containerColor = Color(0xFFECECEC),
-                                            labelColor = Color.Black
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                         ),
                                         border = FilterChipDefaults.filterChipBorder(
                                             borderColor = Color.Transparent,
@@ -248,9 +251,9 @@ fun FilterSideTransaksi(
                         shape = RoundedCornerShape(25.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = Color.Transparent,
-                            contentColor = Color(0xFF6D8E22)
+                            contentColor = MaterialTheme.colorScheme.primary
                         ),
-                        border = BorderStroke(1.dp, color = Color(0xFF6D8E22))
+                        border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary)
                     ) {
                         Text("Atur Ulang", style = AppTheme.typography.paragraph2)
                     }
@@ -267,8 +270,8 @@ fun FilterSideTransaksi(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(25.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color(0xFF6D8E22),
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
                         Text("Terapkan", style = AppTheme.typography.paragraph2)
@@ -287,15 +290,15 @@ fun FilterSideTransaksi(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(25.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color(0xFF6D8E22),
-                        contentColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     enabled = !isPdfLoading
                 ) {
                     if (isPdfLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             strokeWidth = 2.dp
                         )
                     } else {
@@ -309,7 +312,7 @@ fun FilterSideTransaksi(
                 AnimatedVisibility(visible = isPdfSuccess) {
                     Text(
                         "PDF berhasil diunduh!",
-                        color = Color(0xFF6D8E22),
+                        color = MaterialTheme.colorScheme.primary,
                         style = AppTheme.typography.paragraph2,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
@@ -319,7 +322,7 @@ fun FilterSideTransaksi(
                 AnimatedVisibility(visible = pdfError != null) {
                     Text(
                         pdfError ?: "",
-                        color = Color.Red,
+                        color = MaterialTheme.colorScheme.error,
                         style = AppTheme.typography.paragraph2,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()

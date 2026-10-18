@@ -24,7 +24,7 @@ fun SubKategoriListItem(
     Card(
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
     ) {
@@ -38,7 +38,7 @@ fun SubKategoriListItem(
             Text(
                 text = subkategori.name,
                 style = AppTheme.typography.paragraph1Semibold,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
 
@@ -47,7 +47,7 @@ fun SubKategoriListItem(
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = "Edit",
-                    tint = AppTheme.colors.surface
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -56,7 +56,7 @@ fun SubKategoriListItem(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = Color.Red
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }
