@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Cod Cashier</string>
     <string name="nav_home">Beranda</string>
+    <string name="nav_cashier">Kasir</string>
     <string name="nav_transactions">Transaksi</string>
     <string name="nav_recap">Rekap</string>
     <string name="menu_load_failed">Menu belum dapat dimuat. Periksa koneksi internet, lalu coba lagi.</string>

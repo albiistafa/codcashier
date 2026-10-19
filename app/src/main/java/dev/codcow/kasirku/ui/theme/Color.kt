@@ -64,7 +64,10 @@ data class AppColors(
     val hero: List<Color>,
     val onHero: Color,
     /** Paid / settled status. */
-    val success: Color
+    val success: Color,
+    /** Kunyit: only for the action that starts taking money (Mulai jualan). */
+    val money: Color = Color(0xFFF4B740),
+    val onMoney: Color = Color(0xFF2B1D00)
 )
 
 private val HeroGradient = listOf(Color(0xFF526C18), Color(0xFF394F0C), Color(0xFF526C18))

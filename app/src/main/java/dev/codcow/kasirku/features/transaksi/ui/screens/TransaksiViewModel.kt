@@ -116,8 +116,10 @@ class TransaksiViewModel @Inject constructor(
 
     fun refreshPendingCount() {
         viewModelScope.launch {
-            transaksiRepository.getTransaksiByStatus("pending").onSuccess { data ->
-                _pendingCount.value = data.pagination.total.toIntOrNull() ?: data.transactions.size
+            // /transactions/status/{status} 404s on the server; use the same filtered list as the Transaksi tab
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time)
+            transaksiRepository.getAllTransaksiAcrossPages("", "pending", today, today).onSuccess { data ->
+                _pendingCount.value = data.transactions.size
             }
         }
     }

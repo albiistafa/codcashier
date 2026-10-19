@@ -40,8 +40,9 @@ fun Splash(navController: NavController, viewModel: LoginViewModel, context: Con
         animationStarted = true
 
         if (viewModel.hasValidToken(context)) {
-            // Navigasi langsung ke home jika token valid
-            navController.navigate("menu") {
+            // Pemilik ke Beranda, pegawai langsung ke Kasir
+            val start = if (viewModel.getUserRole(context) == "admin") "home" else "menu"
+            navController.navigate(start) {
                 popUpTo("splash") { inclusive = true } // Hapus splash screen dari back stack
             }
         } else {

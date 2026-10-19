@@ -1,3 +1,12 @@
+import dev.codcow.kasirku.ui.components.NavIcons
+import dev.codcow.kasirku.ui.components.DuoIcon
+import dev.codcow.kasirku.ui.components.Duo
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -36,55 +45,41 @@ fun CustomBottomNavigation(
         Spacer(modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
         return
     }
-    val items = tabLabels()
-    val selectedIndex = remember(currentRoute) { selectedTabIndex(currentRoute) }
+    val tabs = navTabs()
+    val selected = selectedTab(tabs, currentRoute)
+    val line = MaterialTheme.colorScheme.outlineVariant
 
     // Surface paints behind the gesture bar; only the content is inset
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = 24.dp,
-                shape = RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp),
-                clip = false
-            )
-            .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .drawBehind { drawLine(line, Offset.Zero, Offset(size.width, 0f), 1.dp.toPx()) }
             .windowInsetsPadding(WindowInsets.navigationBars)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 82.dp),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp).selectableGroup(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().selectableGroup(),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                items.forEachIndexed { index, label ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .weight(1f)
-                            .selectable(selected = selectedIndex == index, role = Role.Tab) {
-                                navController.navigateToTab(tabRoutes[index])
-                            }
-                            .heightIn(min = 48.dp)
-                            .padding(8.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = tabIcons[index]),
-                            contentDescription = null,
-                            tint = if (selectedIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Text(
-                            text = label,
-                            style = AppTheme.typography.paragraph2,
-                            color = if (selectedIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+            tabs.forEach { tab ->
+                val active = tab == selected
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .selectable(selected = active, role = Role.Tab) { navController.navigateToTab(tab.route) }
+                        .padding(vertical = 10.dp)
+                ) {
+                    TabIcon(tab, active)
+                    Text(
+                        text = stringResource(tab.label),
+                        style = AppTheme.typography.paragraph2.copy(
+                            fontSize = 12.sp,
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.Medium
+                        ),
+                        color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -92,23 +87,37 @@ fun CustomBottomNavigation(
 }
 
 @Composable
+private fun TabIcon(tab: NavTab, active: Boolean) = DuoIcon(
+    tab.icon, 26.dp,
+    fill = if (active) AppTheme.colors.money else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+    stroke = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+)
+
+@Composable
 fun currentRoute(navController: NavController): String? {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     return navBackStackEntry?.destination?.route
 }
 
-private val tabIcons = listOf(R.drawable.navbarhome, R.drawable.navbarshop, R.drawable.navbarrekap)
-private val tabRoutes = listOf(Screen.Menu.route, Screen.Transaksi.route, Screen.Rekap.route)
+private class NavTab(val route: String, val label: Int, val icon: Duo)
 
+private val homeTab = NavTab(Screen.Home.route, R.string.nav_home, NavIcons.home)
+private val cashierTab = NavTab(Screen.Menu.route, R.string.nav_cashier, NavIcons.kasir)
+private val transaksiTab = NavTab(Screen.Transaksi.route, R.string.nav_transactions, NavIcons.transaksi)
+private val rekapTab = NavTab(Screen.Rekap.route, R.string.nav_recap, NavIcons.rekap)
+
+/** Owner gets Beranda; staff land straight in Kasir (decision 19 Okt). */
 @Composable
-private fun tabLabels() = listOf(
-    stringResource(R.string.nav_home),
-    stringResource(R.string.nav_transactions),
-    stringResource(R.string.nav_recap)
-)
+private fun navTabs(): List<NavTab> {
+    val context = LocalContext.current
+    val isAdmin = remember {
+        context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE).getString("user_role", null) == "admin"
+    }
+    return if (isAdmin) listOf(homeTab, cashierTab, transaksiTab, rekapTab) else listOf(cashierTab, transaksiTab, rekapTab)
+}
 
-private fun selectedTabIndex(route: String?) =
-    tabRoutes.indexOf(if (route == Screen.MenuAdmin.route) Screen.Menu.route else route)
+private fun selectedTab(tabs: List<NavTab>, route: String?) =
+    tabs.firstOrNull { it.route == (if (route == Screen.MenuAdmin.route) Screen.Menu.route else route) }
 
 /** Material window size class boundary: compact < 600dp uses the bottom bar, wider gets a rail. */
 @Composable
@@ -120,8 +129,9 @@ fun isExpandedWindow(): Boolean = LocalConfiguration.current.screenWidthDp >= 84
 
 /** Tab switch that keeps one copy of each tab on the stack, so Back exits instead of cycling tabs. */
 fun NavController.navigateToTab(route: String) {
+    val root = if (runCatching { getBackStackEntry(Screen.Home.route) }.isSuccess) Screen.Home.route else Screen.Menu.route
     navigate(route) {
-        popUpTo(Screen.Menu.route) { saveState = true }
+        popUpTo(root) { saveState = true }
         launchSingleTop = true
         restoreState = true
     }
@@ -129,24 +139,23 @@ fun NavController.navigateToTab(route: String) {
 
 @Composable
 fun AppNavigationRail(currentRoute: String?, onSelect: (String) -> Unit) {
-    val labels = tabLabels()
-    val selectedIndex = selectedTabIndex(currentRoute)
+    val tabs = navTabs()
+    val selected = selectedTab(tabs, currentRoute)
     NavigationRail(
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        containerColor = MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxHeight()
     ) {
         Spacer(Modifier.weight(1f))
-        labels.forEachIndexed { index, label ->
+        tabs.forEach { tab ->
+            val active = tab == selected
             NavigationRailItem(
-                selected = selectedIndex == index,
-                onClick = { onSelect(tabRoutes[index]) },
-                icon = { Icon(painterResource(tabIcons[index]), contentDescription = null, modifier = Modifier.size(24.dp)) },
-                label = { Text(label, style = AppTheme.typography.paragraph2) },
+                selected = active,
+                onClick = { onSelect(tab.route) },
+                icon = { TabIcon(tab, active) },
+                label = { Text(stringResource(tab.label), style = AppTheme.typography.paragraph2.copy(fontSize = 12.sp)) },
                 colors = NavigationRailItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.primary,
                     selectedTextColor = MaterialTheme.colorScheme.primary,
                     indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 modifier = Modifier.padding(vertical = 4.dp)

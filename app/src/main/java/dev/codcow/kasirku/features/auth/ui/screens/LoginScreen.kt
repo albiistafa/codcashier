@@ -54,7 +54,9 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
             onLoginSuccess(
                 context, phoneNumber, password
             )
-            navController.navigate("menu") {
+            // Pemilik ke Beranda, pegawai langsung ke Kasir
+            val start = if (viewModel.getUserRole(context) == "admin") "home" else "menu"
+            navController.navigate(start) {
                 popUpTo("login") { inclusive = true }
             }
         }
