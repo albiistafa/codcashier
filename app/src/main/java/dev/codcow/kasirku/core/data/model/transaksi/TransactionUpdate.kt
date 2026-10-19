@@ -5,5 +5,6 @@ data class TransactionUpdateRequest(
     val payment_method: String,
     val items: List<MenuItemUpdate>,
     val customer_id: Int? = null,
-    val is_delivered: String
+    // Null when unknown: Gson omits it, so the server keeps its own value
+    val is_delivered: String? = null
 )

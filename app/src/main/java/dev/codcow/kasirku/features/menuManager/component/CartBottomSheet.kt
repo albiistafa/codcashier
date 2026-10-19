@@ -18,6 +18,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.Color
+import dev.codcow.kasirku.ui.components.DuoIcon
+import dev.codcow.kasirku.ui.components.NavIcons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -77,47 +84,57 @@ fun CartIndicatorBar(
     onPay: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val edge = with(LocalDensity.current) { receiptEdgeShape(12.dp.toPx(), 6.dp.toPx()) }
+    val onDeep = Color.White
     Surface(
-        shape = edge,
-        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(24.dp),
+        color = AppTheme.colors.deep,
         shadowElevation = 10.dp,
         modifier = modifier
             .widthIn(max = 560.dp)
             .fillMaxWidth()
-            .padding(horizontal = 10.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Row(
-            modifier = Modifier.padding(start = 16.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
+            modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Column(
+            Row(
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = 52.dp)
                     .clickable(onClickLabel = "Lihat pesanan", onClick = onOpen),
-                verticalArrangement = Arrangement.Center
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    text = "${cartItems.sumOf { it.quantity }} item · ${cartItems.joinToString(", ") { it.name }}",
-                    style = AppTheme.typography.paragraph2,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = formatRupiah(totalPrice.toString()),
-                    style = AppTheme.typography.heading5Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Box(
+                    Modifier.size(44.dp).background(onDeep.copy(alpha = 0.12f), RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    DuoIcon(NavIcons.kasir, 24.dp, fill = AppTheme.colors.money, stroke = onDeep)
+                }
+                Column {
+                    Text(
+                        text = "${cartItems.sumOf { it.quantity }} item",
+                        style = AppTheme.typography.paragraph2,
+                        color = onDeep.copy(alpha = 0.72f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = formatRupiah(totalPrice.toString()).replace("Rp ", "Rp"),
+                        style = AppTheme.typography.heading5Bold,
+                        color = onDeep
+                    )
+                }
             }
             Button(
                 onClick = onPay,
                 shape = RoundedCornerShape(26.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.money, contentColor = AppTheme.colors.onMoney),
                 modifier = Modifier.heightIn(min = 52.dp)
             ) {
-                Text("Bayar", style = AppTheme.typography.paragraph1Semibold, modifier = Modifier.padding(horizontal = 8.dp))
+                Text("Bayar", style = AppTheme.typography.paragraph1Bold, modifier = Modifier.padding(horizontal = 10.dp))
             }
         }
     }

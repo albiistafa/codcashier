@@ -6,7 +6,8 @@ data class Data(
     val nama_transaksi: String,
     val payment_method: String?,
     val status: String,
-    val is_delivered: String,
+    // GET /transactions/{id} leaves this out, so it can be null at runtime
+    val is_delivered: String? = null,
     val total_amount: String,
     val transaction_details: List<TransactionDetailX>,
     val user_id: Int,

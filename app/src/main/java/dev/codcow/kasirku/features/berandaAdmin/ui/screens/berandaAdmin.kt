@@ -53,6 +53,7 @@ import dev.codcow.kasirku.features.warung.ui.screens.warungViewModel
 import dev.codcow.kasirku.middleware.Screen
 import dev.codcow.kasirku.ui.components.Duo
 import dev.codcow.kasirku.ui.components.DuoIcon
+import dev.codcow.kasirku.ui.components.AppIcons
 import dev.codcow.kasirku.ui.theme.AppTheme
 import dev.codcow.kasirku.ui.util.formatRupiah
 import navigateToTab
@@ -81,17 +82,16 @@ fun beranda(
         warungVm.fetchWarungIfChanged()
         viewModel.load()
     }
-    LightStatusIconsOnGreen()
 
     val tiles = listOf(
-        Tile("Menu", Icons2.menu, onNavigateToMenu),
-        Tile("Kategori", Icons2.kategori, onNavigateToKategori),
-        Tile("Subkategori", Icons2.subkategori, onNavigateToSubKategori),
-        Tile("Deposit", Icons2.deposit, onNavigateToDeposit),
-        Tile("Pegawai", Icons2.pegawai, onNavigateToPegawai),
-        Tile("Kelola transaksi", Icons2.transaksi, onNavigateToTransaksi),
-        Tile("Pengeluaran", Icons2.pengeluaran) { navController.navigate(Screen.CreatePengeluaran.route) },
-        Tile("Warung", Icons2.warung, onNavigateToWarung)
+        Tile("Menu", AppIcons.menu, onNavigateToMenu),
+        Tile("Kategori", AppIcons.kategori, onNavigateToKategori),
+        Tile("Subkategori", AppIcons.subkategori, onNavigateToSubKategori),
+        Tile("Deposit", AppIcons.deposit, onNavigateToDeposit),
+        Tile("Pegawai", AppIcons.pegawai, onNavigateToPegawai),
+        Tile("Kelola transaksi", AppIcons.transaksi, onNavigateToTransaksi),
+        Tile("Pengeluaran", AppIcons.pengeluaran) { navController.navigate(Screen.CreatePengeluaran.route) },
+        Tile("Warung", AppIcons.warung, onNavigateToWarung)
     )
 
     Scaffold(
@@ -189,18 +189,6 @@ fun beranda(
 }
 
 @Composable
-private fun LightStatusIconsOnGreen() {
-    val view = LocalView.current
-    if (view.isInEditMode) return
-    DisposableEffect(Unit) {
-        val controller = WindowCompat.getInsetsController((view.context as Activity).window, view)
-        val before = controller.isAppearanceLightStatusBars
-        controller.isAppearanceLightStatusBars = false
-        onDispose { controller.isAppearanceLightStatusBars = before }
-    }
-}
-
-@Composable
 private fun Header(name: String, onLogout: () -> Unit) {
     val onHero = AppTheme.colors.onHero
     var menuOpen by remember { mutableStateOf(false) }
@@ -280,7 +268,7 @@ private fun MoneyCard(state: BerandaState, onRetry: () -> Unit, onRekap: () -> U
             shape = CircleShape,
             colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.money, contentColor = AppTheme.colors.onMoney)
         ) {
-            DuoIcon(Icons2.receipt, 20.dp, fill = Color.Transparent, stroke = AppTheme.colors.onMoney)
+            DuoIcon(AppIcons.receipt, 20.dp, fill = Color.Transparent, stroke = AppTheme.colors.onMoney)
             Spacer(Modifier.width(8.dp))
             Text("Mulai jualan", style = AppTheme.typography.paragraph1Bold.copy(fontSize = 16.sp))
         }
@@ -403,9 +391,9 @@ private fun PendingCard(trx: Transaction, onLunasi: () -> Unit) {
 private fun SaleRow(trx: TransactionPemasukan, divider: Boolean, onClick: () -> Unit) {
     val method = trx.payment_method.lowercase()
     val icon = when {
-        "deposit" in method -> Icons2.card
-        "tunai" in method || "cash" in method -> Icons2.cash
-        else -> Icons2.qr
+        "deposit" in method -> AppIcons.card
+        "tunai" in method || "cash" in method -> AppIcons.cash
+        else -> AppIcons.qr
     }
     Column(Modifier.clickable(onClick = onClick)) {
         Row(Modifier.heightIn(min = 64.dp).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -446,34 +434,3 @@ private fun itemsSummary(items: List<Pair<String, Int>>) =
 
 private fun initials(name: String) =
     name.split(' ').filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1).uppercase() }.ifEmpty { "W" }
-
-// Same drawings as the v3 canvas frame (32-unit box unless noted)
-private object Icons2 {
-    val menu = Duo(listOf("M5 15h22a11 11 0 0 1-22 0z"), listOf("M11 11c0-2 2-2 2-4M17 11c0-2 2-2 2-4"))
-    val kategori = Duo(listOf("M4 9a2 2 0 0 1 2-2h6l3 3h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"))
-    val subkategori = Duo(
-        listOf("M6 5h6a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z", "M20 19h6a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2z"),
-        listOf("M9 13v10h9")
-    )
-    val deposit = Duo(listOf("M8 8h16a4 4 0 0 1 4 4v9a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-9a4 4 0 0 1 4-4z"), listOf("M4 13h24M20 20h4"))
-    val pegawai = Duo(
-        listOf("M7.5 11a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0-9 0z"),
-        listOf("M4 26c1.2-4.6 4.4-7 8-7s6.8 2.4 8 7M21 7.5a4 4 0 0 1 0 7.5M23 19c2.4.8 4 2.9 4.8 6")
-    )
-    val transaksi = Duo(listOf("M8 4h16v24l-4-2.5-4 2.5-4-2.5L8 28z"), listOf("M12 11h8M12 16h8M12 21h4"))
-    val pengeluaran = Duo(
-        listOf("M9 9h14a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-8a4 4 0 0 1 4-4z"),
-        listOf("M20 17h4M5 14h22M16 3v4M13 5l3 3 3-3")
-    )
-    val warung = Duo(
-        listOf("M6 14v12h20V14z", "M4 8l2-4h20l2 4v2a4 4 0 0 1-8 0a4 4 0 0 1-8 0a4 4 0 0 1-8 0z"),
-        listOf("M13 26v-6h6v6")
-    )
-    val receipt = Duo(emptyList(), listOf("M6 3h12v18l-3-2-3 2-3-2-3 2z", "M9 8h6M9 12h6"), box = 24f)
-    val cash = Duo(listOf("M6 6h12a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3z"), listOf("M9.5 12a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0"), box = 24f)
-    val qr = Duo(
-        listOf("M5.5 4h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 4 8.5v-3A1.5 1.5 0 0 1 5.5 4z"),
-        listOf("M14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2M20 14v1M14 20h2M18 18h2v2"), box = 24f
-    )
-    val card = Duo(listOf("M6 6h12a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3z"), listOf("M3 10h18M15 15h2"), box = 24f)
-}

@@ -1,5 +1,10 @@
 package dev.codcow.kasirku.middleware
 
+import androidx.core.view.WindowCompat
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.runtime.SideEffect
+import androidx.compose.foundation.isSystemInDarkTheme
+import android.app.Activity
 import AppNavigationRail
 import isWideWindow
 import navigateToTab
@@ -119,12 +124,21 @@ sealed class Screen(val route: String) {
     }
 }
 
+private val greenTopRoutes = setOf(Screen.Home.route, Screen.Menu.route, Screen.DetailPembayaran.route)
+
 @Composable
 fun AppNavGraph(startDestination: String = Screen.Splash.route) {
     val navController = rememberNavController()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     // ponytail: mirrors the screens that render CustomBottomNavigation; add a route here when a screen gains it
     val showRail = isWideWindow() && currentRoute in railRoutes
+    // Screens with the green band behind the status bar need white status-bar icons
+    val view = LocalView.current
+    val darkTheme = isSystemInDarkTheme()
+    val greenTop = currentRoute in greenTopRoutes
+    if (!view.isInEditMode) SideEffect {
+        WindowCompat.getInsetsController((view.context as Activity).window, view).isAppearanceLightStatusBars = !darkTheme && !greenTop
+    }
 
     Row(modifier = Modifier.fillMaxSize()) {
     if (showRail) {

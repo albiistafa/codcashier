@@ -67,7 +67,9 @@ data class AppColors(
     val success: Color,
     /** Kunyit: only for the action that starts taking money (Mulai jualan). */
     val money: Color = Color(0xFFF4B740),
-    val onMoney: Color = Color(0xFF2B1D00)
+    val onMoney: Color = Color(0xFF2B1D00),
+    /** Daun tua: the running struk bar and selected cash chips, same in both themes. */
+    val deep: Color = Color(0xFF1E3309)
 )
 
 private val HeroGradient = listOf(Color(0xFF526C18), Color(0xFF394F0C), Color(0xFF526C18))

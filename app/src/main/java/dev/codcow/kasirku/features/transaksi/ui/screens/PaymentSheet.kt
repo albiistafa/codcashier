@@ -4,8 +4,17 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import dev.codcow.kasirku.ui.components.AppIcons
+import dev.codcow.kasirku.ui.components.DuoIcon
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
@@ -23,11 +32,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,7 +61,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 
-private fun rp(amount: Long) = formatRupiah(amount.toDouble().toString())
+private fun rp(amount: Long) = formatRupiah(amount.toDouble().toString()).replace("Rp ", "Rp")
 
 /** Exact amount plus the next notes a customer is likely to hand over. */
 internal fun quickCashOptions(total: Long): List<Long> =
@@ -150,22 +155,35 @@ fun PaymentSheet(
         ) {
             Column {
                 Text(
-                    "Total tagihan · ${cart.items.sumOf { it.quantity }} item",
+                    "Total tagihan, ${cart.items.sumOf { it.quantity }} item",
                     style = AppTheme.typography.paragraph2,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(rp(total), style = AppTheme.typography.heading3Bold, color = MaterialTheme.colorScheme.primary)
+                Text(rp(total), style = AppTheme.typography.heading3Bold, color = MaterialTheme.colorScheme.onSurface)
             }
 
-            val methods = listOf("tunai" to "Tunai", "digital" to "Digital", "deposit" to "Deposit")
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                methods.forEachIndexed { index, (value, label) ->
-                    SegmentedButton(
-                        selected = method == value,
-                        onClick = { method = value },
-                        shape = SegmentedButtonDefaults.itemShape(index, methods.size),
-                        label = { Text(label, style = AppTheme.typography.paragraph2Semibold) }
-                    )
+            // Three icon tiles, like the payment pickers in Grab/Gojek
+            val methods = listOf(Triple("tunai", "Tunai", AppIcons.cash), Triple("digital", "Digital", AppIcons.qr), Triple("deposit", "Deposit", AppIcons.card))
+            Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                methods.forEach { (value, label, icon) ->
+                    val selected = method == value
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.5.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier
+                            .weight(1f)
+                            .selectable(selected = selected, role = Role.RadioButton) { method = value }
+                    ) {
+                        Column(
+                            Modifier.heightIn(min = 76.dp).padding(vertical = 10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically)
+                        ) {
+                            DuoIcon(icon, 28.dp)
+                            Text(label, style = if (selected) AppTheme.typography.paragraph2Semibold.copy(fontWeight = FontWeight.Bold) else AppTheme.typography.paragraph2Semibold)
+                        }
+                    }
                 }
             }
 
@@ -253,12 +271,13 @@ fun PaymentSheet(
                     onClick = { submit(pending = false) },
                     enabled = canPay,
                     shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.money, contentColor = AppTheme.colors.onMoney),
                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
                 ) {
                     if (busy && submitted == false) {
                         CircularProgressIndicator(
                             strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            color = AppTheme.colors.onMoney,
                             modifier = Modifier.padding(4.dp)
                         )
                     } else {
@@ -276,7 +295,7 @@ fun PaymentSheet(
                                     else -> "Potong saldo ${rp(total)}"
                                 }
                             },
-                            style = AppTheme.typography.paragraph1Semibold
+                            style = AppTheme.typography.paragraph1Bold
                         )
                     }
                 }
@@ -287,7 +306,7 @@ fun PaymentSheet(
                 ) {
                     Text(
                         if (name.isBlank()) "Isi nama untuk simpan dulu" else "Simpan dulu, bayar nanti",
-                        style = AppTheme.typography.paragraph1Medium
+                        style = AppTheme.typography.paragraph1Bold
                     )
                 }
             }
@@ -295,6 +314,7 @@ fun PaymentSheet(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CashSection(
     total: Long,
@@ -306,30 +326,23 @@ private fun CashSection(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Uang diterima", style = AppTheme.typography.paragraph2Semibold)
-        quickCashOptions(total).withIndex().chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { (i, amount) ->
-                    val selected = customAmount.isEmpty() && received == amount
-                    OutlinedButton(
-                        onClick = { onPick(amount) },
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(
-                            if (selected) 2.dp else 1.dp,
-                            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                        ),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    ) {
-                        Text(
-                            if (i == 0) "Uang pas" else rp(amount),
-                            style = AppTheme.typography.paragraph1Semibold
-                        )
-                    }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            quickCashOptions(total).forEachIndexed { i, amount ->
+                val selected = customAmount.isEmpty() && received == amount
+                Surface(
+                    onClick = { onPick(amount) },
+                    shape = CircleShape,
+                    color = if (selected) AppTheme.colors.deep else MaterialTheme.colorScheme.surface,
+                    contentColor = if (selected) Color.White else MaterialTheme.colorScheme.onSurface,
+                    border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    modifier = Modifier.semantics { this.selected = selected }
+                ) {
+                    Text(
+                        if (i == 0) "Uang pas" else rp(amount).removePrefix("Rp"),
+                        style = AppTheme.typography.paragraph2Semibold,
+                        modifier = Modifier.heightIn(min = 44.dp).wrapContentHeight().padding(horizontal = 16.dp)
+                    )
                 }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
             }
         }
         OutlinedTextField(
@@ -339,7 +352,7 @@ private fun CashSection(
             prefix = { Text("Rp ") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth()
         )
         val short = change != null && change < 0
@@ -347,13 +360,13 @@ private fun CashSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    if (short) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primary,
-                    RoundedCornerShape(14.dp)
+                    if (short) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+                    RoundedCornerShape(20.dp)
                 )
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 18.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val fg = if (short) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimary
+            val fg = if (short) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
             Text(if (short) "Kurang" else "Kembalian", style = AppTheme.typography.paragraph1Medium, color = fg, modifier = Modifier.weight(1f))
             Text(change?.let { rp(abs(it)) } ?: "—", style = AppTheme.typography.heading4Bold, color = fg)
         }

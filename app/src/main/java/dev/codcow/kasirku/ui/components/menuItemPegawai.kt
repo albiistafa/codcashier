@@ -1,9 +1,11 @@
 package dev.codcow.kasirku.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,8 +45,8 @@ import dev.codcow.kasirku.ui.theme.AppTheme
 import dev.codcow.kasirku.ui.util.formatRupiah
 
 /**
- * Cashier menu card: the whole card is the "+1" target (fast under a queue),
- * the quantity sits in a badge, and "−" only appears once there is something to remove.
+ * Cashier menu card: the whole card is the "+1" target (fast under a queue).
+ * Once ordered, the bottom turns into a − qty + stepper and the quantity also sits in a badge.
  */
 @Composable
 fun MenuCardPemesanan(
@@ -52,13 +56,13 @@ fun MenuCardPemesanan(
     onDecrement: (DataMenu) -> Unit
 ) {
     val selected = quantity > 0
+    val price = formatRupiah(menu.price).replace("Rp ", "Rp")
     Box {
         Card(
             onClick = { onIncrement(menu) },
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            border = BorderStroke(2.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface),
+            border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
             modifier = Modifier
                 .fillMaxWidth()
                 .semantics {
@@ -66,59 +70,84 @@ fun MenuCardPemesanan(
                     onClick(label = "Tambah satu") { onIncrement(menu); true }
                 }
         ) {
-            MenuPhoto(
-                photo = menu.photo,
-                modifier = Modifier
-                    .height(120.dp)
-                    .fillMaxWidth()
-            )
-            Column(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
+            MenuPhoto(photo = menu.photo, modifier = Modifier.height(108.dp).fillMaxWidth())
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = menu.name,
-                    style = AppTheme.typography.paragraph1Semibold,
+                    style = AppTheme.typography.paragraph2Semibold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.heightIn(min = 40.dp)
+                    modifier = Modifier.heightIn(min = 36.dp)
                 )
-                Text(
-                    text = formatRupiah(menu.price),
-                    style = AppTheme.typography.paragraph2,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (selected) {
+                    Text(price, style = AppTheme.typography.paragraph1Bold)
+                    Stepper(menu, quantity, onIncrement, onDecrement)
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(price, style = AppTheme.typography.paragraph1Bold, modifier = Modifier.weight(1f))
+                        RoundButton(Icons.Default.Add, "Tambah ${menu.name}", MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary, 44) {
+                            onIncrement(menu)
+                        }
+                    }
+                }
             }
         }
-
         if (selected) {
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .widthIn(min = 32.dp)
-                    .height(32.dp)
+                modifier = Modifier.align(Alignment.TopEnd).padding(10.dp).widthIn(min = 26.dp).height(26.dp)
             ) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
-                    Text(quantity.toString(), style = AppTheme.typography.paragraph1Semibold, textAlign = TextAlign.Center)
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 7.dp)) {
+                    Text(quantity.toString(), style = AppTheme.typography.paragraph2.copy(fontWeight = FontWeight.ExtraBold), textAlign = TextAlign.Center)
                 }
             }
-            FilledIconButton(
-                onClick = { onDecrement(menu) },
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(4.dp)
-            ) {
-                Icon(Icons.Default.Remove, contentDescription = "Kurangi ${menu.name}", modifier = Modifier.size(18.dp))
-            }
         }
+    }
+}
+
+@Composable
+private fun Stepper(menu: DataMenu, quantity: Int, onIncrement: (DataMenu) -> Unit, onDecrement: (DataMenu) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(44.dp)
+            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+            .padding(horizontal = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RoundButton(Icons.Default.Remove, "Kurangi ${menu.name}", MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.onPrimaryContainer, 40) {
+            onDecrement(menu)
+        }
+        Text(
+            quantity.toString(),
+            style = AppTheme.typography.paragraph1Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.weight(1f)
+        )
+        RoundButton(Icons.Default.Add, "Tambah ${menu.name}", MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary, 40) {
+            onIncrement(menu)
+        }
+    }
+}
+
+@Composable
+private fun RoundButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    container: androidx.compose.ui.graphics.Color,
+    content: androidx.compose.ui.graphics.Color,
+    size: Int,
+    onClick: () -> Unit
+) {
+    FilledIconButton(
+        onClick = onClick,
+        colors = IconButtonDefaults.filledIconButtonColors(containerColor = container, contentColor = content),
+        modifier = Modifier.size(size.dp)
+    ) {
+        Icon(icon, contentDescription = label, modifier = Modifier.size(18.dp))
     }
 }
 
