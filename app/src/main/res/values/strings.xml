@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Cod Cashier</string>
+    <string name="app_name">Kasirku</string>
     <string name="nav_home">Beranda</string>
     <string name="nav_cashier">Kasir</string>
     <string name="nav_transactions">Transaksi</string>

@@ -124,7 +124,7 @@ sealed class Screen(val route: String) {
     }
 }
 
-private val greenTopRoutes = setOf(Screen.Home.route, Screen.Menu.route, Screen.DetailPembayaran.route)
+private val greenTopRoutes = setOf(Screen.Home.route, Screen.Menu.route, Screen.DetailPembayaran.route, Screen.Transaksi.route, Screen.Rekap.route, Screen.Splash.route)
 
 @Composable
 fun AppNavGraph(startDestination: String = Screen.Splash.route) {

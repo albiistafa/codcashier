@@ -21,6 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import dev.codcow.kasirku.ui.components.BandPill
+import dev.codcow.kasirku.ui.components.GreenBand
+import dev.codcow.kasirku.ui.components.SearchPill
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -308,44 +311,25 @@ private fun KasirBand(
     onLogout: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
-    val hero = AppTheme.colors.hero.first()
     val onHero = AppTheme.colors.onHero
-    Column(
-        modifier
-            .fillMaxWidth()
-            .background(Brush.verticalGradient(0f to hero, 0.7f to hero.copy(alpha = 0.92f), 1f to MaterialTheme.colorScheme.surfaceVariant))
-            .padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                "Kasir",
-                style = AppTheme.typography.heading4Bold,
-                color = onHero,
-                modifier = Modifier.weight(1f).semantics { heading() }
-            )
+    GreenBand(
+        title = "Kasir",
+        modifier = modifier,
+        actions = {
             // Unpaid orders live on the cashier screen, not only in the Transaksi tab.
             // Always shown, so the top right never goes empty; 0 reads as "nothing to collect".
-            run {
-                val any = pendingCount > 0
-                Surface(onClick = onUnpaid, shape = CircleShape, color = onHero.copy(alpha = 0.18f), contentColor = onHero) {
-                    Row(
-                        Modifier.heightIn(min = 40.dp).padding(start = 10.dp, end = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Box(
-                            Modifier
-                                .defaultMinSize(20.dp, 20.dp)
-                                .background(if (any) AppTheme.colors.money else onHero.copy(alpha = 0.24f), CircleShape)
-                                .padding(horizontal = 5.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("$pendingCount", color = if (any) AppTheme.colors.onMoney else onHero, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
-                        }
-                        Text("Belum dibayar", style = AppTheme.typography.paragraph2Semibold)
-                    }
+            val any = pendingCount > 0
+            BandPill(onClick = onUnpaid) {
+                Box(
+                    Modifier
+                        .defaultMinSize(20.dp, 20.dp)
+                        .background(if (any) AppTheme.colors.money else onHero.copy(alpha = 0.24f), CircleShape)
+                        .padding(horizontal = 5.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("$pendingCount", color = if (any) AppTheme.colors.onMoney else onHero, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
                 }
+                Text("Belum dibayar", style = AppTheme.typography.paragraph2Semibold)
             }
             if (onLogout != null) {
                 var open by remember { mutableStateOf(false) }
@@ -359,23 +343,7 @@ private fun KasirBand(
                 }
             }
         }
-        TextField(
-            value = query,
-            onValueChange = onQueryChange,
-            placeholder = { Text("Cari menu", style = AppTheme.typography.paragraph1) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            singleLine = true,
-            shape = RoundedCornerShape(24.dp),
-            textStyle = AppTheme.typography.paragraph1,
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                focusedLeadingIconColor = MaterialTheme.colorScheme.primary
-            ),
-            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Cari menu" }
-        )
+    ) {
+        SearchPill(query, onQueryChange, "Cari menu")
     }
 }

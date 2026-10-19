@@ -13,4 +13,10 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
     </style>
+    <!-- Theme.AppCompat as before; the system splash is plain leaf green so only the Compose struk animation plays -->
+    <style name="Theme.Kasirku" parent="Theme.AppCompat">
+        <item name="android:windowSplashScreenBackground">@color/leaf_hero</item>
+        <item name="android:windowBackground">@color/leaf_hero</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
+    </style>
 </resources>

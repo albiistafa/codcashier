@@ -175,6 +175,8 @@ fun DetailPembayaran(
                 .fillMaxSize()
                 .navigationBarsPadding()
         ) {
+          // Band and struk scroll together: an offset struk inside its own scroll area got clipped under the band
+          Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -206,15 +208,10 @@ fun DetailPembayaran(
                 )
             }
 
-            Column(
-                Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                current?.let { trx ->
-                    Receipt(trx, warungName?.name, modifier = Modifier.offset(y = (-48).dp).padding(horizontal = 20.dp))
-                }
+            current?.let { trx ->
+                Receipt(trx, warungName?.name, modifier = Modifier.offset(y = (-48).dp).padding(horizontal = 20.dp))
             }
+          }
 
             Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Button(

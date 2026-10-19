@@ -17,6 +17,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.text.style.TextOverflow
+import dev.codcow.kasirku.ui.components.AppIcons
+import dev.codcow.kasirku.ui.components.DuoIcon
 import dev.codcow.kasirku.core.data.model.transaksi.Transaction
 import dev.codcow.kasirku.ui.theme.AppTheme
 import dev.codcow.kasirku.ui.util.formatRupiah
@@ -27,123 +31,69 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun TransaksiItemTransaksi(
     transaction: Transaction,
+    divider: Boolean = false,
     onFinishTransaction: (Transaction) -> Unit = {},
     onAntarTransaction: (Transaction) -> Unit = {},
     onItemClick: (Transaction) -> Unit = {}
-    ) {
-    Card(
-        modifier = Modifier
+) {
+    val pending = transaction.status.equals("pending", ignoreCase = true)
+    val undelivered = transaction.is_delivered.equals("no", ignoreCase = true)
+    val method = transaction.payment_method.orEmpty().lowercase()
+    val icon = when (method) {
+        "tunai", "cash" -> AppIcons.cash
+        "deposit" -> AppIcons.card
+        else -> AppIcons.qr
+    }
+    Column(
+        Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .clickable(onClickLabel = "Lihat detail") { onItemClick(transaction) }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+        Row(Modifier.heightIn(min = 68.dp).padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center
+            ) { DuoIcon(icon, 22.dp) }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
                 Text(
-                    text = formatJamSaja(transaction.created_at),
-                    style = AppTheme.typography.paragraph2,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    transaction.nama_transaksi.takeIf { !it.isNullOrEmpty() } ?: "Tanpa nama",
+                    style = AppTheme.typography.paragraph1Semibold,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "#${transaction.id}", // Assuming your Transaction model has an 'id'
+                    "${formatJamSaja(transaction.created_at)}, ${if (pending) "belum dibayar" else "lunas"}",
                     style = AppTheme.typography.paragraph2,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (pending) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = transaction.nama_transaksi.takeIf { !it.isNullOrEmpty() } ?: "Tanpa nama",
-                style = AppTheme.typography.paragraph1Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+            Text(formatRupiah(transaction.total_amount).replace("Rp ", "Rp"), style = AppTheme.typography.paragraph1Bold)
+        }
+        if (pending || undelivered) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+                Modifier.fillMaxWidth().padding(start = 52.dp, bottom = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "Total Pembayaran :",
-                    style = AppTheme.typography.paragraph2,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = formatRupiah(transaction.total_amount),
-                    style = AppTheme.typography.paragraph2,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    StatusTag(text = transaction.status)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    if (!transaction.payment_method.isNullOrEmpty()) {
-                        StatusTag(text = transaction.payment_method)
-                    }
+                if (undelivered) {
+                    Button(
+                        onClick = { onAntarTransaction(transaction) },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(horizontal = 14.dp),
+                        modifier = Modifier.heightIn(min = 40.dp)
+                    ) { Text("Sudah diantar", style = AppTheme.typography.paragraph2Semibold) }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (transaction.is_delivered.equals("no", ignoreCase = true)) {
-                        Button(
-                            onClick = { onAntarTransaction(transaction) },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                            shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(horizontal = 14.dp),
-                            modifier = Modifier.heightIn(min = 48.dp)
-                        ) {
-                            Text(
-                                "Selesai",
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                style = AppTheme.typography.paragraph2
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    if (transaction.status.equals("pending", ignoreCase = true)) {
-                        Button(
-                            onClick = { onFinishTransaction(transaction) },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                            shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(horizontal = 14.dp),
-                            modifier = Modifier.heightIn(min = 48.dp)
-                        ) {
-                            Text(
-                                "Bayar",
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                style = AppTheme.typography.paragraph2
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    IconButton(onClick = { onItemClick(transaction) }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Lihat detail transaksi ${transaction.nama_transaksi.orEmpty()}",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                if (pending) {
+                    Button(
+                        onClick = { onFinishTransaction(transaction) },
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        modifier = Modifier.heightIn(min = 40.dp)
+                    ) { Text("Bayar", style = AppTheme.typography.paragraph2Semibold) }
                 }
             }
         }
+        if (divider) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 

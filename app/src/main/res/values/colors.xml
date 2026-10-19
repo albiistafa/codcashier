@@ -7,4 +7,6 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Same green as AppColors.hero: system splash hands over to the Compose splash without a flash -->
+    <color name="leaf_hero">#FF526C18</color>
 </resources>

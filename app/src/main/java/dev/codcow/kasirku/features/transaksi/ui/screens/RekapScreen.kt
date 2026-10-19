@@ -1,5 +1,23 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
+import dev.codcow.kasirku.ui.components.AppIcons
+import dev.codcow.kasirku.ui.components.BandPill
+import dev.codcow.kasirku.ui.components.DuoIcon
+import dev.codcow.kasirku.ui.components.GreenBand
+
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -59,7 +77,6 @@ import java.util.Locale
 import dev.codcow.kasirku.R
 import dev.codcow.kasirku.core.data.model.pemasukan.TransactionPemasukan
 import dev.codcow.kasirku.core.data.model.pengeluaran.TransactionPengeluaran
-import dev.codcow.kasirku.ui.components.RecapFilterSidebar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.compose
 import java.text.SimpleDateFormat
@@ -116,9 +133,6 @@ fun RekapScreen(
         }
     }
 
-    BackHandler(enabled = isFilterVisible) {
-        viewModel.closeFilterSidebar()
-    }
 
     val pullRefreshState = rememberPullToRefreshState()
 
@@ -165,11 +179,6 @@ fun RekapScreen(
         }
     }
 
-    val totalPemasukanFormatted = remember(totalPemasukan) {
-        val formattedAmount = NumberFormat.getNumberInstance(Locale("id", "ID"))
-            .format(totalPemasukan)
-        "Rp $formattedAmount"
-    }
 
     val totalPengeluaran = remember(allPengeluaran) {
         allPengeluaran.sumOf {
@@ -179,901 +188,335 @@ fun RekapScreen(
         }
     }
 
-    val totalPengeluaranFormatted = remember(totalPengeluaran) {
-        val formattedAmount = NumberFormat.getNumberInstance(Locale("id", "ID"))
-            .format(totalPengeluaran)
-        "-Rp $formattedAmount"
+
+
+    val today = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time) }
+    val start = (if (selectedTabIndex == 0) currentRekapPemasukanStartDate else currentRekapPengeluaranStartDate).ifEmpty { today }
+    val end = (if (selectedTabIndex == 0) currentRekapPemasukanEndDate else currentRekapPengeluaranEndDate).ifEmpty { today }
+    var showDates by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(pdfError) {
+        pdfError?.let { snackbarHostState.showSnackbar("PDF gagal dibuat: $it"); viewModel.resetPdfState() }
     }
 
-    // Simplified display logic to ensure search results are shown properly
-    val displayPemasukan = allPemasukan
+    // Same date filter the side panel had: applies to the open tab, keeps the search
+    fun applyDates(startDate: String, endDate: String) {
+        if (selectedTabIndex == 0) {
+            if (searchQuery.isEmpty()) viewModel.fetchAllPemasukanAcrossPages(startDate, endDate)
+            else { viewModel.applyRekapPemasukanFilters(startDate, endDate); viewModel.searchRekapPemasukan(searchQuery, startDate, endDate) }
+        } else {
+            if (searchQueryPeng.isEmpty()) viewModel.fetchAllPengeluaranAcrossPages(startDate, endDate)
+            else { viewModel.applyRekapPengeluaranFilters(startDate, endDate); viewModel.searchRekapPengeluaran(searchQueryPeng, startDate, endDate) }
+        }
+    }
 
-    val displayPengeluaran = allPengeluaran
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 22.dp)
-            ) {
-                // Filter chips can go here if needed
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(top = 20.dp)
-                    .weight(1f)
-                    .background(MaterialTheme.colorScheme.background),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-
-                Text(
-                    "Rekap",
-                    style = AppTheme.typography.labelBold,
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = { CustomBottomNavigation(navController = navController) },
+        floatingActionButton = {
+            if (selectedTabIndex == 1) {
+                ExtendedFloatingActionButton(
+                    onClick = { navController.navigate(Screen.CreatePengeluaran.route) },
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    text = { Text("Catat pengeluaran", style = AppTheme.typography.paragraph1Bold) },
+                    shape = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                TabRow(
-                    selectedTabIndex = selectedTabIndex,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
-                            modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                            color = MaterialTheme.colorScheme.primary // Warna indikator yang Anda inginkan
-                        )
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            GreenBand(
+                title = "Rekap",
+                modifier = Modifier.background(AppTheme.colors.hero.first()).statusBarsPadding(),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 72.dp),
+                actions = {
+                    BandPill(onClick = { showDates = true }) {
+                        Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(rangeLabel(start, end, today), style = AppTheme.typography.paragraph2Semibold)
                     }
+                    BandPill(onClick = {
+                        val type = if (selectedTabIndex == 0) "pemasukan" else "pengeluaran"
+                        viewModel.downloadRekapPdf(start, end, type, "rekap_${type}_${LocalDate.now()}.pdf")
+                    }, enabled = !isPdfLoading) {
+                        if (isPdfLoading) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = AppTheme.colors.onHero)
+                        else Icon(Icons.Default.Download, contentDescription = "Unduh PDF", modifier = Modifier.size(18.dp))
+                        Text("PDF", style = AppTheme.typography.paragraph2Semibold)
+                    }
+                }
+            ) {
+                // Two tabs as a segmented pill on the band
+                Row(
+                    Modifier.fillMaxWidth().background(AppTheme.colors.onHero.copy(alpha = 0.16f), CircleShape).padding(4.dp).selectableGroup(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Tab(
-                        selected = selectedTabIndex == 0,
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(0)
-                            }
-                        },
-                        content = {
-                            val contentColor = if (selectedTabIndex == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            CompositionLocalProvider(LocalContentColor provides contentColor) {
-                                Row(
-                                    modifier = Modifier.padding(vertical = 3.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.stash_article_duotone__1_),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        "Pemasukan",
-                                        style = AppTheme.typography.paragraph2
-                                    )
-                                }
-                            }
-                        },
-                        modifier = Modifier.padding(vertical = 3.dp)
-                    )
-                    Tab(
-                        selected = selectedTabIndex == 1,
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(1)
-                            }
-                        },
-                        content = {
-                            val contentColor = if (selectedTabIndex == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            CompositionLocalProvider(LocalContentColor provides contentColor) {
-                                Row(
-                                    modifier = Modifier.padding(vertical = 3.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.hugeicons_chart_down),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        "Pengeluaran",
-                                        style = AppTheme.typography.paragraph2
-                                    )
-                                }
-                            }
-                        },
-                        modifier = Modifier.padding(vertical = 3.dp)
-                    )
-                }
-
-                // Horizontal pager for tab content
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxWidth().weight(1f)
-                ) { page ->
-                    when (page) {
-                        0 -> RekapTransaksiContent(
-                            totalPemasukanFormatted = totalPemasukanFormatted,
-                            isAmountVisible = isAmountVisible,
-                            onToggleAmountVisibility = { isAmountVisible = !isAmountVisible },
-                            query = searchQuery,
-                            onQueryChange = { newQuery ->
-                                searchQuery = newQuery
-                                viewModel.updateSearchQuery(newQuery) // Use consistent function name
-                                val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time)
-                                val startDateToSend = if (currentRekapPemasukanStartDate.isNotEmpty()) currentRekapPemasukanStartDate else today
-                                val endDateToSend = if (currentRekapPemasukanEndDate.isNotEmpty()) currentRekapPemasukanEndDate else today
-                                Log.d("onQueryChange", "today: $today")
-                                Log.d("onQueryChange", "startDateToSend: $startDateToSend")
-                                Log.d("onQueryChange", "endDateToSend: $endDateToSend")
-                                if (newQuery.isEmpty()) {
-                                    viewModel.fetchAllPemasukanAcrossPages(startDateToSend, endDateToSend)
-                                } else {
-                                    viewModel.searchRekapPemasukan(newQuery, startDateToSend, endDateToSend)
-                                }
-                            },
-                            onFilterClick = { viewModel.toggleFilterSidebar() },
-                            isLoading = isLoading,
-                            error = errorPemasukan,
-                            displayPemasukan = displayPemasukan
-                        )
-                        1 -> PengeluaranContent(
-                            totalPengeluaranFormatted = totalPengeluaranFormatted,
-                            isAmountVisible = isAmountVisible,
-                            onToggleAmountVisibility = { isAmountVisible = !isAmountVisible },
-                            query = searchQueryPeng,
-                            onQueryChange = { newQuery ->
-                                searchQueryPeng = newQuery
-                                viewModel.updateSearchQuery(newQuery)
-                                if (newQuery.isEmpty()) {
-                                    viewModel.fetchAllPengeluaranAcrossPages(currentRekapPengeluaranStartDate, currentRekapPengeluaranEndDate)
-                                } else {
-                                    viewModel.searchRekapPengeluaran(newQuery, currentRekapPengeluaranStartDate, currentRekapPengeluaranEndDate)
-                                }
-                            },
-                            onFilterClick = { viewModel.toggleFilterSidebar() },
-                            isLoading = isLoading,
-                            error = errorPengeluaran,
-                            displayPengeluaran = displayPengeluaran
-                        )
-                    }
-                }
-            }
-
-            CustomBottomNavigation(navController = navController)
-        }
-
-
-        Box(modifier = Modifier.fillMaxHeight().align(Alignment.TopEnd)) {
-            RecapFilterSidebar(
-                isVisible = isFilterVisible,
-                onDismiss = { viewModel.closeFilterSidebar() },
-                modifier = Modifier.align(Alignment.TopEnd),
-                onApplyDateFilter = { startDateInput, endDateInput ->
-                    val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time)
-
-                    val startDate = if (startDateInput.isNotEmpty()) startDateInput else today
-                    val endDate = if (endDateInput.isNotEmpty()) endDateInput else today
-
-                    if (selectedTabIndex == 0) {
-                        if (searchQuery.isEmpty()) {
-                            viewModel.fetchAllPemasukanAcrossPages(startDate, endDate)
-                        } else {
-                            viewModel.applyRekapPemasukanFilters(startDate, endDate)
-                            viewModel.searchRekapPemasukan(searchQuery, startDate, endDate)
-                        }
-                    } else {
-                        if (searchQueryPeng.isEmpty()) {
-                            viewModel.fetchAllPengeluaranAcrossPages(startDate, endDate)
-                        } else {
-                            viewModel.applyRekapPengeluaranFilters(startDate, endDate)
-                            viewModel.searchRekapPengeluaran(searchQueryPeng, startDate, endDate)
-                        }
-                    }
-                },
-                onResetFilter = {
-                    val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time)
-
-                    if (selectedTabIndex == 0) { // Set filter ke hari ini
-                        viewModel.fetchAllPemasukanAcrossPages(today, today) // Fetch data hari ini
-                    } else { // Set filter ke hari ini
-                        viewModel.fetchAllPengeluaranAcrossPages(today, today) // Fetch data hari ini
-                    }
-                },
-                isPdfLoading = isPdfLoading,
-                isPdfSuccess = isPdfSuccess,
-                pdfError = pdfError,
-                onDownloadPdf = { startDate, endDate ->
-                    val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time)
-                    val startDate = if (startDate.isNotEmpty()) startDate else today
-                    val endDate = if (endDate.isNotEmpty()) endDate else today
-                    val type = if (selectedTabIndex == 0) "pemasukan" else "pengeluaran"
-                    val fileName = "rekap_${type}_${LocalDate.now()}.pdf"
-                    viewModel.downloadRekapPdf(startDate, endDate, type, fileName)
-                },
-                onResetPdfState = {
-                    viewModel.resetPdfState()
-                },
-            )
-        }
-
-        if (isFilterVisible && selectedTabIndex == 1) {
-
-        } else if (!isFilterVisible && selectedTabIndex == 1) {
-            FloatingActionButton(
-                onClick = {
-                    navController.navigate(Screen.CreatePengeluaran.route)
-                },
-                modifier = Modifier
-                    .padding(bottom = 120.dp, end = 16.dp)
-                    .align(Alignment.BottomEnd), // Tetap di pojok kanan bawah saat filter tidak terlihat
-                containerColor = MaterialTheme.colorScheme.primary,
-                shape = CircleShape,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Pengeluaran"
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun RekapTransaksiContent(
-    totalPemasukanFormatted: String,
-    isAmountVisible: Boolean,
-    onToggleAmountVisibility: () -> Unit,
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onFilterClick: () -> Unit,
-    isLoading: Boolean,
-    error: String?,
-    displayPemasukan: List<TransactionPemasukan>,
-    viewModel : TransaksiViewModel = hiltViewModel()
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "Gradient Animation")
-    val errorPemasukan by viewModel.errorPemasukan.collectAsState()
-
-    val animatedOffset = if (rememberReduceMotion()) 1000f else infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f, // besar nilai ini mempengaruhi kecepatan
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 10000, easing = LinearEasing), // 10 detik
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "Offset Animation"
-    ).value
-
-    val animatedBrush = Brush.linearGradient(
-        colors = AppTheme.colors.hero,
-        start = Offset(0f, 0f),
-        end = Offset(animatedOffset, animatedOffset)
-    )
-
-    var searchText by remember { mutableStateOf(query) }
-
-    var refreshing by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
-
-    fun refresh() {
-        coroutineScope.launch {
-            refreshing = true
-            delay(800)
-            refreshing = false
-        }
-    }
-    val pullRefreshState = rememberPullToRefreshState()
-
-
-    LaunchedEffect(isLoading) {
-        refreshing = isLoading
-        if (!isLoading) {
-            delay(800)
-            refreshing = false
-        }
-    }
-
-    // Sync with external query changes
-    LaunchedEffect(query) {
-        if (query != searchText) {
-            searchText = query
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 22.dp)
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp, bottom = 16.dp),
-            shape = RoundedCornerShape(20.dp), // Membuat card lebih melengkung
-            colors = CardDefaults.cardColors(
-                containerColor = Color.Transparent // karena kita pakai background
-            ),
-            elevation = CardDefaults.cardElevation(8.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(animatedBrush, shape = RoundedCornerShape(20.dp)) // Membuat background juga melengkung
-            ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Text(
-                            text = "Total Pemasukan",
-                            style = AppTheme.typography.paragraph2,
-                            color = AppTheme.colors.onHero
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                    listOf("Pemasukan", "Pengeluaran").forEachIndexed { index, label ->
+                        val on = selectedTabIndex == index
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .heightIn(min = 40.dp)
+                                .clip(CircleShape)
+                                .background(if (on) MaterialTheme.colorScheme.surface else Color.Transparent)
+                                .selectable(selected = on, role = Role.Tab) { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (isAmountVisible) totalPemasukanFormatted else "Rp ●●●●●●●",
-                                style = AppTheme.typography.heading4Bold,
-                                color = AppTheme.colors.onHero
+                                label,
+                                style = AppTheme.typography.paragraph2Semibold,
+                                color = if (on) AppTheme.colors.deep else AppTheme.colors.onHero
                             )
-                            IconButton(
-                                onClick = onToggleAmountVisibility,
-                                colors = IconButtonDefaults.iconButtonColors(
-                                    containerColor = AppTheme.colors.onHero.copy(alpha = 0.2f)
-                                )
-                            ) {
-                                Icon(
-                                    imageVector = if (isAmountVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
-                                    contentDescription = if (isAmountVisible) "Sembunyikan jumlah" else "Tampilkan jumlah",
-                                    tint = AppTheme.colors.onHero
-                                )
-                            }
                         }
-                        Text(
-                            text = "Terakhir diperbarui: ${getCurrentDateTime()}",
-                            style = AppTheme.typography.paragraph2,
-                            color = AppTheme.colors.onHero.copy(alpha = 0.85f)
-                        )
-                    }
-            }
-
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                ,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // Hitung total untuk setiap kategori pembayaran
-            val tunaiTotal = displayPemasukan
-                .filter { it.payment_method.equals("Tunai", ignoreCase = true) }
-                .sumOf { it.total_amount.replace("Rp ", "", ignoreCase = true).toDoubleOrNull() ?: 0.0 }
-
-            val digitalTotal = displayPemasukan
-                .filter { it.payment_method.equals("Digital", ignoreCase = true) }
-                .sumOf { it.total_amount.replace("Rp ", "", ignoreCase = true).toDoubleOrNull() ?: 0.0 }
-
-            val depositTotal = displayPemasukan
-                .filter { it.payment_method.equals("Deposit", ignoreCase = true) }
-                .sumOf { it.total_amount.replace("Rp ", "", ignoreCase = true).toDoubleOrNull() ?: 0.0 }
-
-            // Card untuk Tunai
-            Card(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 4.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Tunai",
-                        style = AppTheme.typography.paragraph2,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = if (isAmountVisible) "Rp ${NumberFormat.getNumberInstance(Locale("id")).format(tunaiTotal)}" else "Rp ●●●",
-                        style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            // Card untuk Digital
-            Card(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 2.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Digital",
-                        style = AppTheme.typography.paragraph2,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = if (isAmountVisible) "Rp ${NumberFormat.getNumberInstance(Locale("id")).format(digitalTotal)}" else "Rp ●●●",
-                        style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            // Card untuk Deposit
-            Card(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 4.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Deposit",
-                        style = AppTheme.typography.paragraph2,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = if (isAmountVisible) "Rp ${NumberFormat.getNumberInstance(Locale("id")).format(depositTotal)}" else "Rp ●●●",
-                        style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Search Bar
-        SearchBarMenu(
-            query = query,
-            onQueryChange = onQueryChange,
-            placeholder = "Cari Transaksi",
-            onFilterClick = onFilterClick
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Riwayat Transaksi Header
-        Text(
-            text = "Riwayat Transaksi",
-            style = AppTheme.typography.paragraph1Medium,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
-        ){
-            if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-
-                }
-            } else if (errorPemasukan != null) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "$errorPemasukan",
-                        style = AppTheme.typography.paragraph1,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else if (displayPemasukan.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Tidak ada data pemasukan",
-                        style = AppTheme.typography.paragraph1,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(displayPemasukan) { transaction ->
-                        TransaksiItem(transaction)
-                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
             }
-            PullToRefreshDefaults.Indicator(
-                isRefreshing = refreshing,
-                state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter),
-                containerColor = MaterialTheme.colorScheme.primary,
-                color = MaterialTheme.colorScheme.onPrimary
-            )
+            HorizontalPager(
+                state = pagerState,
+                // Card overlaps the band, like Beranda
+                modifier = Modifier.fillMaxWidth().weight(1f).offset(y = (-56).dp)
+            ) { page ->
+                val pemasukan = page == 0
+                RekapPage(
+                    totalLabel = if (pemasukan) "Total pemasukan" else "Total pengeluaran",
+                    total = if (pemasukan) totalPemasukan else totalPengeluaran,
+                    isAmountVisible = isAmountVisible,
+                    onToggleAmountVisibility = { isAmountVisible = !isAmountVisible },
+                    breakdown = if (pemasukan) allPemasukan.groupBy { it.payment_method.lowercase() }
+                        .mapValues { (_, v) -> v.sumOf { it.total_amount.toDoubleOrNull() ?: 0.0 } } else null,
+                    query = if (pemasukan) searchQuery else searchQueryPeng,
+                    onQueryChange = { newQuery ->
+                        viewModel.updateSearchQuery(newQuery)
+                        if (pemasukan) {
+                            searchQuery = newQuery
+                            if (newQuery.isEmpty()) viewModel.fetchAllPemasukanAcrossPages(start, end) else viewModel.searchRekapPemasukan(newQuery, start, end)
+                        } else {
+                            searchQueryPeng = newQuery
+                            if (newQuery.isEmpty()) viewModel.fetchAllPengeluaranAcrossPages(currentRekapPengeluaranStartDate, currentRekapPengeluaranEndDate)
+                            else viewModel.searchRekapPengeluaran(newQuery, currentRekapPengeluaranStartDate, currentRekapPengeluaranEndDate)
+                        }
+                    },
+                    historyTitle = if (pemasukan) "Riwayat pemasukan" else "Riwayat pengeluaran",
+                    isLoading = isLoading,
+                    error = if (pemasukan) errorPemasukan else errorPengeluaran,
+                    emptyText = if (pemasukan) "Tidak ada data pemasukan" else "Tidak ada data pengeluaran",
+                    refreshing = refreshing,
+                    onRefresh = ::refresh,
+                    rows = if (pemasukan) allPemasukan.map { t ->
+                        RekapRow(t.nama_transaksi, "${formatJamSaja(t.created_at)}, ${t.payment_method.lowercase()}", formatRupiah(t.total_amount).replace("Rp ", "Rp"), t.payment_method)
+                    } else allPengeluaran.map { t ->
+                        RekapRow(t.nama_transaksi, formatTanggalSaja(t.created_at), formatRupiahMines(t.total_amount).replace("-Rp ", "−Rp"), null)
+                    }
+                )
+            }
         }
+    }
+
+    if (showDates) {
+        DateRangeSheet(
+            initialStart = start,
+            initialEnd = end,
+            onDismiss = { showDates = false },
+            onToday = { showDates = false; applyDates(today, today) },
+            onApply = { s, e -> showDates = false; applyDates(s, e) }
+        )
     }
 }
 
+private class RekapRow(val name: String?, val meta: String, val amount: String, val method: String?)
+
+private fun rangeLabel(start: String, end: String, today: String): String {
+    if (start == today && end == today) return "Hari ini"
+    val fmt = DateTimeFormatter.ofPattern("d MMM", Locale("id", "ID"))
+    fun d(v: String) = runCatching { LocalDate.parse(v).format(fmt) }.getOrDefault(v)
+    return if (start == end) d(start) else "${d(start)} – ${d(end)}"
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PengeluaranContent(
-    totalPengeluaranFormatted: String,
+private fun RekapPage(
+    totalLabel: String,
+    total: Double,
     isAmountVisible: Boolean,
     onToggleAmountVisibility: () -> Unit,
+    breakdown: Map<String, Double>?,
     query: String,
     onQueryChange: (String) -> Unit,
-    onFilterClick: () -> Unit,
+    historyTitle: String,
     isLoading: Boolean,
     error: String?,
-    displayPengeluaran: List<TransactionPengeluaran>,
-    viewModel: TransaksiViewModel = hiltViewModel()
+    emptyText: String,
+    refreshing: Boolean,
+    onRefresh: () -> Unit,
+    rows: List<RekapRow>,
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "Gradient Animation")
-    val errorPengeluaran by viewModel.errorPengeluaran.collectAsState()
-
-    val animatedOffset = if (rememberReduceMotion()) 1000f else infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f, // besar nilai ini mempengaruhi kecepatan
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 10000, easing = LinearEasing), // 10 detik
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "Offset Animation"
-    ).value
-
-    val animatedBrush = Brush.linearGradient(
-        colors = AppTheme.colors.hero,
-        start = Offset(0f, 0f),
-        end = Offset(animatedOffset, animatedOffset)
-    )
-
-    var searchText by remember { mutableStateOf(query) }
-
-    var refreshing by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
-
-    fun refresh() {
-        coroutineScope.launch {
-            refreshing = true
-            delay(800)
-            refreshing = false
-        }
-    }
     val pullRefreshState = rememberPullToRefreshState()
-
-    LaunchedEffect(isLoading) {
-        refreshing = isLoading
-        if (!isLoading) {
-            delay(800)
-            refreshing = false
-        }
-    }
-
-    // Sync with external query changes
-    LaunchedEffect(query) {
-        if (query != searchText) {
-            searchText = query
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 22.dp)
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp, bottom = 16.dp),
-            shape = RoundedCornerShape(20.dp), // Membuat card lebih melengkung
-            colors = CardDefaults.cardColors(
-                containerColor = Color.Transparent // karena kita pakai background
-            ),
-            elevation = CardDefaults.cardElevation(8.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        animatedBrush,
-                        shape = RoundedCornerShape(20.dp)
-                    )
-            ) {
+    fun rp(v: Double) = if (isAmountVisible) formatRupiah(v.toString()).replace("Rp ", "Rp") else "Rp●●●●"
+    Box(Modifier.fillMaxSize().pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = onRefresh)) {
+        LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 136.dp)) {
+            item {
                 Column(
-                    modifier = Modifier
+                    Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .shadow(16.dp, RoundedCornerShape(24.dp), ambientColor = AppTheme.colors.hero.first(), spotColor = AppTheme.colors.hero.first())
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Text(
-                        text = "Total Pengeluaran",
-                        style = AppTheme.typography.paragraph2,
-                        color = AppTheme.colors.onHero
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = if (isAmountVisible) totalPengeluaranFormatted else "Rp ●●●●●●●",
-                            style = AppTheme.typography.heading4Bold,
-                            color = AppTheme.colors.onHero
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(totalLabel, style = AppTheme.typography.paragraph2, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(rp(total), style = AppTheme.typography.paragraph1Bold.copy(fontSize = 28.sp, letterSpacing = (-0.5).sp))
+                        }
                         IconButton(
-                                onClick = onToggleAmountVisibility,
-                                colors = IconButtonDefaults.iconButtonColors(
-                                    containerColor = AppTheme.colors.onHero.copy(alpha = 0.2f)
-                                )
-                            ) {
+                            onClick = onToggleAmountVisibility,
+                            modifier = Modifier.size(44.dp).border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                        ) {
                             Icon(
-                                imageVector = if (isAmountVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
-                                contentDescription = if (isAmountVisible) "Sembunyikan jumlah" else "Tampilkan jumlah",
-                                tint = AppTheme.colors.onHero
+                                if (isAmountVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                                contentDescription = if (isAmountVisible) "Sembunyikan jumlah" else "Tampilkan jumlah"
                             )
                         }
                     }
-                    Text(
-                        text = "Terakhir diperbarui: ${getCurrentDateTime()}",
-                        style = AppTheme.typography.paragraph2,
-                        color = AppTheme.colors.onHero.copy(alpha = 0.85f)
-                    )
+                    breakdown?.let { byMethod ->
+                        val sum = byMethod.values.sum().takeIf { it > 0 } ?: 1.0
+                        listOf(Triple("tunai", "Tunai", AppIcons.cash), Triple("digital", "Digital", AppIcons.qr), Triple("deposit", "Deposit", AppIcons.card)).forEach { (key, label, icon) ->
+                            val v = byMethod[key] ?: 0.0
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Box(Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
+                                    DuoIcon(icon, 22.dp)
+                                }
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Row {
+                                        Text(label, style = AppTheme.typography.paragraph2Semibold, modifier = Modifier.weight(1f))
+                                        Text(rp(v), style = AppTheme.typography.paragraph2Bold)
+                                    }
+                                    LinearProgressIndicator(
+                                        progress = { (v / sum).toFloat() },
+                                        modifier = Modifier.fillMaxWidth().height(6.dp),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        trackColor = MaterialTheme.colorScheme.primaryContainer,
+                                        strokeCap = StrokeCap.Round,
+                                        drawStopIndicator = {}
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
-        }
-
-        // Search Bar
-        SearchBarMenu(
-            query = query,
-            onQueryChange = onQueryChange,
-            placeholder = "Cari Pengeluaran",
-            onFilterClick = onFilterClick
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Riwayat Pengeluaran Header
-        Text(
-            text = "Riwayat Pengeluaran",
-            style = AppTheme.typography.paragraph1Medium,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
-        ){
-            if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-
-                }
-            } else if (errorPengeluaran != null) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "$errorPengeluaran",
-                        style = AppTheme.typography.paragraph1,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else if (displayPengeluaran.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Tidak ada data pengeluaran",
-                        style = AppTheme.typography.paragraph1,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                LazyColumn(
+            item {
+                Spacer(Modifier.height(18.dp))
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    placeholder = { Text("Cari transaksi", style = AppTheme.typography.paragraph2) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    singleLine = true,
+                    shape = CircleShape,
+                    textStyle = AppTheme.typography.paragraph2,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    ),
                     modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(displayPengeluaran) { pengeluaran ->
-                        PengeluaranItem(pengeluaran)
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                }
-            }
-            PullToRefreshDefaults.Indicator(
-                isRefreshing = refreshing,
-                state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter),
-                containerColor = MaterialTheme.colorScheme.primary,
-                color = MaterialTheme.colorScheme.onPrimary
-            )
-        }
-    }
-}
-
-@Composable
-fun TransaksiItem(transaction: TransactionPemasukan) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Row (
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .background(
-                        AppTheme.colors.onHero.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(percent = 50),
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.maki_arrow),
-                    contentDescription = null,
-                    modifier = Modifier.size(30.dp)
                 )
+                Text(historyTitle, style = AppTheme.typography.paragraph1Bold, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Spacer(modifier = Modifier.weight(1f))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    val transactionName = transaction.nama_transaksi.takeIf { !it.isNullOrEmpty() }
-                        ?: "Tanpa nama"
-                    val shortenedName = if (transactionName.length > 14) {
-                        transactionName.take(10) + "…"
-                    } else {
-                        transactionName
-                    }
-
+            when {
+                isLoading && rows.isEmpty() -> {}
+                error != null || rows.isEmpty() -> item {
                     Text(
-                        text = shortenedName,
-                        style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Clip
-                    )
-                    Text(
-                        text = formatJamSaja(transaction.created_at),
-                        style = AppTheme.typography.paragraph2,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = error ?: emptyText,
+                        style = AppTheme.typography.paragraph1,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                        textAlign = TextAlign.Center
                     )
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = formatRupiah(transaction.total_amount),
-                        style = AppTheme.typography.paragraph1Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "#${transaction.payment_method}",
-                        style = AppTheme.typography.paragraph2,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                else -> itemsIndexed(rows) { i, r ->
+                    Row(Modifier.heightIn(min = 64.dp).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        r.method?.let { m ->
+                            Box(Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
+                                DuoIcon(when (m.lowercase()) { "tunai", "cash" -> AppIcons.cash; "deposit" -> AppIcons.card; else -> AppIcons.qr }, 22.dp)
+                            }
+                            Spacer(Modifier.width(12.dp))
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text(r.name.takeIf { !it.isNullOrEmpty() } ?: "Tanpa nama", style = AppTheme.typography.paragraph1Semibold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(r.meta, style = AppTheme.typography.paragraph2, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Text(if (isAmountVisible) r.amount else "Rp●●●", style = AppTheme.typography.paragraph1Bold)
+                    }
+                    if (i < rows.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
         }
+        PullToRefreshDefaults.Indicator(
+            isRefreshing = refreshing,
+            state = pullRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter),
+            containerColor = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.onPrimary
+        )
     }
 }
 
+/** Tanggal mulai / Tanggal selesai, the same range filter the side panel had. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PengeluaranItem(transaction: TransactionPengeluaran) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Row (
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .background(
-                        AppTheme.colors.onHero.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(percent = 50),
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.maki_arrowpengeluaran),
-                    contentDescription = null,
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Spacer(modifier = Modifier.weight(1f))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    val transactionName = transaction.nama_transaksi.takeIf { !it.isNullOrEmpty() }
-                        ?: "Tanpa nama"
-                    val shortenedName = if (transactionName.length > 14) {
-                        transactionName.take(10) + "…"
-                    } else {
-                        transactionName
+private fun DateRangeSheet(
+    initialStart: String,
+    initialEnd: String,
+    onDismiss: () -> Unit,
+    onToday: () -> Unit,
+    onApply: (String, String) -> Unit
+) {
+    val context = LocalContext.current
+    var start by remember { mutableStateOf(LocalDate.parse(initialStart)) }
+    var end by remember { mutableStateOf(LocalDate.parse(initialEnd)) }
+    val fmt = remember { DateTimeFormatter.ofPattern("d MMM yyyy", Locale("id", "ID")) }
+    fun pick(current: LocalDate, onPicked: (LocalDate) -> Unit) {
+        android.app.DatePickerDialog(context, { _, y, m, d -> onPicked(LocalDate.of(y, m + 1, d)) }, current.year, current.monthValue - 1, current.dayOfMonth).show()
+    }
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surface) {
+        Column(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("Pilih tanggal", style = AppTheme.typography.heading5Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                listOf("Tanggal mulai" to start, "Tanggal selesai" to end).forEachIndexed { i, (label, date) ->
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(label, style = AppTheme.typography.paragraph2Semibold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        OutlinedButton(
+                            onClick = { pick(date) { if (i == 0) start = it else end = it } },
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp)
+                        ) {
+                            Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(date.format(fmt), style = AppTheme.typography.paragraph2, color = MaterialTheme.colorScheme.onSurface)
+                        }
                     }
-                    Text(
-                        text = shortenedName,
-                        style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Clip
-                    )
-                    Text(
-                        text = formatTanggalSaja(transaction.created_at),
-                        style = AppTheme.typography.paragraph2,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = formatRupiahMines(transaction.total_amount),
-                        style = AppTheme.typography.paragraph1Bold,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Text(
-                        text = "#${transaction.payment_method}",
-                        style = AppTheme.typography.paragraph2,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            }
+            if (end.isBefore(start)) {
+                Text("Tanggal selesai harus sama atau setelah tanggal mulai.", style = AppTheme.typography.paragraph2, color = MaterialTheme.colorScheme.error)
+            } else {
+                Text("Berlaku untuk tab yang sedang dibuka, juga untuk Unduh PDF.", style = AppTheme.typography.paragraph2, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onToday, shape = CircleShape, modifier = Modifier.weight(1f).heightIn(min = 52.dp)) {
+                    Text("Hari ini lagi", style = AppTheme.typography.paragraph1Bold)
                 }
+                Button(
+                    onClick = { onApply(start.toString(), end.toString()) },
+                    enabled = !end.isBefore(start),
+                    shape = CircleShape,
+                    modifier = Modifier.weight(1.4f).heightIn(min = 52.dp)
+                ) { Text("Pakai", style = AppTheme.typography.paragraph1Bold) }
             }
         }
     }
