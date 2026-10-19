@@ -1,4 +1,9 @@
 package dev.codcow.kasirku.features.kategoriManager.ui.screens
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBarsPadding
+import dev.codcow.kasirku.ui.components.GreenBand
+import dev.codcow.kasirku.ui.components.SearchPill
+import dev.codcow.kasirku.ui.components.fullBleed
 
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
@@ -105,6 +110,7 @@ fun KategoriManager(
     val pullRefreshState = rememberPullToRefreshState()
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             CustomBottomNavigation(navController = navController)
         },
@@ -132,13 +138,14 @@ fun KategoriManager(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 30.dp, vertical = 30.dp)
+                    .padding(horizontal = 20.dp)
             ) {
-                WelcomeTopBar(navController = navController)
-                Spacer(modifier = Modifier.height(14.dp))
-
-                SearchBar(
-                    query = query,
+                GreenBand(
+                    title = "Kategori",
+                    onBack = { navController.popBackStack() },
+                    modifier = Modifier.fullBleed(20.dp).background(AppTheme.colors.hero.first()).statusBarsPadding()
+                ) {
+                    SearchPill(query = query,
                     onQueryChange = { newQuery ->
                         // Tambahkan log untuk debugging
                         Log.d("SearchDebug", "Query Changed: $newQuery")
@@ -151,8 +158,10 @@ fun KategoriManager(
                             viewModel.searchKategoriItems(newQuery)
                         }
                     },
-                    placeholder = "Cari Kategori"
-                )
+                    placeholder = "Cari kategori"
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Box(

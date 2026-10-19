@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.deposit.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -74,25 +75,7 @@ fun EditDeposit(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Edit Deposit Customer",
-                        style = AppTheme.typography.labelBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
+            BandTopBar(title = "Ubah deposit", onBack = onNavigateBack)
         }
     ) { paddingValues ->
         Column(
@@ -230,7 +213,8 @@ fun EditDeposit(
                     .padding(bottom = 16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 enabled = !isLoading && namaDeposit.isNotBlank() && phoneDeposit.isNotBlank() && balance.isNotBlank()
             ) {
@@ -242,8 +226,7 @@ fun EditDeposit(
                 } else {
                     Text(
                         text = "Simpan",
-                        style = AppTheme.typography.paragraph1,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        style = AppTheme.typography.paragraph1
                     )
                 }
             }

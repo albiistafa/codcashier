@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import android.annotation.SuppressLint
 import android.util.Log
@@ -118,26 +119,7 @@ fun DetailPesananScreenUpdate(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Update Pesanan",
-                        style = AppTheme.typography.labelBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
+            BandTopBar(title = "Bayar pesanan", onBack = onNavigateBack)
         },
         bottomBar = {
             if (transaction != null) {

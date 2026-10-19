@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.subKategoriManager.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
@@ -61,25 +62,7 @@ fun EditSubKategori(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Edit Sub-Kategori",
-                        style = AppTheme.typography.labelBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
+            BandTopBar(title = "Ubah subkategori", onBack = onNavigateBack)
         }
     ) { paddingValues ->
         Column(
@@ -208,7 +191,8 @@ fun EditSubKategori(
                     .padding(bottom = 16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 enabled = !isLoading && namaKategori.isNotBlank() && selectedCategoryId != null
             ) {
@@ -220,8 +204,7 @@ fun EditSubKategori(
                 } else {
                     Text(
                         text = "Simpan",
-                        style = AppTheme.typography.paragraph1,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        style = AppTheme.typography.paragraph1
                     )
                 }
             }

@@ -1,6 +1,9 @@
 package dev.codcow.kasirku.ui.theme
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -32,6 +35,13 @@ fun AppTheme(
     ) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+            // v3 shapes: inputs 16, cards 24, sheets 28
+            shapes = Shapes(
+                extraSmall = RoundedCornerShape(16.dp),
+                small = RoundedCornerShape(16.dp),
+                medium = RoundedCornerShape(24.dp),
+                large = RoundedCornerShape(28.dp)
+            ),
             content = content
         )
     }

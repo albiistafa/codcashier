@@ -6,6 +6,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -34,9 +35,9 @@ fun MenuCard(
     onEditClick: (Int) -> Unit ,
     onDeleteClick: (Int) -> Unit) {
     Card(
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
     ) {
@@ -51,7 +52,7 @@ fun MenuCard(
                 photo = menu.photo,
                 modifier = Modifier
                     .size(102.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(14.dp))
             )
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -104,10 +105,10 @@ fun MenuCard(
 @Composable
 fun Chip(text: String) {
     Surface(
-        shape = RoundedCornerShape(10.dp),
+        shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = Modifier
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
             .padding(2.dp)
     ) {
         Text(

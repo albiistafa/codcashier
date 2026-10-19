@@ -1,4 +1,9 @@
 package dev.codcow.kasirku.kategoriManager.ui.screens
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBarsPadding
+import dev.codcow.kasirku.ui.components.GreenBand
+import dev.codcow.kasirku.ui.components.SearchPill
+import dev.codcow.kasirku.ui.components.fullBleed
 
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
@@ -108,6 +113,7 @@ fun SubKategoriManager(
     val pullRefreshState = rememberPullToRefreshState()
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             CustomBottomNavigation(navController = navController)
         },
@@ -135,13 +141,14 @@ fun SubKategoriManager(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 30.dp, vertical = 30.dp)
+                    .padding(horizontal = 20.dp)
             ) {
-                WelcomeTopBar(navController = navController)
-                Spacer(modifier = Modifier.height(14.dp))
-
-                SearchBar(
-                    query = query,
+                GreenBand(
+                    title = "Subkategori",
+                    onBack = { navController.popBackStack() },
+                    modifier = Modifier.fullBleed(20.dp).background(AppTheme.colors.hero.first()).statusBarsPadding()
+                ) {
+                    SearchPill(query = query,
                     onQueryChange = { newQuery ->
                         Log.d("SearchDebug", "Query Changed: $newQuery")
                         // Cek apakah string pencarian benar-benar kosong
@@ -153,8 +160,10 @@ fun SubKategoriManager(
                             viewModel.searchSubKategoriItems(newQuery)
                         }
                     },
-                    placeholder = "Cari Sub Kategori"
-                )
+                    placeholder = "Cari subkategori"
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Box(

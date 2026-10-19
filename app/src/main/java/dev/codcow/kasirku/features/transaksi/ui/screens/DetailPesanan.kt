@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import androidx.compose.foundation.border
 import android.annotation.SuppressLint
@@ -71,25 +72,7 @@ fun DetailPesananScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Detail Pesanan",
-                        style = AppTheme.typography.labelBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = {navController.popBackStack()}) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
+            BandTopBar(title = "Pesanan", onBack = {navController.popBackStack()})
         }
     ) { paddingValues ->
         CheckoutPane(
@@ -219,9 +202,11 @@ fun CheckoutPane(
                 onClick = { showPay = true },
                 enabled = hasItems,
                 shape = RoundedCornerShape(28.dp),
+                // Kunyit: the money action, same as Bayar on the struk bar
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.money, contentColor = AppTheme.colors.onMoney),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
             ) {
-                Text("Bayar", style = AppTheme.typography.paragraph1Semibold)
+                Text("Bayar", style = AppTheme.typography.paragraph1Bold)
             }
         }
     }

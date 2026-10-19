@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import dev.codcow.kasirku.ui.components.BandPill
 import dev.codcow.kasirku.ui.components.GreenBand
 import dev.codcow.kasirku.ui.components.SearchPill
+import dev.codcow.kasirku.ui.components.fullBleed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -292,13 +293,6 @@ fun MenuPegawai(
             )
         }
     }
-}
-
-/** Lets a header inside the padded grid paint edge to edge. */
-private fun Modifier.fullBleed(inset: Dp) = layout { measurable, constraints ->
-    val extra = inset.roundToPx() * 2
-    val placeable = measurable.measure(constraints.copy(minWidth = constraints.maxWidth + extra, maxWidth = constraints.maxWidth + extra))
-    layout(placeable.width - extra, placeable.height) { placeable.place(-extra / 2, 0) }
 }
 
 /** Green band like Beranda: title, unpaid shortcut, and the search pill. */

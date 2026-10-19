@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import android.annotation.SuppressLint
 import android.util.Log
@@ -62,25 +63,7 @@ fun DetailPesananScreenSelesai(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Detail Pesanan",
-                        style = AppTheme.typography.labelBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
+            BandTopBar(title = "Detail pesanan", onBack = onNavigateBack)
         }
     ) { paddingValues ->
         // Main content in a scrollable column

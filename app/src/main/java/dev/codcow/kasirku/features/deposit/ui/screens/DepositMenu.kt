@@ -1,4 +1,9 @@
 package dev.codcow.kasirku.features.deposit.ui.screens
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBarsPadding
+import dev.codcow.kasirku.ui.components.GreenBand
+import dev.codcow.kasirku.ui.components.SearchPill
+import dev.codcow.kasirku.ui.components.fullBleed
 
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
@@ -109,6 +114,7 @@ fun DepositManager(
     val pullRefreshState = rememberPullToRefreshState()
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             CustomBottomNavigation(navController = navController)
         },
@@ -136,13 +142,14 @@ fun DepositManager(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 30.dp, vertical = 30.dp)
+                    .padding(horizontal = 20.dp)
             ) {
-                WelcomeTopBar(navController = navController)
-                Spacer(modifier = Modifier.height(14.dp))
-
-                SearchBar(
-                    query = query,
+                GreenBand(
+                    title = "Deposit",
+                    onBack = { navController.popBackStack() },
+                    modifier = Modifier.fullBleed(20.dp).background(AppTheme.colors.hero.first()).statusBarsPadding()
+                ) {
+                    SearchPill(query = query,
                     onQueryChange = { newQuery ->
                         // Tambahkan log untuk debugging
                         Log.d("SearchDebug", "Query Changed: $newQuery")
@@ -155,8 +162,10 @@ fun DepositManager(
                             viewModel.searchDepositItems(newQuery)
                         }
                     },
-                    placeholder = "Cari Deposit"
-                )
+                    placeholder = "Cari pelanggan deposit"
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Box(
@@ -253,7 +262,8 @@ fun DepositManager(
                                     enabled = isAmountValid,
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = MaterialTheme.colorScheme.primary,
-                                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                                        disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     ),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {

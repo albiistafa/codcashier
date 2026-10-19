@@ -1,4 +1,9 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBarsPadding
+import dev.codcow.kasirku.ui.components.GreenBand
+import dev.codcow.kasirku.ui.components.SearchPill
+import dev.codcow.kasirku.ui.components.fullBleed
 
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
@@ -128,6 +133,7 @@ fun MenuManager(
     val pullRefreshState = rememberPullToRefreshState()
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             CustomBottomNavigation(navController = navController)
         },
@@ -155,20 +161,23 @@ fun MenuManager(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 24.dp)
+                    .padding(horizontal = 20.dp)
             ) {
-                WelcomeTopBar(navController = navController)
-                Spacer(modifier = Modifier.height(14.dp))
-
-                SearchBarMenu(
-                    query = query,
+                GreenBand(
+                    title = "Menu",
+                    onBack = { navController.popBackStack() },
+                    modifier = Modifier.fullBleed(20.dp).background(AppTheme.colors.hero.first()).statusBarsPadding()
+                ) {
+                    SearchPill(query = query,
                     onQueryChange = { newQuery ->
                         query = newQuery
                         viewModel.searchMenuItems(newQuery)
                     },
-                    placeholder = "Cari Menu",
+                    placeholder = "Cari menu",
                     onFilterClick = { showFilter = true }
-                )
+                    )
+                }
+
 
                 Spacer(modifier = Modifier.height(14.dp))
 

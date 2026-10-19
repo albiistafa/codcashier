@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.deposit.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
@@ -47,25 +48,7 @@ fun CreateDeposit(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        text = "Catat Deposit Customer",
-                        style = AppTheme.typography.labelBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
+            BandTopBar(title = "Catat deposit", onBack = onNavigateBack)
         }
     ) { paddingValues ->
         Column(
@@ -212,7 +195,8 @@ fun CreateDeposit(
                     .padding(bottom = 16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 enabled = !isLoading && namaDeposit.isNotBlank() && phoneDeposit.isNotBlank() && balance.isNotBlank()
             ) {
@@ -224,8 +208,7 @@ fun CreateDeposit(
                 } else {
                     Text(
                         text = "Simpan",
-                        style = AppTheme.typography.paragraph1,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        style = AppTheme.typography.paragraph1
                     )
                 }
             }

@@ -18,7 +18,8 @@ val LightColorScheme = lightColorScheme(
     // Selected segments, chips and nav indicators use secondaryContainer: keep them in the leaf family
     secondaryContainer = Color(0xFFE2EAC8),
     onSecondaryContainer = Color(0xFF263604),
-    background = Color.White,
+    // v3: pages sit on a pale leaf tint; cards and fields stay white (surface) on top of it
+    background = Color(0xFFF3F6EA),
     onBackground = Color(0xFF20251A),
     surface = Color.White,
     onSurface = Color(0xFF20251A),

@@ -124,18 +124,16 @@ sealed class Screen(val route: String) {
     }
 }
 
-private val greenTopRoutes = setOf(Screen.Home.route, Screen.Menu.route, Screen.DetailPembayaran.route, Screen.Transaksi.route, Screen.Rekap.route, Screen.Splash.route)
-
 @Composable
 fun AppNavGraph(startDestination: String = Screen.Splash.route) {
     val navController = rememberNavController()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     // ponytail: mirrors the screens that render CustomBottomNavigation; add a route here when a screen gains it
     val showRail = isWideWindow() && currentRoute in railRoutes
-    // Screens with the green band behind the status bar need white status-bar icons
+    // Every screen but Login has the green band behind the status bar: white status-bar icons
     val view = LocalView.current
     val darkTheme = isSystemInDarkTheme()
-    val greenTop = currentRoute in greenTopRoutes
+    val greenTop = currentRoute != null && currentRoute != Screen.Login.route
     if (!view.isInEditMode) SideEffect {
         WindowCompat.getInsetsController((view.context as Activity).window, view).isAppearanceLightStatusBars = !darkTheme && !greenTop
     }

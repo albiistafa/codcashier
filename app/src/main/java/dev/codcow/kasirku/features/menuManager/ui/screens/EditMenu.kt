@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import android.net.Uri
 import android.util.Log
@@ -130,23 +131,7 @@ fun EditMenuScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Edit Menu",
-                        style = AppTheme.typography.labelBold,
-                        textAlign = TextAlign.Center
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
+            BandTopBar(title = "Ubah menu", onBack = { navController.navigateUp() })
         },
         content = { paddingValues ->
             Column(

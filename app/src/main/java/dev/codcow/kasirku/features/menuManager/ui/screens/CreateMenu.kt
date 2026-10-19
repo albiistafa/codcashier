@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -112,23 +113,7 @@ fun BuatMenuScreen(
             .background(MaterialTheme.colorScheme.surface)
     ) {
         // Top Bar
-        TopAppBar(
-            title = {
-                Text(
-                    "Buat Menu",
-                    style = AppTheme.typography.labelBold,
-                    textAlign = TextAlign.Center
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
-        )
+        BandTopBar(title = "Tambah menu", onBack = onNavigateBack)
 
         HorizontalDivider()
 
@@ -424,11 +409,12 @@ fun BuatMenuScreen(
                 .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ),
             enabled = menuName.isNotEmpty() && price.isNotEmpty() && selectedCategoryId != null
         ) {
-            Text("Buat Menu", color = MaterialTheme.colorScheme.onPrimary, style = AppTheme.typography.paragraph1)
+            Text("Buat Menu", style = AppTheme.typography.paragraph1)
         }
     }
 

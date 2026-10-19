@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.warung.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import android.net.Uri
 import android.util.Log
@@ -58,25 +59,7 @@ fun EditWarung(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        text = "Edit Nama Warung",
-                        style = AppTheme.typography.labelBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
+            BandTopBar(title = "Nama warung", onBack = { navController.navigateUp() })
         }
     ) { paddingValues ->
         Column(
@@ -142,7 +125,8 @@ fun EditWarung(
                     .padding(bottom = 16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 enabled = !isLoading && warung.isNotBlank()
             ) {
@@ -154,8 +138,7 @@ fun EditWarung(
                 } else {
                     Text(
                         text = "Simpan",
-                        style = AppTheme.typography.paragraph1,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        style = AppTheme.typography.paragraph1
                     )
                 }
             }

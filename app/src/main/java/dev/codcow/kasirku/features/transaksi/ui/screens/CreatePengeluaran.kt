@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.background
@@ -74,25 +75,7 @@ fun CreatePengeluaran(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Tambah Pengeluaran",
-                        style = AppTheme.typography.labelBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
+            BandTopBar(title = "Catat pengeluaran", onBack = onNavigateBack)
         }
     ) { paddingValues ->
         Column(
@@ -240,7 +223,8 @@ fun CreatePengeluaran(
                     .padding(bottom = 16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 enabled = !isLoading && namaNota.isNotBlank() && hargaNota.isNotBlank() && tanggalPengeluaran.isNotBlank()
             ) {
@@ -252,8 +236,7 @@ fun CreatePengeluaran(
                 } else {
                     Text(
                         text = "Simpan",
-                        style = AppTheme.typography.paragraph1,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        style = AppTheme.typography.paragraph1
                     )
                 }
             }
