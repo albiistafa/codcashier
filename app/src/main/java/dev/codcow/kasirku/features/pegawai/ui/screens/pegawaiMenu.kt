@@ -1,4 +1,7 @@
 package dev.codcow.kasirku.features.pegawai.ui.screens
+import dev.codcow.kasirku.ui.components.ListHint
+import dev.codcow.kasirku.ui.components.AddFab
+import androidx.compose.foundation.lazy.itemsIndexed
 import dev.codcow.kasirku.ui.components.ConfirmDialog
 import dev.codcow.kasirku.ui.components.ErrorState
 import androidx.compose.foundation.layout.WindowInsets
@@ -103,22 +106,8 @@ fun PegawaiManager(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            CustomBottomNavigation(navController = navController)
-        },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate("create_pegawai") },
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Kategori",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
+            AddFab("Tambah pegawai") { navController.navigate("create_pegawai") }
         }
     ) { paddingValues ->
         Box(
@@ -163,8 +152,7 @@ fun PegawaiManager(
                 ) {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp)
+                                                contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp)
                     ) {
                         when {
                             isLoading -> item {
@@ -174,12 +162,12 @@ fun PegawaiManager(
                                 ErrorState(message = error ?: "", onRetry = { viewModel.fetchPegawaiItems() })
                             }
                             else -> {
-                                items(pegawaiItems, key = { it.id }) { pegawai ->
+                                item { ListHint("Pegawai bisa membuka Kasir, Transaksi, dan Rekap") }
+itemsIndexed(pegawaiItems, key = { _, it -> it.id }) { i, pegawai ->
                                     PegawaiItem(
+                                        index = i,
+                                        count = pegawaiItems.size,
                                         pegawai = pegawai,
-                                        onEditClick = { id ->
-                                            navController.navigate("edit_kategori/$id")
-                                        },
                                         onDeleteClick = { id ->
                                             selectedPegawaiId = id
                                             showDeleteDialog = true }

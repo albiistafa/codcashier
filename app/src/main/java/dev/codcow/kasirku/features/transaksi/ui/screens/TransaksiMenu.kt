@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import androidx.compose.foundation.lazy.itemsIndexed
 import dev.codcow.kasirku.ui.components.ConfirmDialog
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -404,24 +405,7 @@ fun TransaksiManager(
     }
 
     Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            CustomBottomNavigation(navController = navController)
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showDeletePeriodeDialog = true },
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Hapus Periode",
-                    tint = MaterialTheme.colorScheme.onError
-                )
-            }
-        }
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -445,7 +429,7 @@ fun TransaksiManager(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     FilterChip(
                         selected = isPendingActive,
@@ -455,19 +439,15 @@ fun TransaksiManager(
                         },
                         label = {
                             Text(
-                                "Pending",
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center
+                                "Belum dibayar",
+                                maxLines = 1
                             )
                         },
-                        modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp))
 
                     FilterChip(
                         selected = isLunasActive,
@@ -478,18 +458,14 @@ fun TransaksiManager(
                         label = {
                             Text(
                                 "Lunas",
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center
+                                maxLines = 1
                             )
                         },
-                        modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp))
 
                     FilterChip(
                         selected = isDateActive,
@@ -521,7 +497,6 @@ fun TransaksiManager(
                                 )
                             }
                         },
-                        modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimary
@@ -557,22 +532,23 @@ fun TransaksiManager(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(MaterialTheme.colorScheme.background),
-                            contentPadding = PaddingValues(bottom = 80.dp, top = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                            contentPadding = PaddingValues(bottom = 24.dp, top = 10.dp)
                         ) {
                             if (allTransactions.isNotEmpty()) {
                                 item {
                                     Text(
-                                        text = "Semua Transaksi",
-                                        style = AppTheme.typography.paragraph1Semibold,
-                                        color = MaterialTheme.colorScheme.primary,
+                                        text = "Transaksi",
+                                        style = AppTheme.typography.paragraph2Semibold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(bottom = 8.dp)
                                     )
                                 }
 
-                                items(allTransactions) { transaksi ->
+                                itemsIndexed(allTransactions) { i, transaksi ->
                                     TransaksiItemDelete(
                                         transaksi = transaksi,
+                                        index = i,
+                                        count = allTransactions.size,
                                         onDeleteClick = { id ->
                                             selectedTransaksiId = id
                                             isDeletePengeluaran = false  // Mark as regular transaction deletion
@@ -597,22 +573,36 @@ fun TransaksiManager(
                             if (allPengeluaran.isNotEmpty()) {
                                 item {
                                     Text(
-                                        text = "Semua Pengeluaran",
-                                        style = AppTheme.typography.paragraph1Semibold,
-                                        color = MaterialTheme.colorScheme.primary,
+                                        text = "Pengeluaran",
+                                        style = AppTheme.typography.paragraph2Semibold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(bottom = 8.dp)
                                     )
                                 }
 
-                                items(allPengeluaran) { pengeluaran ->
+                                itemsIndexed(allPengeluaran) { i, pengeluaran ->
                                     TransaksiItemPengeluaran(
                                         pengeluaran = pengeluaran,
+                                        index = i,
+                                        count = allPengeluaran.size,
                                         onDeleteClick = { id ->
                                             selectedTransaksiId = id
                                             isDeletePengeluaran = true  // Mark as pengeluaran deletion
                                             showDeleteDialog = true
                                         }
                                     )
+                                }
+                            }
+
+                            // Deleting a whole period is rare and irreversible: a plain red link at the end, not a floating button
+                            item {
+                                TextButton(
+                                    onClick = { showDeletePeriodeDialog = true },
+                                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 48.dp)
+                                ) {
+                                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Hapus transaksi satu periode…", style = AppTheme.typography.paragraph2Semibold, color = MaterialTheme.colorScheme.error)
                                 }
                             }
 

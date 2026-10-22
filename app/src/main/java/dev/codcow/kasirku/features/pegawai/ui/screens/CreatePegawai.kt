@@ -104,7 +104,7 @@ fun CreatePegawai(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Nomor Pegawai",
+                    text = "Nomor HP",
                     style = AppTheme.typography.paragraph2,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -126,6 +126,8 @@ fun CreatePegawai(
                     .fillMaxWidth()
                     .padding(top = 8.dp),
                 singleLine = true,
+                supportingText = { Text("Dipakai pegawai untuk masuk ke Kasirku", style = AppTheme.typography.paragraph2) },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -175,7 +177,7 @@ fun CreatePegawai(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Konfirmasi Password",
+                    text = "Ulangi password",
                     style = AppTheme.typography.paragraph2,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -219,7 +221,7 @@ fun CreatePegawai(
                 onClick = {
                     // Validate fields
                     if (password != konfirmasiPassword) {
-                        passwordError = "Password tidak sama"
+                        passwordError = "Password belum sama. Ketik ulang password yang sama."
                         return@Button
                     } else {
                         passwordError = null
@@ -258,7 +260,7 @@ fun CreatePegawai(
                     )
                 } else {
                     Text(
-                        text = "Simpan",
+                        text = "Simpan pegawai",
                         style = AppTheme.typography.paragraph1
                     )
                 }

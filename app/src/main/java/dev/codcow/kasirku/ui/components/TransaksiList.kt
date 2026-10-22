@@ -27,101 +27,45 @@ import java.util.Locale
 @Composable
 fun TransaksiItemDelete(
     transaksi: Transaction,
+    index: Int,
+    count: Int,
     onDeleteClick: (Int) -> Unit,
     onItemClick: (Int) -> Unit
 ) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClickLabel = "Lihat detail transaksi", role = Role.Button) { onItemClick(transaksi.id) }
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Column (
-                modifier = Modifier.weight(1f)
-            ){
-                Text(
-                    text = transaksi.nama_transaksi ,
-                    style = AppTheme.typography.paragraph1Semibold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                    text = formatTanggalSaja(transaksi.created_at),
-                    style = AppTheme.typography.paragraph2,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                    text = formatRupiah(transaksi.total_amount),
-                    style = AppTheme.typography.paragraph2,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            // Tombol Delete
-            IconButton(onClick = { onDeleteClick(transaksi.id) }) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
+    val pending = transaksi.status.equals("pending", ignoreCase = true)
+    val method = transaksi.payment_method.orEmpty().lowercase()
+    AdminRow(
+        index = index, count = count,
+        title = transaksi.nama_transaksi.ifBlank { "Tanpa nama" },
+        subtitle = listOf(formatTanggalSaja(transaksi.created_at), method, if (pending) "belum dibayar" else "lunas")
+            .filter { it.isNotBlank() }.joinToString(", "),
+        // Only unpaid orders open (to be paid), as before
+        onClick = if (pending) ({ onItemClick(transaksi.id) }) else null,
+        leading = { RowIcon(when (method) { "tunai", "cash" -> AppIcons.cash; "deposit" -> AppIcons.card; else -> AppIcons.qr }) },
+        trailing = {
+            Text(formatRupiah(transaksi.total_amount).replace("Rp ", "Rp"), style = AppTheme.typography.paragraph1Bold)
+            DeleteButton(transaksi.nama_transaksi) { onDeleteClick(transaksi.id) }
         }
-    }
+    )
 }
 
 @Composable
 fun TransaksiItemPengeluaran(
     pengeluaran: TransactionPengeluaran,
+    index: Int,
+    count: Int,
     onDeleteClick: (Int) -> Unit
 ) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier
-            .fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = pengeluaran.nama_transaksi,
-                    style = AppTheme.typography.paragraph1Semibold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                    text = formatRupiah(pengeluaran.total_amount),
-                    style = AppTheme.typography.paragraph2,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            IconButton(onClick = { onDeleteClick(pengeluaran.id) }) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
+    AdminRow(
+        index = index, count = count,
+        title = pengeluaran.nama_transaksi.ifBlank { "Tanpa nama" },
+        subtitle = formatTanggalSaja(pengeluaran.created_at),
+        leading = { RowIcon(AppIcons.pengeluaran) },
+        trailing = {
+            Text("−" + formatRupiah(pengeluaran.total_amount).replace("Rp ", "Rp"), style = AppTheme.typography.paragraph1Bold)
+            DeleteButton(pengeluaran.nama_transaksi) { onDeleteClick(pengeluaran.id) }
         }
-    }
+    )
 }
 
 fun formatTanggalSaja(timestamp: String): String {

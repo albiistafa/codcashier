@@ -1,4 +1,8 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
+import dev.codcow.kasirku.ui.components.CategoryChips
+import dev.codcow.kasirku.ui.components.ListHint
+import dev.codcow.kasirku.ui.components.AddFab
+import androidx.compose.foundation.lazy.itemsIndexed
 import dev.codcow.kasirku.ui.components.ConfirmDialog
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -31,7 +35,6 @@ import dev.codcow.kasirku.core.data.model.kategori.FilterChipItem
 import dev.codcow.kasirku.features.beranda.ui.components.SearchBarMenu
 import dev.codcow.kasirku.features.berandaAdmin.ui.screens.currentRoute
 import dev.codcow.kasirku.middleware.Screen
-import dev.codcow.kasirku.ui.components.FilterSidebarMenu
 import dev.codcow.kasirku.ui.components.MenuCard
 import dev.codcow.kasirku.ui.components.WelcomeTopBar
 import dev.codcow.kasirku.ui.theme.AppTheme
@@ -48,10 +51,11 @@ fun MenuManager(
     },
     onEditClick: (Int) -> Unit = {}
 ) {
-    var showFilter by remember { mutableStateOf(false) }
     val menuItems by viewModel.menuItems.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val subCategories by viewModel.subCategories.collectAsState()
+    val selectedCategoryIds by viewModel.selectedCategoryIds.collectAsState()
+    val selectedSubCategoryIds by viewModel.selectedSubCategoryIds.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
@@ -65,10 +69,6 @@ fun MenuManager(
 
     val subCategoryMap = remember(subCategories) {
         subCategories.associate { it.id to it.name }
-    }
-
-    BackHandler(enabled = showFilter) {
-        showFilter = false
     }
 
     var selectedMenuId by remember { mutableStateOf<Int?>(null) }
@@ -121,22 +121,8 @@ fun MenuManager(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            CustomBottomNavigation(navController = navController)
-        },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddClick,
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Item",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
+            AddFab("Tambah menu") { onAddClick() }
         }
     ) { paddingValues ->
         Box(
@@ -160,10 +146,19 @@ fun MenuManager(
                         query = newQuery
                         viewModel.searchMenuItems(newQuery)
                     },
-                    placeholder = "Cari menu",
-                    onFilterClick = { showFilter = true }
+                    placeholder = "Cari menu"
                     )
                 }
+                Spacer(modifier = Modifier.height(4.dp))
+                CategoryChips(
+                    categories = categories,
+                    subCategories = subCategories,
+                    selectedCategoryId = selectedCategoryIds.firstOrNull(),
+                    selectedSubCategoryId = selectedSubCategoryIds.firstOrNull(),
+                    onSelect = { categoryId, subCategoryId ->
+                        viewModel.filterMenuItems(listOfNotNull(categoryId), listOfNotNull(subCategoryId))
+                    }
+                )
 
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -178,10 +173,12 @@ fun MenuManager(
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.background),
                         contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        items(menuItems, key = { it.id }) { menu ->
+                                            ) {
+                        item { ListHint("Ketuk menu untuk mengubah nama, harga, atau fotonya") }
+itemsIndexed(menuItems, key = { _, it -> it.id }) { i, menu ->
                             MenuCard(
+                                        index = i,
+                                        count = menuItems.size,
                                 menu = menu,
                                 categories = categoryMap,
                                 subCategories = subCategoryMap,
@@ -205,27 +202,7 @@ fun MenuManager(
                     )
                 }
             }
-            Box(modifier = Modifier.fillMaxHeight().align(Alignment.TopEnd)) {
-                FilterSidebarMenu(
-                    isVisible = showFilter,
-                    onDismiss = { showFilter = false },
-                    modifier = Modifier.align(Alignment.TopEnd),
-                    categories = viewModel.categories.collectAsState().value.map {
-                        FilterChipItem(it.id, it.name)
-                    },
-                    subCategories = viewModel.subCategories.collectAsState().value.map {
-                        FilterChipItem(it.id, it.name)
-                    },
-                    onResetFilter = {
-                        // Reset filter dengan mengirim list kosong
-                        viewModel.filterMenuItems(emptyList(), emptyList())
-                    },
-                    onApplyFilter = { categoryIds, subCategoryIds ->
-                        // Terapkan filter kategori dan subkategori
-                        viewModel.filterMenuItems(categoryIds, subCategoryIds)
-                    }
-                )
-            }
+
         }
     }
 }

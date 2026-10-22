@@ -97,6 +97,7 @@ fun EditWarung(
                     .fillMaxWidth()
                     .padding(top = 8.dp),
                 singleLine = true,
+                supportingText = { Text("Tampil di Beranda dan di struk", style = AppTheme.typography.paragraph2) },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,

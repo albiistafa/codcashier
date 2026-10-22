@@ -1,82 +1,56 @@
 package dev.codcow.kasirku.ui.components
 
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.semantics.Role
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircleOutline
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.codcow.kasirku.core.data.model.deposit.DataDeposit
 import dev.codcow.kasirku.ui.theme.AppTheme
+import dev.codcow.kasirku.ui.util.formatRupiah
 
+/**
+ * Pelanggan deposit: saldo on the right with an "Isi saldo" money button; tap the row to edit.
+ * Deleting moved to the edit screen so the row holds one action besides opening it.
+ */
 @Composable
 fun DepositItem(
     deposit: DataDeposit,
-    onEditClick: (Int) -> Unit,
-    onDeleteClick: (Int) -> Unit,
-    onItemClick: (Int) -> Unit
+    index: Int,
+    count: Int,
+    onTopUpClick: () -> Unit,
+    onItemClick: () -> Unit
 ) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClickLabel = "Ubah deposit ${deposit.customer_name}", role = Role.Button) { onItemClick(deposit.customer_id) }
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Column (
-                modifier = Modifier.weight(1f)
-            ){
+    val saldo = deposit.balance.toDoubleOrNull() ?: 0.0
+    AdminRow(
+        index = index, count = count,
+        title = deposit.customer_name,
+        subtitle = deposit.phone_number,
+        onClick = onItemClick,
+        leading = { InitialsAvatar(deposit.customer_name) },
+        trailing = {
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = deposit.customer_name ,
-                    style = AppTheme.typography.paragraph1Semibold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    formatRupiah(saldo.toString()).replace("Rp ", "Rp"),
+                    style = AppTheme.typography.paragraph1Bold,
+                    color = if (saldo <= 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                 )
-
-                Text(
-                    text = deposit.phone_number,
-                    style = AppTheme.typography.paragraph2,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-
-
-
-            // Tombol Edit
-            IconButton(onClick = { onEditClick(deposit.customer_id)}) {
-                Icon(
-                    imageVector = Icons.Default.AddCircleOutline,
-                    contentDescription = "Edit",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            // Tombol Delete
-            IconButton(onClick = { onDeleteClick(deposit.id) }) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.error
-                )
+                Button(
+                    onClick = onTopUpClick,
+                    shape = CircleShape,
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.money, contentColor = AppTheme.colors.onMoney),
+                    modifier = Modifier.heightIn(min = 36.dp)
+                ) { Text("Isi saldo", style = AppTheme.typography.paragraph2Semibold) }
             }
         }
-    }
+    )
 }
-

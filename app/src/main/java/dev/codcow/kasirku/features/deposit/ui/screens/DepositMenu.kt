@@ -1,4 +1,13 @@
 package dev.codcow.kasirku.features.deposit.ui.screens
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import dev.codcow.kasirku.ui.util.formatRupiah
+import dev.codcow.kasirku.ui.components.InitialsAvatar
+import dev.codcow.kasirku.ui.components.ListHint
+import dev.codcow.kasirku.ui.components.AddFab
+import androidx.compose.foundation.lazy.itemsIndexed
 import dev.codcow.kasirku.ui.components.ConfirmDialog
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -62,21 +71,7 @@ fun DepositManager(
 
     var selectedDepositId by remember { mutableStateOf<Int?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    if (showDeleteDialog) {
-        ConfirmDialog(
-            title = "Hapus pelanggan deposit?",
-            message = "Data deposit \u201C${depositItems.find { it.id == selectedDepositId }?.customer_name.orEmpty()}\u201D akan dihapus dan tidak bisa dikembalikan.",
-            confirmLabel = "Hapus deposit",
-            destructive = true,
-            onDismiss = { showDeleteDialog = false },
-            onConfirm = {
-                        selectedDepositId?.let { id ->
-                            viewModel.deleteDeposit(id)
-                        }
-                        showDeleteDialog = false
-            }
-        )
-    }
+    
 
     LaunchedEffect(Unit) {
         viewModel.getAllDeposits()
@@ -102,22 +97,8 @@ fun DepositManager(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            CustomBottomNavigation(navController = navController)
-        },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate("create_deposit") },
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Deposit",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
+            AddFab("Tambah pelanggan") { navController.navigate("create_deposit") }
         }
     ) { paddingValues ->
         Box(
@@ -162,8 +143,7 @@ fun DepositManager(
                 ) {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp)
+                                                contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp)
                     ) {
                         when {
                             isLoading -> item {
@@ -171,18 +151,17 @@ fun DepositManager(
                             }
 
                             else -> {
-                                items(depositItems, key = { it.id }) { deposit ->
+                                item { ListHint("Ketuk pelanggan untuk mengubah data atau menghapusnya") }
+itemsIndexed(depositItems, key = { _, it -> it.id }) { i, deposit ->
                                     DepositItem(
+                                        index = i,
+                                        count = depositItems.size,
                                         deposit = deposit,
-                                        onEditClick = {
+                                        onTopUpClick = {
                                             selectedDeposit = deposit
-                                            showTopUpSheet = true},
-                                        onDeleteClick = {
-                                                id ->
-                                            selectedDepositId = deposit.customer_id
-                                            showDeleteDialog = true
+                                            showTopUpSheet = true
                                         },
-                                        onItemClick = {navController.navigate(Screen.EditDeposit.createRoute(deposit.customer_id))}
+                                        onItemClick = { navController.navigate(Screen.EditDeposit.createRoute(deposit.customer_id)) }
                                     )
                                 }
                             }
@@ -210,52 +189,57 @@ fun DepositManager(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(16.dp)
-                            ) {
-                                Text("Top Up untuk: ${selectedDeposit!!.customer_name}",
-                                    style = AppTheme.typography.paragraph1Semibold)
-                                Spacer(modifier = Modifier.height(12.dp))
-
+                            ){
+                                val d = selectedDeposit!!
+                                val now = d.balance.toDoubleOrNull() ?: 0.0
+                                val add = amountText.toLongOrNull() ?: 0L
+                                fun rp(v: Double) = formatRupiah(v.toString()).replace("Rp ", "Rp")
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    InitialsAvatar(d.customer_name)
+                                    Column {
+                                        Text("Isi saldo ${d.customer_name}", style = AppTheme.typography.heading5Bold)
+                                        Text("Saldo sekarang ${rp(now)}", style = AppTheme.typography.paragraph2, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
                                 OutlinedTextField(
                                     value = amountText,
-                                    onValueChange = { newText ->
-                                        // Hanya izinkan angka saja
-                                        if (newText.all { it.isDigit() }) {
-                                            amountText = newText
-                                        }
-                                    },
-                                    label = { Text("Jumlah Top Up") },
-                                    leadingIcon = { Text("Rp", modifier = Modifier.padding(start = 8.dp)) },
-                                    placeholder = { Text("Masukkan nominal dalam angka") },
+                                    onValueChange = { newText -> if (newText.all { it.isDigit() } && newText.length <= 9) amountText = newText },
+                                    label = { Text("Jumlah isi saldo") },
+                                    prefix = { Text("Rp") },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     singleLine = true,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                                    )
+                                    textStyle = AppTheme.typography.heading5Bold,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
-
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Row(
+                                    Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(18.dp)).padding(horizontal = 16.dp, vertical = 14.dp)
+                                ) {
+                                    Text("Saldo setelah diisi", style = AppTheme.typography.paragraph1Semibold, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.weight(1f))
+                                    Text(rp(now + add), style = AppTheme.typography.paragraph1Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                }
                                 Spacer(modifier = Modifier.height(16.dp))
-
                                 Button(
                                     onClick = {
-                                        val amount = amountText.toIntOrNull() ?: 0
-                                        viewModel.topUpBalance(id = selectedDeposit!!.customer_id, amount = amount)
+                                        viewModel.topUpBalance(id = d.customer_id, amount = add.toInt())
                                         showTopUpSheet = false
                                         selectedDeposit = null
                                         amountText = ""
                                     },
                                     enabled = isAmountValid,
+                                    shape = CircleShape,
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        containerColor = AppTheme.colors.money,
+                                        contentColor = AppTheme.colors.onMoney,
                                         disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
-                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     ),
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
                                 ) {
-                                    Text("Konfirmasi Top Up")
+                                    Text(if (add > 0) "Isi saldo ${rp(add.toDouble())}" else "Isi jumlahnya dulu", style = AppTheme.typography.paragraph1Bold)
                                 }
+                                Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
                     }

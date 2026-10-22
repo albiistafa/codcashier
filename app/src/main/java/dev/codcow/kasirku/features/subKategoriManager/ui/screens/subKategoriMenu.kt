@@ -1,4 +1,8 @@
 package dev.codcow.kasirku.kategoriManager.ui.screens
+import dev.codcow.kasirku.features.kategoriManager.ui.screens.KategoriManagerViewModel
+import dev.codcow.kasirku.ui.components.ListHint
+import dev.codcow.kasirku.ui.components.AddFab
+import androidx.compose.foundation.lazy.itemsIndexed
 import dev.codcow.kasirku.ui.components.ConfirmDialog
 import dev.codcow.kasirku.ui.components.ErrorState
 import androidx.compose.foundation.layout.WindowInsets
@@ -43,6 +47,7 @@ import kotlinx.coroutines.launch
 fun SubKategoriManager(
     navController: NavController,
     viewModel: SubKategoriViewModel = hiltViewModel(),
+    kategoriViewModel: KategoriManagerViewModel = hiltViewModel(),
     onAddClick: () -> Unit = {
         navController.navigate(Screen.CreateSubKategori.route)
     },
@@ -74,8 +79,10 @@ fun SubKategoriManager(
         )
     }
 
+    val kategoriItems by kategoriViewModel.kategoriItems.collectAsState()
     LaunchedEffect(Unit) {
         viewModel.fetchSubKategoriItems()
+        kategoriViewModel.fetchKategoriItems()
     }
 
     LaunchedEffect(isLoading) { // Observe perubahan pada isLoading
@@ -102,22 +109,8 @@ fun SubKategoriManager(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            CustomBottomNavigation(navController = navController)
-        },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddClick,
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Sub-Kategori",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
+            AddFab("Tambah subkategori") { onAddClick() }
         }
     ) { paddingValues ->
         Box(
@@ -164,8 +157,7 @@ fun SubKategoriManager(
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.background),
                         contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                                            ) {
                         // Display loading indicator if data is loading
                         if (isLoading) {
                             item {
@@ -180,18 +172,34 @@ fun SubKategoriManager(
                         }
                         // Display subkategori items
                         else {
-                            items(subkategoriItems, key = { it.id }) { subkategori ->
-                                SubKategoriListItem(
-                                    subkategori = subkategori,
-                                    onEditClick = { subKategoriId ->
-                                        navController.navigate("edit_subKategori/$subKategoriId")
-                                    },
-                                    onDeleteClick = { id ->
-                                        selectedSubId = id
-                                        showDeleteDialog = true }
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
+                            item { ListHint("Ketuk subkategori untuk mengganti namanya") }
+// Grouped under their kategori, in the kategori list's order
+                            val names = kategoriItems.associate { it.id to it.name }
+                            subkategoriItems.groupBy { it.category_id }
+                                .toList()
+                                .sortedBy { (catId, _) -> kategoriItems.indexOfFirst { it.id == catId }.let { if (it < 0) Int.MAX_VALUE else it } }
+                                .forEach { (catId, group) ->
+                                    item(key = "cat-$catId") {
+                                        Text(
+                                            names[catId] ?: "Tanpa kategori",
+                                            style = AppTheme.typography.paragraph2Semibold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
+                                        )
+                                    }
+                                    itemsIndexed(group, key = { _, it -> it.id }) { i, subkategori ->
+                                        SubKategoriListItem(
+                                            index = i,
+                                            count = group.size,
+                                            subkategori = subkategori,
+                                            onEditClick = { subKategoriId -> navController.navigate("edit_subKategori/$subKategoriId") },
+                                            onDeleteClick = { id ->
+                                                selectedSubId = id
+                                                showDeleteDialog = true
+                                            }
+                                        )
+                                    }
+                                }
                         }
                     }
 

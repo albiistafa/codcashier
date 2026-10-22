@@ -1,4 +1,6 @@
 package dev.codcow.kasirku.features.deposit.ui.screens
+import androidx.compose.foundation.layout.heightIn
+import dev.codcow.kasirku.ui.components.ConfirmDialog
 import dev.codcow.kasirku.ui.components.BandTopBar
 
 import android.util.Log
@@ -42,6 +44,7 @@ fun EditDeposit(
     val isSuccess by viewModel.isSuccess.collectAsState()
 
     val scope = rememberCoroutineScope()
+    var showDelete by remember { mutableStateOf(false) }
 
     LaunchedEffect(customerId) {
         viewModel.getCustomerById(customerId)
@@ -240,6 +243,25 @@ fun EditDeposit(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
             }
+
+            // Delete lives here, not on the list row, so the row keeps one action besides opening it
+            TextButton(
+                onClick = { showDelete = true },
+                enabled = !isLoading,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) {
+                Text("Hapus pelanggan ini", style = AppTheme.typography.paragraph1Bold, color = MaterialTheme.colorScheme.error)
+            }
         }
+    }
+
+    if (showDelete) {
+        ConfirmDialog(
+            title = "Hapus pelanggan deposit?",
+            message = "Data deposit \u201C${namaDeposit.ifBlank { "pelanggan ini" }}\u201D akan dihapus dan tidak bisa dikembalikan.",
+            confirmLabel = "Hapus deposit",
+            onDismiss = { showDelete = false },
+            onConfirm = { showDelete = false; viewModel.deleteDeposit(customerId) }
+        )
     }
 }

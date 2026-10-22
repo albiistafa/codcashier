@@ -1,4 +1,7 @@
 package dev.codcow.kasirku.features.kategoriManager.ui.screens
+import dev.codcow.kasirku.ui.components.ListHint
+import dev.codcow.kasirku.ui.components.AddFab
+import androidx.compose.foundation.lazy.itemsIndexed
 import dev.codcow.kasirku.ui.components.ConfirmDialog
 import dev.codcow.kasirku.ui.components.ErrorState
 import androidx.compose.foundation.layout.WindowInsets
@@ -99,22 +102,8 @@ fun KategoriManager(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            CustomBottomNavigation(navController = navController)
-        },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate("create_kategori") },
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Kategori",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
+            AddFab("Tambah kategori") { navController.navigate("create_kategori") }
         }
     ) { paddingValues ->
         Box(
@@ -159,8 +148,7 @@ fun KategoriManager(
                 ) {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp)
+                                                contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp)
                     ) {
                         when {
                             isLoading -> item {
@@ -170,8 +158,11 @@ fun KategoriManager(
                                 ErrorState(message = error ?: "", onRetry = { viewModel.fetchKategoriItems() })
                             }
                             else -> {
-                                items(kategoriItems, key = { it.id }) { kategori ->
+                                item { ListHint("Ketuk kategori untuk mengganti namanya") }
+itemsIndexed(kategoriItems, key = { _, it -> it.id }) { i, kategori ->
                                     KategoriListItem(
+                                        index = i,
+                                        count = kategoriItems.size,
                                         kategori = kategori,
                                         onEditClick = { id ->
                                             navController.navigate("edit_kategori/$id")
