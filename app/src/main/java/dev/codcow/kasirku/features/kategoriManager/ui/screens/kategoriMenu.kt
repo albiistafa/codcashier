@@ -1,4 +1,6 @@
 package dev.codcow.kasirku.features.kategoriManager.ui.screens
+import dev.codcow.kasirku.ui.components.ConfirmDialog
+import dev.codcow.kasirku.ui.components.ErrorState
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBarsPadding
 import dev.codcow.kasirku.ui.components.GreenBand
@@ -57,31 +59,17 @@ fun KategoriManager(
     var selectedKategoriId by remember { mutableStateOf<Int?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            title = { Text("Konfirmasi Hapus", style = AppTheme.typography.heading5Bold,
-                color = MaterialTheme.colorScheme.primary) },
-            text = { Text("Apakah Anda yakin ingin menghapus kategori ini?", style = AppTheme.typography.paragraph2) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        ConfirmDialog(
+            title = "Hapus kategori?",
+            message = "Kategori \u201C${kategoriItems.find { it.id == selectedKategoriId }?.name.orEmpty()}\u201D akan dihapus dan tidak bisa dikembalikan.",
+            confirmLabel = "Hapus kategori",
+            destructive = true,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
                         selectedKategoriId?.let { id ->
                             viewModel.deleteKategoriItem(id)
                         }
                         showDeleteDialog = false
-                    }
-                ) {
-                    Text("Ya", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Tidak", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.primary)
-                }
             }
         )
     }
@@ -179,11 +167,7 @@ fun KategoriManager(
 
                             }
                             error != null -> item {
-                                Text(
-                                    text = "Error: $error",
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(16.dp)
-                                )
+                                ErrorState(message = error ?: "", onRetry = { viewModel.fetchKategoriItems() })
                             }
                             else -> {
                                 items(kategoriItems, key = { it.id }) { kategori ->

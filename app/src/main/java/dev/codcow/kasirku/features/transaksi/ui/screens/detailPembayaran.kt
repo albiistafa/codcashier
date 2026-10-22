@@ -138,7 +138,7 @@ fun DetailPembayaran(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = if (error?.contains("404") == true) "Transaksi tidak ditemukan."
+                    text = if (error != null) error.orEmpty()
                         else "Struk belum bisa dimuat. Transaksi tetap tersimpan dan bisa dilihat di menu Transaksi.",
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 24.dp),

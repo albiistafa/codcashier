@@ -1,4 +1,6 @@
 package dev.codcow.kasirku.features.pegawai.ui.screens
+import dev.codcow.kasirku.ui.components.ConfirmDialog
+import dev.codcow.kasirku.ui.components.ErrorState
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBarsPadding
 import dev.codcow.kasirku.ui.components.GreenBand
@@ -60,31 +62,17 @@ fun PegawaiManager(
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            title = { Text("Konfirmasi Hapus", style = AppTheme.typography.heading5Bold,
-                color = MaterialTheme.colorScheme.primary) },
-            text = { Text("Apakah Anda yakin ingin menghapus pegawai ini?", style = AppTheme.typography.paragraph2) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        ConfirmDialog(
+            title = "Hapus pegawai?",
+            message = "Akun pegawai \u201C${pegawaiItems.find { it.id == selectedPegawaiId }?.name.orEmpty()}\u201D akan dihapus dan tidak bisa dikembalikan.",
+            confirmLabel = "Hapus pegawai",
+            destructive = true,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
                         selectedPegawaiId?.let { id ->
                             viewModel.deletePegawaiItem(id)
                         }
                         showDeleteDialog = false
-                    }
-                ) {
-                    Text("Ya", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Tidak", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.primary)
-                }
             }
         )
     }
@@ -183,11 +171,7 @@ fun PegawaiManager(
 
                             }
                             error != null -> item {
-                                Text(
-                                    text = "Error: $error",
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(16.dp)
-                                )
+                                ErrorState(message = error ?: "", onRetry = { viewModel.fetchPegawaiItems() })
                             }
                             else -> {
                                 items(pegawaiItems, key = { it.id }) { pegawai ->

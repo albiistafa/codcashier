@@ -1,4 +1,7 @@
 package dev.codcow.kasirku.features.auth.ui.screens
+import dev.codcow.kasirku.core.data.repository.AuthorizationException
+import dev.codcow.kasirku.core.data.repository.AuthenticationException
+import dev.codcow.kasirku.ui.util.toUserMessage
 
 import android.content.Context
 import android.util.Log
@@ -158,10 +161,10 @@ class LoginViewModel @Inject constructor(
                     saveToken(context, authResult.token, authResult.role)
                     LoginState.Success(authResult, 200)
                 } else {
-                    LoginState.Error("Unexpected empty response")
+                    LoginState.Error("Belum bisa masuk. Server tidak mengirim data akun. Coba lagi beberapa saat lagi.")
                 }
             } else {
-                LoginState.Error(result.exceptionOrNull()?.message ?: "Unknown error")
+                LoginState.Error(loginErrorMessage(result.exceptionOrNull()))
             }
         }
     }
@@ -192,4 +195,12 @@ sealed class LoginState {
     object Loading : LoginState()
     data class Success(val data: AuthResult, val statusCode: Int = 200) : LoginState()
     data class Error(val message: String) : LoginState()
+}
+
+/** Login has its own wording: here a 401 means a wrong password, not an expired session. */
+internal fun loginErrorMessage(error: Throwable?): String = when (error) {
+    is AuthenticationException -> "Password salah. Periksa lagi, lalu coba masuk."
+    is AuthorizationException -> "Nomor telepon ini belum terdaftar. Periksa nomornya, atau minta pemilik warung menambahkannya di menu Pegawai."
+    null -> "Belum bisa masuk. Coba lagi."
+    else -> error.toUserMessage("Belum bisa masuk")
 }

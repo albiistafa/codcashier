@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import dev.codcow.kasirku.ui.components.ConfirmDialog
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBarsPadding
 import dev.codcow.kasirku.ui.components.GreenBand
@@ -240,16 +241,13 @@ fun TransaksiManager(
 
     // Delete confirmation dialog
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            title = { Text("Konfirmasi Hapus", style = AppTheme.typography.heading5Bold,
-                color = MaterialTheme.colorScheme.primary) },
-            text = { Text("Apakah Anda yakin ingin menghapus transaksi ini?", style = AppTheme.typography.paragraph2) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        ConfirmDialog(
+            title = "Hapus transaksi?",
+            message = "Transaksi \u201C${allTransactions.find { it.id == selectedTransaksiId }?.nama_transaksi ?: "ini"}\u201D akan dihapus dan tidak bisa dikembalikan.",
+            confirmLabel = "Hapus transaksi",
+            destructive = true,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
                         selectedTransaksiId?.let { id ->
                             viewModel.deleteTransaksi(id)
                             if (isDeletePengeluaran) {
@@ -262,29 +260,29 @@ fun TransaksiManager(
                             }
                         }
                         showDeleteDialog = false
-                    }
-                ) {
-                    Text("Ya", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Tidak", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.primary)
-                }
             }
         )
     }
 
     if (showDeletePeriodeDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeletePeriodeDialog = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            title = { Text("Hapus Periode", style = AppTheme.typography.heading5Bold,
-                color = MaterialTheme.colorScheme.primary) },
-            text = {
+        ConfirmDialog(
+            title = "Hapus transaksi satu periode?",
+            message = "Semua transaksi di antara dua tanggal ini akan dihapus dan tidak bisa dikembalikan.",
+            confirmLabel = "Hapus periode",
+            destructive = true,
+            onDismiss = { showDeletePeriodeDialog = false },
+            onConfirm = {
+                        val startDateString = startDate?.let {
+                            if (it != LocalDate.MIN) it.format(apiFormatter) else ""
+                        } ?: ""
+                        val endDateString = endDate?.let {
+                            if (it != LocalDate.MIN) it.format(apiFormatter) else ""
+                        } ?: ""
+
+                        viewModel.deletePeriode(startDateString, endDateString)
+                        showDeletePeriodeDialog = false
+            },
+            content = {
                 Column {
                     OutlinedTextField(
                         value = tanggalMulaiText,
@@ -311,30 +309,6 @@ fun TransaksiManager(
                             }
                         }
                     )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val startDateString = startDate?.let {
-                            if (it != LocalDate.MIN) it.format(apiFormatter) else ""
-                        } ?: ""
-                        val endDateString = endDate?.let {
-                            if (it != LocalDate.MIN) it.format(apiFormatter) else ""
-                        } ?: ""
-
-                        viewModel.deletePeriode(startDateString, endDateString)
-                        showDeletePeriodeDialog = false
-                    }
-                ) {
-                    Text("Hapus", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeletePeriodeDialog = false }) {
-                    Text("Batal", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.primary)
                 }
             }
         )

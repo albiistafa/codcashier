@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.deposit.ui.screens
+import dev.codcow.kasirku.ui.components.ConfirmDialog
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBarsPadding
 import dev.codcow.kasirku.ui.components.GreenBand
@@ -62,31 +63,17 @@ fun DepositManager(
     var selectedDepositId by remember { mutableStateOf<Int?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            title = { Text("Konfirmasi Hapus", style = AppTheme.typography.heading5Bold,
-                color = MaterialTheme.colorScheme.primary) },
-            text = { Text("Apakah Anda yakin ingin menghapus deposit ini?", style = AppTheme.typography.paragraph2) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        ConfirmDialog(
+            title = "Hapus pelanggan deposit?",
+            message = "Data deposit \u201C${depositItems.find { it.id == selectedDepositId }?.customer_name.orEmpty()}\u201D akan dihapus dan tidak bisa dikembalikan.",
+            confirmLabel = "Hapus deposit",
+            destructive = true,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
                         selectedDepositId?.let { id ->
                             viewModel.deleteDeposit(id)
                         }
                         showDeleteDialog = false
-                    }
-                ) {
-                    Text("Ya", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Tidak", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.primary)
-                }
             }
         )
     }

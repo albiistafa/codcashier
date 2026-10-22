@@ -5,6 +5,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import dev.codcow.kasirku.ui.components.StrukMark
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
@@ -62,140 +73,118 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
         }
     }
 
-    Box(
+    val loading = uiState is LoginState.Loading
+    fun submit() { if (isFormValid && !loading) viewModel.onLoginClick() }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppTheme.colors.primaryGradient)
-            .systemBarsPadding()
-            .imePadding(),
-        contentAlignment = Alignment.Center
+            .background(AppTheme.colors.hero.first())
+            .imePadding()
     ) {
+        // Same mark and name as the opening animation
         Column(
-            modifier = Modifier.verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+            Modifier.fillMaxWidth().statusBarsPadding().padding(top = 48.dp, bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            StrukMark()
+            Text("Kasirku", style = AppTheme.typography.heading2Bold, color = AppTheme.colors.onHero)
             Text(
-                text = "Masuk",
-                style = AppTheme.typography.heading1Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Text(
-                text = "Masukkan nomor telepon dan password untuk mulai menggunakan Kasirku",
+                "Masuk dengan nomor telepon dan password akunmu",
                 style = AppTheme.typography.paragraph1,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                color = AppTheme.colors.onHero.copy(alpha = 0.85f),
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 45.dp)
+                modifier = Modifier.padding(horizontal = 32.dp)
             )
-
-            Column(
-                horizontalAlignment = Alignment.Start,
-                modifier = Modifier
-                    .padding(21.dp)
-                    .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(30.dp))
-                    .padding(16.dp)
-            ) {
-                Text("No. Telepon",
-                    style = AppTheme.typography.paragraph1,
-                    textAlign = TextAlign.Start)
-                Spacer(modifier = Modifier.height(2.dp))
-                OutlinedTextField(
-                    value = phoneNumber,
-                    onValueChange = { viewModel.onPhoneNumberChange(it) },
-                    placeholder = { Text("Masukkan nomor telepon", style = AppTheme.typography.paragraph2) },
-                    leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    shape = RoundedCornerShape(30.dp),
-                    textStyle = AppTheme.typography.paragraph2,
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary, // Ganti dengan warna yang diinginkan
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline // Ganti dengan warna untuk border saat tidak fokus
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text("Password", style = AppTheme.typography.paragraph1)
-                Spacer(modifier = Modifier.height(2.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { viewModel.onPasswordChange(it) },
-                    placeholder = { Text("Masukkan password", style = AppTheme.typography.paragraph2) },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                    trailingIcon = {
-                        val image = if (passwordVisible)
-                            Icons.Filled.Visibility
-                        else Icons.Filled.VisibilityOff
-
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                imageVector = image,
-                                contentDescription = if (passwordVisible) "Sembunyikan password" else "Tampilkan password",
-                                tint = MaterialTheme.colorScheme.primary// Warna sesuai tema
-                            )
-                        }
-                    },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    shape = RoundedCornerShape(30.dp),
-                    textStyle = AppTheme.typography.paragraph2,
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                    )
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Checkbox(
-                        checked = rememberMe,
-                        onCheckedChange = { viewModel.onRememberMeChange(it) },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = MaterialTheme.colorScheme.primary, // Warna ketika Checkbox terpilih
-                            uncheckedColor = MaterialTheme.colorScheme.outline, // Warna ketika Checkbox tidak terpilih
-                            checkmarkColor = MaterialTheme.colorScheme.onPrimary // Warna checkmark
+        }
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                // The form scrolls on its own when the keyboard is up; the mark stays put
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("Masuk", style = AppTheme.typography.heading4Bold, color = MaterialTheme.colorScheme.onSurface)
+            OutlinedTextField(
+                value = phoneNumber,
+                onValueChange = { viewModel.onPhoneNumberChange(it) },
+                label = { Text("Nomor telepon") },
+                placeholder = { Text("Contoh: 081234567890") },
+                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+                isError = uiState is LoginState.Error,
+                singleLine = true,
+                textStyle = AppTheme.typography.paragraph1,
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = password,
+                onValueChange = { viewModel.onPasswordChange(it) },
+                label = { Text("Password") },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                            contentDescription = if (passwordVisible) "Sembunyikan password" else "Tampilkan password",
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                    )
-                    Text("Ingat saya", style = AppTheme.typography.paragraph2)
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = { viewModel.onLoginClick() },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(30.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    enabled = isFormValid && uiState !is LoginState.Loading
-                ) {
-                    if (uiState is LoginState.Loading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text("Masuk", color = MaterialTheme.colorScheme.onPrimary, style = AppTheme.typography.paragraph1)
                     }
-                }
-
-                if (uiState is LoginState.Error) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = (uiState as LoginState.Error).message,
-                        color = MaterialTheme.colorScheme.error,
-                        style = AppTheme.typography.paragraph2
-                    )
+                },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { submit() }),
+                isError = uiState is LoginState.Error,
+                singleLine = true,
+                textStyle = AppTheme.typography.paragraph1,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(value = rememberMe, role = Role.Checkbox, onValueChange = { viewModel.onRememberMeChange(it) })
+            ) {
+                Checkbox(checked = rememberMe, onCheckedChange = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Ingat saya di HP ini", style = AppTheme.typography.paragraph2, color = MaterialTheme.colorScheme.onSurface)
+            }
+            if (uiState is LoginState.Error) {
+                // What went wrong and what to do: wrong password, unknown number, or no connection
+                Text(
+                    text = (uiState as LoginState.Error).message,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = AppTheme.typography.paragraph2,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.errorContainer, RoundedCornerShape(16.dp))
+                        .padding(14.dp)
+                        .semantics { liveRegion = LiveRegionMode.Polite }
+                )
+            }
+            Button(
+                onClick = ::submit,
+                enabled = isFormValid && !loading,
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+            ) {
+                if (loading) {
+                    CircularProgressIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Sedang masuk…", style = AppTheme.typography.paragraph1Bold)
+                } else {
+                    Text("Masuk", style = AppTheme.typography.paragraph1Bold)
                 }
             }
         }
     }
 }
-
-
-

@@ -391,7 +391,7 @@ fun EditMenuScreen(
                                         if (isLocalImage) uriToFile(imageUri!!) else null
 
                                     if (isLocalImage && imageFile == null ) {
-                                        viewModel.setError("Gagal memproses gambar")
+                                        viewModel.setError("Foto belum bisa dipakai. Pilih foto lain dari galeri.")
                                     } else {
                                         val maxSizeInBytes = 1 * 1024 * 1024
                                         if (imageFile != null && imageFile.length() > maxSizeInBytes) {

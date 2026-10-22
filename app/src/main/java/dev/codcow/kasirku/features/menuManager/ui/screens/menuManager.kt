@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
+import dev.codcow.kasirku.ui.components.ConfirmDialog
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBarsPadding
 import dev.codcow.kasirku.ui.components.GreenBand
@@ -73,31 +74,17 @@ fun MenuManager(
     var selectedMenuId by remember { mutableStateOf<Int?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            title = { Text("Konfirmasi Hapus", style = AppTheme.typography.heading5Bold,
-                color = MaterialTheme.colorScheme.primary) },
-            text = { Text("Apakah Anda yakin ingin menghapus menu ini?", style = AppTheme.typography.paragraph2) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        ConfirmDialog(
+            title = "Hapus menu?",
+            message = "Menu \u201C${menuItems.find { it.id == selectedMenuId }?.name.orEmpty()}\u201D akan dihapus dan tidak bisa dikembalikan. Riwayat transaksi yang sudah ada tidak berubah.",
+            confirmLabel = "Hapus menu",
+            destructive = true,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
                         selectedMenuId?.let { id ->
                             viewModel.deleteMenuItem(id)
                         }
                         showDeleteDialog = false
-                    }
-                ) {
-                    Text("Ya", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Tidak", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.primary)
-                }
             }
         )
     }

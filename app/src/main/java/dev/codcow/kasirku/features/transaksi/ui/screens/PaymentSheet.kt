@@ -260,7 +260,7 @@ fun PaymentSheet(
 
             if (submitted != null && error != null && !isLoading) {
                 Text(
-                    "Transaksi belum tersimpan: $error. Periksa koneksi lalu coba lagi.",
+                    error.orEmpty(),
                     style = AppTheme.typography.paragraph2,
                     color = MaterialTheme.colorScheme.error
                 )

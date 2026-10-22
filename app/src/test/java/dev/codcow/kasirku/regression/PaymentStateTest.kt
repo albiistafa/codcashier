@@ -59,12 +59,12 @@ class PaymentStateTest {
         vm.getTransactionById(10)
         runCurrent()
         vm.payTransaction("tunai", null)
-        completion.complete(Result.failure(IllegalStateException("Koneksi terputus")))
+        completion.complete(Result.failure(java.io.IOException("timeout")))
         runCurrent()
         assertFalse(vm.isSuccess.value)
         assertFalse(vm.isLoading.value)
         assertEquals("pending", vm.currentTransaction.value?.status)
-        assertEquals("Koneksi terputus", vm.error.value)
+        assertEquals("Pembayaran belum tersimpan. Koneksi internet terputus atau lambat. Periksa koneksi, lalu coba lagi.", vm.error.value)
         vm.payTransaction("tunai", null)
         runCurrent()
         assertEquals(2, calls)
@@ -76,6 +76,6 @@ class PaymentStateTest {
         runCurrent()
         assertFalse(vm.isSuccess.value)
         assertFalse(vm.isLoading.value)
-        assertEquals("Tidak tersimpan", vm.error.value)
+        assertEquals("Status pesanan belum tersimpan. Coba lagi. Kalau masih gagal, tutup lalu buka lagi aplikasinya.", vm.error.value)
     }
 }

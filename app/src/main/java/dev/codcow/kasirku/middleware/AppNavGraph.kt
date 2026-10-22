@@ -130,10 +130,10 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     // ponytail: mirrors the screens that render CustomBottomNavigation; add a route here when a screen gains it
     val showRail = isWideWindow() && currentRoute in railRoutes
-    // Every screen but Login has the green band behind the status bar: white status-bar icons
+    // Every screen, Login included, has leaf green behind the status bar: white status-bar icons
     val view = LocalView.current
     val darkTheme = isSystemInDarkTheme()
-    val greenTop = currentRoute != null && currentRoute != Screen.Login.route
+    val greenTop = currentRoute != null
     if (!view.isInEditMode) SideEffect {
         WindowCompat.getInsetsController((view.context as Activity).window, view).isAppearanceLightStatusBars = !darkTheme && !greenTop
     }

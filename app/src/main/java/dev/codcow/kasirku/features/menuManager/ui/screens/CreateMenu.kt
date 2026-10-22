@@ -385,7 +385,7 @@ fun BuatMenuScreen(
                                     imageFile = imageFile
                                 )
                             } else {
-                                viewModel.setError("Gagal memproses gambar")
+                                viewModel.setError("Foto belum bisa dipakai. Pilih foto lain dari galeri.")
                             }
                         } else {
                             // Tidak ada gambar, gunakan metode createMenu biasa

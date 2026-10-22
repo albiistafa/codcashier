@@ -1,5 +1,7 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
 
+import dev.codcow.kasirku.ui.util.toUserMessage
+
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -235,7 +237,7 @@ class TransaksiViewModel @Inject constructor(
                             _errorPemasukan.value = "Periksa koneksi internet Anda"
                         }
                         else -> {
-                            _errorPemasukan.value = exception.message ?: "Terjadi kesalahan"
+                            _errorPemasukan.value = exception.toUserMessage("Pencarian pemasukan belum berhasil")
                         }
                     }
                 }
@@ -291,7 +293,7 @@ class TransaksiViewModel @Inject constructor(
                             _errorPengeluaran.value = "Periksa koneksi internet Anda"
                         }
                         else -> {
-                            _errorPengeluaran.value = exception.message ?: "Terjadi kesalahan"
+                            _errorPengeluaran.value = exception.toUserMessage("Pencarian pengeluaran belum berhasil")
                         }
                     }
                 }
@@ -338,7 +340,7 @@ class TransaksiViewModel @Inject constructor(
                     _isLoading.update { false }
                 }
                 .onFailure { exception ->
-                    _error.value = exception.message ?: "Failed to create transaction"
+                    _error.value = exception.toUserMessage("Transaksi belum tersimpan")
                 }
 
             _isLoading.value = false
@@ -396,7 +398,7 @@ class TransaksiViewModel @Inject constructor(
                             _error.value = "Periksa koneksi internet Anda"
                         }
                         else -> {
-                            _error.value = exception.message ?: "Terjadi kesalahan"
+                            _error.value = exception.toUserMessage("Daftar transaksi belum bisa dimuat")
                         }
                     }
                 }
@@ -445,7 +447,7 @@ class TransaksiViewModel @Inject constructor(
                             _error.value = "Periksa koneksi internet Anda"
                         }
                         else -> {
-                            _error.value = exception.message ?: "Terjadi kesalahan"
+                            _error.value = exception.toUserMessage("Daftar transaksi belum bisa dimuat")
                         }
                     }
                 }
@@ -485,7 +487,7 @@ class TransaksiViewModel @Inject constructor(
                             _errorPengeluaran.value = "Periksa koneksi internet Anda"
                         }
                         else -> {
-                            _errorPengeluaran.value = exception.message ?: "Terjadi kesalahan, silahkan coba lagi"
+                            _errorPengeluaran.value = exception.toUserMessage("Data pengeluaran belum bisa dimuat")
                         }
                     }
                 }
@@ -531,7 +533,7 @@ class TransaksiViewModel @Inject constructor(
                     _isSuccess.value = true
                 }
                 .onFailure { exception ->
-                    _error.value = exception.message ?: "Pembayaran belum tersimpan. Coba lagi."
+                    _error.value = exception.toUserMessage("Pembayaran belum tersimpan")
                 }
             _isLoading.value = false
         }
@@ -559,7 +561,7 @@ class TransaksiViewModel @Inject constructor(
                     _isSuccess.value = true
                 }
                 .onFailure { exception ->
-                    _error.value = exception.message ?: "Status belum tersimpan. Coba lagi."
+                    _error.value = exception.toUserMessage("Status pesanan belum tersimpan")
                 }
             _isLoading.value = false
         }
@@ -579,7 +581,7 @@ class TransaksiViewModel @Inject constructor(
                     Log.d("TRANSACTION_DETAILS", "Details: ${response.data}")
                 }
                 .onFailure { exception ->
-                    _error.value = exception.message ?: "Failed to fetch transaction details"
+                    _error.value = exception.toUserMessage("Detail transaksi belum bisa dimuat")
                 }
 
             _isLoading.value = false
@@ -642,7 +644,7 @@ class TransaksiViewModel @Inject constructor(
                             _errorPemasukan.value = "Periksa koneksi internet Anda"
                         }
                         else -> {
-                            _errorPemasukan.value = exception.message ?: "Terjadi kesalahan, silahkan coba lagi"
+                            _errorPemasukan.value = exception.toUserMessage("Data pemasukan belum bisa dimuat")
                         }
                     }
                 }
@@ -673,7 +675,7 @@ class TransaksiViewModel @Inject constructor(
                     fetchAllPengeluaranAcrossPages(_currentRekapPengeluaranStartDate.value, _currentRekapPengeluaranEndDate.value) // Refresh pengeluaran data
                 }
                 .onFailure { exception ->
-                    _error.value = exception.message ?: "Gagal menambahkan pengeluaran"
+                    _error.value = exception.toUserMessage("Pengeluaran belum tersimpan")
                 }
 
             _isLoading.value = false
@@ -765,7 +767,7 @@ class TransaksiViewModel @Inject constructor(
                             _error.value = "Periksa koneksi internet Anda"
                         }
                         else -> {
-                            _error.value = exception.message ?: "Terjadi kesalahan, silahkan coba lagi"
+                            _error.value = exception.toUserMessage("Pencarian transaksi belum berhasil")
                         }
                     }
                 }
@@ -809,7 +811,7 @@ class TransaksiViewModel @Inject constructor(
                         "payment method: $paymentMethod, status: $status, date filter: ${_dateFilter.value}")
             } catch (e: Exception) {
                 Log.e("TransaksiViewModel", "Error applying filters: ${e.message}", e)
-                _error.value = e.message ?: "Unknown error occurred"
+                _error.value = e.toUserMessage("Filter belum bisa diterapkan")
             } finally {
                 _isLoading.value = false
             }
@@ -842,11 +844,11 @@ class TransaksiViewModel @Inject constructor(
                         _pdfFile.value = file
                         _isPdfSuccess.value = true
                     } catch (e: Exception) {
-                        _pdfError.value = "Failed to save PDF: ${e.message}"
+                        _pdfError.value = e.toUserMessage("PDF belum bisa disimpan di HP")
                     }
                 }
                 .onFailure { exception ->
-                    _pdfError.value = exception.message ?: "Failed to download PDF"
+                    _pdfError.value = exception.toUserMessage("PDF belum bisa dibuat")
                 }
 
             _isPdfLoading.value = false
@@ -867,11 +869,11 @@ class TransaksiViewModel @Inject constructor(
                         _pdfFile.value = file
                         _isPdfSuccess.value = true
                     } catch (e: Exception) {
-                        _pdfError.value = "Failed to save PDF: ${e.message}"
+                        _pdfError.value = e.toUserMessage("PDF belum bisa disimpan di HP")
                     }
                 }
                 .onFailure { exception ->
-                    _pdfError.value = exception.message ?: "Failed to download PDF"
+                    _pdfError.value = exception.toUserMessage("PDF belum bisa dibuat")
                 }
 
             _isPdfLoading.value = false
@@ -906,7 +908,7 @@ class TransaksiViewModel @Inject constructor(
                     fetchAllTransaksiNoFilter()
                 }
                 .onFailure { exception ->
-                    _error.value = exception.message ?: "Gagal menghapus transaksi"
+                    _error.value = exception.toUserMessage("Transaksi belum terhapus")
                 }
 
             _isLoading.value = false
@@ -925,7 +927,7 @@ class TransaksiViewModel @Inject constructor(
                     fetchAllTransaksiNoFilter()
                 }
                 .onFailure { exception ->
-                    _error.value = exception.message ?: "Gagal menghapus periode transaksi"
+                    _error.value = exception.toUserMessage("Transaksi pada periode itu belum terhapus")
                 }
 
             _isLoading.value = false

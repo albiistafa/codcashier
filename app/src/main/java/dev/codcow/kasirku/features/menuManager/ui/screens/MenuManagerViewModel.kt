@@ -1,5 +1,7 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
 
+import dev.codcow.kasirku.ui.util.toUserMessage
+
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -79,7 +81,7 @@ class MenuManagerViewModel @Inject constructor(
             kategoriRepository.getAllKategori().onSuccess { fetchedCategories ->
                 _categories.value = fetchedCategories
             }.onFailure { exception ->
-                _error.value = "Failed to load categories: ${exception.message}"
+                _error.value = exception.toUserMessage("Kategori belum bisa dimuat")
             }
         }
     }
@@ -89,7 +91,7 @@ class MenuManagerViewModel @Inject constructor(
             subKategoriRepository.getAllSubKategori().onSuccess { fetchedSubCategories ->
                 _subCategories.value = fetchedSubCategories
             }.onFailure { exception ->
-                _error.value = "Failed to load subcategories: ${exception.message}"
+                _error.value = exception.toUserMessage("Subkategori belum bisa dimuat")
             }
         }
     }
@@ -122,7 +124,7 @@ class MenuManagerViewModel @Inject constructor(
                         (subCategoryIds.isEmpty() || menu.sub_category_id in subCategoryIds)
                 }
             }.onFailure { exception ->
-                _error.value = exception.message ?: "Menu belum dapat dimuat"
+                _error.value = exception.toUserMessage("Menu belum bisa dimuat")
             }
             _isLoading.value = false
         }
@@ -135,7 +137,7 @@ class MenuManagerViewModel @Inject constructor(
             response.onSuccess {
                 _menuItems.value = _menuItems.value.filterNot { it.id == id }
             }.onFailure { exception ->
-                _error.value = "Failed to delete menu item: ${exception.message}"
+                _error.value = exception.toUserMessage("Menu belum terhapus")
                 android.util.Log.e("MenuManagerViewModel", "Delete failed", exception)
             }
             _isLoading.value = false
@@ -154,10 +156,10 @@ class MenuManagerViewModel @Inject constructor(
                         fetchMenuItems()
                     }
                     .onFailure { exception ->
-                        _error.value = exception.message ?: "Gagal membuat menu"
+                        _error.value = exception.toUserMessage("Menu belum tersimpan")
                     }
             } catch (e: Exception) {
-                _error.value = "Terjadi kesalahan: ${e.message}"
+                _error.value = e.toUserMessage("Menu belum tersimpan")
             } finally {
                 _isLoading.value = false
             }
@@ -182,10 +184,10 @@ class MenuManagerViewModel @Inject constructor(
                         fetchMenuItems()
                     }
                     .onFailure { exception ->
-                        _error.value = exception.message ?: "Gagal membuat menu dengan gambar"
+                        _error.value = exception.toUserMessage("Menu belum tersimpan")
                     }
             } catch (e: Exception) {
-                _error.value = "Terjadi kesalahan: ${e.message}"
+                _error.value = e.toUserMessage("Menu belum tersimpan")
             } finally {
                 _isLoading.value = false
             }
@@ -200,7 +202,7 @@ class MenuManagerViewModel @Inject constructor(
                     _selectedMenu.value = menuResponse
                 }
                 .onFailure { exception ->
-                    _error.value = exception.message
+                    _error.value = exception.toUserMessage("Menu belum bisa dibuka")
                 }
             _isLoading.value = false
         }
@@ -224,7 +226,7 @@ class MenuManagerViewModel @Inject constructor(
                 menuRepository.updateMenu(id, name, price, categoryId, subCategoryId, imageFile)
                 _isSuccess.value = true
             } catch (e: Exception) {
-                _error.value = e.message
+                _error.value = e.toUserMessage("Perubahan menu belum tersimpan")
             } finally {
                 _isLoading.value = false
             }

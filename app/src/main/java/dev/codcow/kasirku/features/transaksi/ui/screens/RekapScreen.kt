@@ -196,7 +196,7 @@ fun RekapScreen(
     var showDates by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(pdfError) {
-        pdfError?.let { snackbarHostState.showSnackbar("PDF gagal dibuat: $it"); viewModel.resetPdfState() }
+        pdfError?.let { snackbarHostState.showSnackbar(it); viewModel.resetPdfState() }
     }
 
     // Same date filter the side panel had: applies to the open tab, keeps the search

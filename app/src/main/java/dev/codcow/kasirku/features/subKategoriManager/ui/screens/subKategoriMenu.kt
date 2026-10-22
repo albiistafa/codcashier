@@ -1,4 +1,6 @@
 package dev.codcow.kasirku.kategoriManager.ui.screens
+import dev.codcow.kasirku.ui.components.ConfirmDialog
+import dev.codcow.kasirku.ui.components.ErrorState
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBarsPadding
 import dev.codcow.kasirku.ui.components.GreenBand
@@ -57,31 +59,17 @@ fun SubKategoriManager(
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            title = { Text("Konfirmasi Hapus", style = AppTheme.typography.heading5Bold,
-                color = MaterialTheme.colorScheme.primary) },
-            text = { Text("Apakah Anda yakin ingin menghapus sub-kategori ini?", style = AppTheme.typography.paragraph2) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        ConfirmDialog(
+            title = "Hapus subkategori?",
+            message = "Subkategori \u201C${subkategoriItems.find { it.id == selectedSubId }?.name.orEmpty()}\u201D akan dihapus dan tidak bisa dikembalikan.",
+            confirmLabel = "Hapus subkategori",
+            destructive = true,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
                         selectedSubId?.let { id ->
                             viewModel.deleteSubKategoriItem(id)
                         }
                         showDeleteDialog = false
-                    }
-                ) {
-                    Text("Ya", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Tidak", style = AppTheme.typography.paragraph2Bold,
-                        color = MaterialTheme.colorScheme.primary)
-                }
             }
         )
     }
@@ -187,11 +175,7 @@ fun SubKategoriManager(
                         // Display error message if there is an error
                         else if (error != null) {
                             item {
-                                Text(
-                                    text = "Error: $error",
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(16.dp)
-                                )
+                                ErrorState(message = error ?: "", onRetry = { viewModel.fetchSubKategoriItems() })
                             }
                         }
                         // Display subkategori items

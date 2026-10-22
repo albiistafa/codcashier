@@ -1,5 +1,7 @@
 package dev.codcow.kasirku.features.deposit.ui.screens
 
+import dev.codcow.kasirku.ui.util.toUserMessage
+
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -64,7 +66,7 @@ class DepositViewModel @Inject constructor(
                     _isLoading.value = false
                 },
                 onFailure = { error ->
-                    _error.value = error.message ?: "Unknown error occurred"
+                    _error.value = error.toUserMessage("Data deposit belum bisa dimuat")
                     _isLoading.value = false
                 }
             )
@@ -78,11 +80,11 @@ class DepositViewModel @Inject constructor(
         depositRepository.createDeposit(createDataDeposit)
             .onSuccess {
                 _isSuccess.value = true
-                _actionMessage.value = "Deposit created successfully"
+                _actionMessage.value = "Pelanggan deposit tersimpan"
                 emit(Result.Success(Unit))
             }
             .onFailure { exception ->
-                _error.value = exception.message ?: "Failed to create deposit"
+                _error.value = exception.toUserMessage("Pelanggan deposit belum tersimpan")
                 emit(Result.Error(exception))
             }
 
@@ -100,7 +102,7 @@ class DepositViewModel @Inject constructor(
                     _isLoading.value = false
                 },
                 onFailure = { error ->
-                    _error.value = error.message ?: "Failed to get customer details"
+                    _error.value = error.toUserMessage("Data pelanggan belum bisa dibuka")
                     _isLoading.value = false
                 }
             )
@@ -120,12 +122,12 @@ class DepositViewModel @Inject constructor(
             depositRepository.updateCustomerById(id, updateData).fold(
                 onSuccess = {
                     _isSuccess.value = true
-                    _actionMessage.value = "Customer updated successfully"
+                    _actionMessage.value = "Data pelanggan tersimpan"
                     _isLoading.value = false
                     getCustomerById(id)
                 },
                 onFailure = { error ->
-                    _error.value = error.message ?: "Failed to update customer"
+                    _error.value = error.toUserMessage("Perubahan data pelanggan belum tersimpan")
                     _isLoading.value = false
                 }
             )
@@ -160,7 +162,7 @@ class DepositViewModel @Inject constructor(
                                 _error.value = "Periksa koneksi internet Anda"
                             }
                             else -> {
-                                _error.value = exception.message ?: "Terjadi kesalahan"
+                                _error.value = exception.toUserMessage("Saldo belum terisi")
                             }
                         }
                     }
@@ -178,7 +180,7 @@ class DepositViewModel @Inject constructor(
                         _error.value = "Periksa koneksi internet Anda"
                     }
                     else -> {
-                        _error.value = e.message ?: "Terjadi kesalahan, silakan coba lagi"
+                        _error.value = e.toUserMessage("Saldo belum terisi")
                     }
                 }
             }
@@ -196,12 +198,12 @@ class DepositViewModel @Inject constructor(
             depositRepository.deleteDeposit(id).fold(
                 onSuccess = {
                     _isSuccess.value = true
-                    _actionMessage.value = "Deposit deleted successfully"
+                    _actionMessage.value = "Data deposit dihapus"
                     _isLoading.value = false
                     getAllDeposits()
                 },
                 onFailure = { error ->
-                    _error.value = error.message ?: "Failed to delete deposit"
+                    _error.value = error.toUserMessage("Data deposit belum terhapus")
                     _isLoading.value = false
                 }
             )
@@ -228,7 +230,7 @@ class DepositViewModel @Inject constructor(
                 _isLoading.value = false
 
             }.onFailure { exception ->
-                _error.value = "Search failed: ${exception.message}"
+                _error.value = exception.toUserMessage("Pencarian pelanggan deposit belum berhasil")
                 _isLoading.value = false
             }
         }

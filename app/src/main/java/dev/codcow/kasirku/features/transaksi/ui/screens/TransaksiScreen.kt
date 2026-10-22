@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import dev.codcow.kasirku.ui.components.ConfirmDialog
 
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
@@ -183,26 +184,13 @@ fun TransaksiScreen(
 
     if (showFinishTransactionDialog && currentSelectedTransaction != null) {
         if (currentSelectedTransaction?.status == "pending") {
-            AlertDialog(
-                onDismissRequest = { showFinishTransactionDialog = false },
-                containerColor = MaterialTheme.colorScheme.surface,
-                textContentColor = MaterialTheme.colorScheme.onSurface,
-                title = {
-                    Text(
-                        "Konfirmasi Pembayaran",
-                        style = AppTheme.typography.heading5Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                },
-                text = {
-                    Text(
-                        "Apakah Anda yakin ingin menyelesaikan transaksi ini? Pastikan pesanan telah sesuai.",
-                        style = AppTheme.typography.paragraph2
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
+            ConfirmDialog(
+                title = "Tandai lunas?",
+                message = "Pesanan \u201C${currentSelectedTransaction?.nama_transaksi.orEmpty()}\u201D ditandai lunas. Pastikan uangnya sudah diterima.",
+                confirmLabel = "Tandai lunas",
+                destructive = false,
+                onDismiss = { showFinishTransactionDialog = false },
+                onConfirm = {
                             currentSelectedTransaction?.let { transaction ->
                                 viewModel.getTransactionById(transaction.id)
 
@@ -216,23 +204,6 @@ fun TransaksiScreen(
                                 isUpdatingStatus = true
                             }
                             showFinishTransactionDialog = false
-                        }
-                    ) {
-                        Text(
-                            "Ya",
-                            style = AppTheme.typography.paragraph2Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showFinishTransactionDialog = false }) {
-                        Text(
-                            "Tidak",
-                            style = AppTheme.typography.paragraph2Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             )
         }
@@ -240,26 +211,13 @@ fun TransaksiScreen(
 
     if (showAntarTransactionDialog && currentSelectedTransaction != null) {
         if (currentSelectedTransaction?.is_delivered == "no") {
-            AlertDialog(
-                onDismissRequest = { showAntarTransactionDialog = false },
-                containerColor = MaterialTheme.colorScheme.surface,
-                textContentColor = MaterialTheme.colorScheme.onSurface,
-                title = {
-                    Text(
-                        "Tandai sebagai diantar",
-                        style = AppTheme.typography.heading5Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                },
-                text = {
-                    Text(
-                        "Apakah Anda yakin ingin menyelesaikan transaksi ini? Pastikan pesanan telah diterima oleh pelanggan.",
-                        style = AppTheme.typography.paragraph2
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
+            ConfirmDialog(
+                title = "Tandai sudah diantar?",
+                message = "Pesanan \u201C${currentSelectedTransaction?.nama_transaksi.orEmpty()}\u201D ditandai sudah diterima pelanggan.",
+                confirmLabel = "Sudah diantar",
+                destructive = false,
+                onDismiss = { showAntarTransactionDialog = false },
+                onConfirm = {
                             currentSelectedTransaction?.let { transaction ->
                                 viewModel.getTransactionById(transaction.id)
 
@@ -273,23 +231,6 @@ fun TransaksiScreen(
                                 isUpdatingStatus = true
                             }
                             showAntarTransactionDialog = false
-                        }
-                    ) {
-                        Text(
-                            "Ya",
-                            style = AppTheme.typography.paragraph2Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showAntarTransactionDialog = false }) {
-                        Text(
-                            "Tidak",
-                            style = AppTheme.typography.paragraph2Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             )
         }
@@ -302,7 +243,7 @@ fun TransaksiScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(Unit) { viewModel.refreshPendingCount() }
     LaunchedEffect(pdfError) {
-        pdfError?.let { snackbarHostState.showSnackbar(if (it.contains("not found", ignoreCase = true)) "Tidak ada transaksi untuk diunduh" else "PDF gagal dibuat: $it") }
+        pdfError?.let { snackbarHostState.showSnackbar(it); viewModel.resetPdfState() }
     }
 
     fun applyFilter(q: String = query) {
@@ -358,7 +299,7 @@ fun TransaksiScreen(
             ) {
                 if (error != null && !isLoading) {
                     Text(
-                        text = if (error == "Tidak ada data transaksi") "Belum ada transaksi" else "$error. Tarik ke bawah untuk mencoba lagi.",
+                        text = if (error == "Tidak ada data transaksi") "Belum ada transaksi" else error.orEmpty(),
                         style = AppTheme.typography.paragraph1,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,

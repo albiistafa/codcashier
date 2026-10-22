@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import dev.codcow.kasirku.features.auth.ui.screens.LoginViewModel
 import dev.codcow.kasirku.ui.theme.AppTheme
+import dev.codcow.kasirku.ui.components.StrukMark
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -87,33 +88,7 @@ fun Splash(navController: NavController, viewModel: LoginViewModel, context: Con
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.width(132.dp).height(14.dp).background(AppTheme.colors.deep, RoundedCornerShape(7.dp)))
-            val teeth = with(LocalDensity.current) { tornBottom(12.dp.toPx(), 5.dp.toPx()) }
-            Column(
-                Modifier
-                    .offset(y = (-7).dp)
-                    .width(112.dp)
-                    // Reveal from the slot downward, like paper feeding out
-                    .graphicsLayer { clip = true; shape = RevealShape(paper.value) }
-                    .clip(teeth)
-                    .background(onHero)
-                    .padding(start = 14.dp, end = 14.dp, top = 18.dp, bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(9.dp)
-            ) {
-                val line = AppTheme.colors.deep.copy(alpha = 0.12f)
-                listOf(0.7f, 0.9f, 0.55f).forEach { w ->
-                    Box(Modifier.fillMaxWidth(w).height(6.dp).background(line, RoundedCornerShape(3.dp)))
-                }
-                Box(Modifier.fillMaxWidth().height(1.dp).background(line))
-                Box(
-                    Modifier
-                        .align(Alignment.End)
-                        .fillMaxWidth(0.62f)
-                        .height(8.dp)
-                        .graphicsLayer { scaleX = total.value; transformOrigin = TransformOrigin(1f, 0.5f) }
-                        .background(AppTheme.colors.money, RoundedCornerShape(4.dp))
-                )
-            }
+            StrukMark(paperFraction = paper.value, totalScale = total.value)
             Spacer(Modifier.height(20.dp))
             Text(
                 "Kasirku",
@@ -134,25 +109,4 @@ fun Splash(navController: NavController, viewModel: LoginViewModel, context: Con
                 .graphicsLayer { alpha = name.value }
         )
     }
-}
-
-/** Shows the top [fraction] of the paper. */
-private class RevealShape(private val fraction: Float) : Shape {
-    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density) =
-        Outline.Rectangle(Rect(0f, 0f, size.width, size.height * fraction))
-}
-
-/** Torn bottom edge of the struk. */
-private fun tornBottom(toothWidthPx: Float, toothHeightPx: Float) = GenericShape { size, _ ->
-    val teeth = (size.width / toothWidthPx).toInt().coerceAtLeast(1)
-    val w = size.width / teeth
-    moveTo(0f, 0f)
-    lineTo(size.width, 0f)
-    lineTo(size.width, size.height - toothHeightPx)
-    repeat(teeth) { i ->
-        val x = size.width - i * w
-        lineTo(x - w / 2, size.height)
-        lineTo(x - w, size.height - toothHeightPx)
-    }
-    close()
 }
