@@ -91,7 +91,7 @@ fun beranda(
         Tile("Pegawai", AppIcons.pegawai, onNavigateToPegawai),
         Tile("Kelola transaksi", AppIcons.transaksi, onNavigateToTransaksi),
         Tile("Pengeluaran", AppIcons.pengeluaran) { navController.navigate(Screen.CreatePengeluaran.route) },
-        Tile("Warung", AppIcons.warung, onNavigateToWarung)
+        Tile("Warung & QRIS", AppIcons.warung, onNavigateToWarung)
     )
 
     Scaffold(

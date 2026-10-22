@@ -76,6 +76,10 @@ dependencies {
     implementation(libs.hilt.android)
 
     kapt(libs.hilt.android.compiler)
+    // QRIS warung is kept on the phone (decision 19 Okt); server sync comes later
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    kapt(libs.room.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
     implementation(libs.androidx.lifecycle.viewmodel.ktx)

@@ -1,4 +1,9 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import dev.codcow.kasirku.features.warung.ui.screens.QrisViewModel
+import java.io.File
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -80,7 +85,9 @@ fun PaymentSheet(
     onDone: (transactionId: Int, pending: Boolean, received: Long?) -> Unit,
     transaksiViewModel: TransaksiViewModel = hiltViewModel(),
     depositViewModel: DepositViewModel = hiltViewModel(),
+    qrisViewModel: QrisViewModel = hiltViewModel(),
 ) {
+    val qrisPath by qrisViewModel.path.collectAsState()
     val cart by menuViewModel.cart.collectAsState()
     val deposits by depositViewModel.depositItem.collectAsState()
     val isLoading by transaksiViewModel.isLoading.collectAsState()
@@ -199,11 +206,7 @@ fun PaymentSheet(
                     },
                     change = change
                 )
-                "digital" -> Text(
-                    "Minta pelanggan membayar lewat QRIS atau transfer. Selesaikan setelah notifikasi pembayaran masuk.",
-                    style = AppTheme.typography.paragraph2,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                "digital" -> DigitalSection(qrisPath = qrisPath, total = total)
                 else -> Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Pilih pelanggan deposit", style = AppTheme.typography.paragraph2Semibold)
                     if (deposits.isEmpty()) {
@@ -370,5 +373,49 @@ private fun CashSection(
             Text(if (short) "Kurang" else "Kembalian", style = AppTheme.typography.paragraph1Medium, color = fg, modifier = Modifier.weight(1f))
             Text(change?.let { rp(abs(it)) } ?: "—", style = AppTheme.typography.heading4Bold, color = fg)
         }
+    }
+}
+
+/** QRIS first (amount on top so the customer types the right total), then when to press Sudah dibayar. */
+@Composable
+private fun DigitalSection(qrisPath: String?, total: Long) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (qrisPath != null) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(24.dp))
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Scan QRIS, lalu bayar ${rp(total)}", style = AppTheme.typography.paragraph1Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                AsyncImage(
+                    model = File(qrisPath),
+                    contentDescription = "QRIS warung untuk dipindai pelanggan",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 340.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                )
+            }
+        } else {
+            Text(
+                "QRIS belum ada di HP ini. Pemilik bisa mengunggahnya di Beranda, menu Warung. Sementara itu, minta pelanggan transfer.",
+                style = AppTheme.typography.paragraph2,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(16.dp))
+                    .padding(14.dp)
+            )
+        }
+        Text(
+            "Tekan Sudah dibayar setelah notifikasi pembayaran masuk.",
+            style = AppTheme.typography.paragraph2,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
