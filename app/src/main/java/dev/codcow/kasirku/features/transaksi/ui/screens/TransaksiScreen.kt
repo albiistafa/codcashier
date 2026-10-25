@@ -260,7 +260,7 @@ fun TransaksiScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = { CustomBottomNavigation(navController = navController) },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
@@ -388,7 +388,7 @@ private fun FilterRow(
                 shape = RoundedCornerShape(20.dp),
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = AppTheme.colors.deep,
-                    selectedLabelColor = Color.White,
+                    selectedLabelColor = AppTheme.colors.onDeep,
                     containerColor = MaterialTheme.colorScheme.surface,
                     labelColor = MaterialTheme.colorScheme.onSurface
                 ),

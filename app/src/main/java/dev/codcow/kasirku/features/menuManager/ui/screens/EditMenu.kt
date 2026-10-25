@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
+import androidx.compose.ui.semantics.Role
 import dev.codcow.kasirku.ui.components.BandTopBar
 
 import android.net.Uri
@@ -336,7 +337,7 @@ fun EditMenuScreen(
                             .height(160.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                            .clickable { imagePicker.launch("image/*") },
+                            .clickable(onClickLabel = "Pilih foto menu", role = Role.Button) { imagePicker.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
                         if (imageUri != null) {
@@ -346,7 +347,7 @@ fun EditMenuScreen(
                                         .data(imageUri)
                                         .build()
                                 ),
-                                contentDescription = "Selected Image",
+                                contentDescription = "Foto menu",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
@@ -356,7 +357,7 @@ fun EditMenuScreen(
                             ) {
                                 Icon(
                                     Icons.Default.Panorama,
-                                    contentDescription = "Upload Image",
+                                    contentDescription = "Pilih foto menu",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text("Pilih Foto", color = MaterialTheme.colorScheme.onSurfaceVariant)

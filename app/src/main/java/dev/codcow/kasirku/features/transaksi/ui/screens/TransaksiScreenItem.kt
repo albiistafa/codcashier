@@ -64,7 +64,7 @@ fun TransaksiItemTransaksi(
                 Text(
                     "${formatJamSaja(transaction.created_at)}, ${if (pending) "belum dibayar" else "lunas"}",
                     style = AppTheme.typography.paragraph2,
-                    color = if (pending) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (pending) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Text(formatRupiah(transaction.total_amount).replace("Rp ", "Rp"), style = AppTheme.typography.paragraph1Bold)

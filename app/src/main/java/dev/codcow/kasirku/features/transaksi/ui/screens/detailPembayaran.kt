@@ -166,7 +166,7 @@ fun DetailPembayaran(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
         Column(
@@ -180,7 +180,7 @@ fun DetailPembayaran(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .background(Brush.verticalGradient(0f to hero, 0.7f to hero.copy(alpha = 0.92f), 1f to MaterialTheme.colorScheme.surfaceVariant))
+                    .background(Brush.verticalGradient(0f to hero, 0.7f to hero.copy(alpha = 0.92f), 1f to MaterialTheme.colorScheme.background))
                     .statusBarsPadding()
                     .padding(top = 36.dp, bottom = 72.dp)
                     .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
@@ -278,7 +278,7 @@ private fun Receipt(trx: Data, warungName: String?, modifier: Modifier = Modifie
             Text(
                 if (pending) "Belum dibayar" else "Lunas",
                 style = AppTheme.typography.paragraph2Semibold,
-                color = if (pending) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+                color = if (pending) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.primary
             )
         }
         DashedRule()

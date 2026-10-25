@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.kategoriManager.ui.screens
+import dev.codcow.kasirku.ui.components.readableWidth
 import dev.codcow.kasirku.features.kategoriManager.ui.screens.KategoriManagerViewModel
 import dev.codcow.kasirku.ui.components.ListHint
 import dev.codcow.kasirku.ui.components.AddFab
@@ -37,7 +38,6 @@ import dev.codcow.kasirku.features.subKategoriManager.ui.screens.SubKategoriView
 import dev.codcow.kasirku.middleware.Screen
 import dev.codcow.kasirku.ui.components.SearchBar
 import dev.codcow.kasirku.ui.components.SubKategoriListItem
-import dev.codcow.kasirku.ui.components.WelcomeTopBar
 import dev.codcow.kasirku.ui.theme.AppTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -153,7 +153,7 @@ fun SubKategoriManager(
                         .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
                     LazyColumn(
-                        modifier = Modifier
+                        modifier = Modifier.readableWidth()
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.background),
                         contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp),

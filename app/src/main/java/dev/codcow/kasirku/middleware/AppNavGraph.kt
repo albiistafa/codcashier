@@ -22,7 +22,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dev.codcow.kasirku.core.data.model.addToCart.CartItem
 import dev.codcow.kasirku.features.auth.ui.screens.LoginScreen
-import dev.codcow.kasirku.features.beranda.ui.screens.BerandaPegawai
 import dev.codcow.kasirku.features.berandaAdmin.ui.screens.beranda
 import dev.codcow.kasirku.features.deposit.ui.screens.CreateDeposit
 import dev.codcow.kasirku.features.deposit.ui.screens.DepositManager
@@ -32,7 +31,6 @@ import dev.codcow.kasirku.features.kategoriManager.ui.screens.KategoriManager
 import dev.codcow.kasirku.features.kategoriManager.ui.screens.EditKategori
 import dev.codcow.kasirku.features.menuManager.ui.screens.BuatMenuScreen
 import dev.codcow.kasirku.features.menuManager.ui.screens.EditMenuScreen
-import dev.codcow.kasirku.features.menuManager.ui.screens.MenuAdmin
 import dev.codcow.kasirku.kategoriManager.ui.screens.SubKategoriManager
 import dev.codcow.kasirku.features.menuManager.ui.screens.MenuManager
 import dev.codcow.kasirku.features.menuManager.ui.screens.MenuPegawai
@@ -52,8 +50,8 @@ import dev.codcow.kasirku.features.warung.ui.screens.EditWarung
 import dev.codcow.kasirku.features.transaksi.ui.screens.DetailPesananScreenUpdate
 
 private val railRoutes = setOf(
-    Screen.Menu.route, Screen.MenuAdmin.route, Screen.Transaksi.route, Screen.Rekap.route,
-    Screen.Home.route, Screen.HomePegawai.route, Screen.Pegawai.route, Screen.Deposit.route,
+    Screen.Menu.route, Screen.Transaksi.route, Screen.Rekap.route,
+    Screen.Home.route, Screen.Pegawai.route, Screen.Deposit.route,
     Screen.Kategori.route, Screen.SubKategori.route, Screen.MenuManager.route, Screen.TransaksiManager.route
 )
 
@@ -61,13 +59,11 @@ sealed class Screen(val route: String) {
     object Splash : Screen("splash")
     object Login : Screen("login")
     object Home : Screen("home")
-    object HomePegawai : Screen("homePegawai")
 
     object Pegawai : Screen("pegawai")
     object CreatePegawai : Screen("create_pegawai")
 
     object Menu : Screen("menu")
-    object MenuAdmin : Screen("menuadmin")
 
     object MenuManager : Screen("menuManager")
     object CreateMenu : Screen("create_menu")
@@ -168,11 +164,6 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
                 onNavigateToWarung = { navController.navigate(Screen.EditWarung.route)}
             )
         }
-        composable(Screen.HomePegawai.route){
-            BerandaPegawai(
-                navController = navController
-            )
-        }
         composable(Screen.Pegawai.route) {
             PegawaiManager(
                 navController = navController
@@ -197,11 +188,6 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
         }
         composable(Screen.Menu.route) {
             MenuPegawai(
-                navController = navController
-            )
-        }
-        composable(Screen.MenuAdmin.route) {
-            MenuAdmin(
                 navController = navController
             )
         }

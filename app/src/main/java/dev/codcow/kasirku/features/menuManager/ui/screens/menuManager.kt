@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
+import dev.codcow.kasirku.ui.components.readableWidth
 import dev.codcow.kasirku.ui.components.CategoryChips
 import dev.codcow.kasirku.ui.components.ListHint
 import dev.codcow.kasirku.ui.components.AddFab
@@ -36,7 +37,6 @@ import dev.codcow.kasirku.features.beranda.ui.components.SearchBarMenu
 import dev.codcow.kasirku.features.berandaAdmin.ui.screens.currentRoute
 import dev.codcow.kasirku.middleware.Screen
 import dev.codcow.kasirku.ui.components.MenuCard
-import dev.codcow.kasirku.ui.components.WelcomeTopBar
 import dev.codcow.kasirku.ui.theme.AppTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -169,7 +169,7 @@ fun MenuManager(
                         .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
                     LazyColumn(
-                        modifier = Modifier
+                        modifier = Modifier.readableWidth()
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.background),
                         contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp),

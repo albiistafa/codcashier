@@ -100,7 +100,7 @@ private fun CategoryChip(label: String, selected: Boolean, onClick: () -> Unit) 
         shape = RoundedCornerShape(20.dp),
         colors = FilterChipDefaults.filterChipColors(
             selectedContainerColor = AppTheme.colors.deep,
-            selectedLabelColor = Color.White,
+            selectedLabelColor = AppTheme.colors.onDeep,
             containerColor = colors.surface,
             labelColor = colors.onSurface
         ),

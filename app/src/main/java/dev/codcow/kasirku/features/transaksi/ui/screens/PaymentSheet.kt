@@ -1,4 +1,6 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
@@ -216,7 +218,8 @@ fun PaymentSheet(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    deposits.forEach { d ->
+                    // Long deposit lists scroll inside their own box instead of stretching the sheet
+                    LazyColumn(Modifier.heightIn(max = 280.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { items(deposits, key = { it.id }) { d ->
                         val balance = d.balance.toDoubleOrNull()?.toLong() ?: 0L
                         val enough = balance >= total
                         val selected = d.id == depositId
@@ -246,7 +249,7 @@ fun PaymentSheet(
                                 )
                             }
                         }
-                    }
+                    } }
                 }
             }
 
@@ -336,7 +339,7 @@ private fun CashSection(
                     onClick = { onPick(amount) },
                     shape = CircleShape,
                     color = if (selected) AppTheme.colors.deep else MaterialTheme.colorScheme.surface,
-                    contentColor = if (selected) Color.White else MaterialTheme.colorScheme.onSurface,
+                    contentColor = if (selected) AppTheme.colors.onDeep else MaterialTheme.colorScheme.onSurface,
                     border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.semantics { this.selected = selected }
                 ) {

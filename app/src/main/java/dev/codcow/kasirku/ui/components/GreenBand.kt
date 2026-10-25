@@ -1,4 +1,6 @@
 package dev.codcow.kasirku.ui.components
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.widthIn
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -52,7 +54,7 @@ fun GreenBand(
     Column(
         modifier
             .fillMaxWidth()
-            .background(Brush.verticalGradient(0f to hero, 0.7f to hero.copy(alpha = 0.92f), 1f to MaterialTheme.colorScheme.surfaceVariant))
+            .background(Brush.verticalGradient(0f to hero, 0.7f to hero.copy(alpha = 0.92f), 1f to MaterialTheme.colorScheme.background))
             .padding(contentPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -138,3 +140,6 @@ fun Modifier.fullBleed(inset: Dp) = layout { measurable, constraints ->
     val placeable = measurable.measure(constraints.copy(minWidth = constraints.maxWidth + extra, maxWidth = constraints.maxWidth + extra))
     layout(placeable.width - extra, placeable.height) { placeable.place(-extra / 2, 0) }
 }
+
+/** Content column on wide windows: full width on phones, centred at 640dp on tablets so rows don't stretch. */
+fun Modifier.readableWidth() = fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).widthIn(max = 640.dp)

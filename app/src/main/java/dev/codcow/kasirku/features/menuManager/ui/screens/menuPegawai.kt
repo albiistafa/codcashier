@@ -132,7 +132,7 @@ fun MenuPegawai(
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(bottom = paddingValues.calculateBottomPadding())
         ) {
         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {

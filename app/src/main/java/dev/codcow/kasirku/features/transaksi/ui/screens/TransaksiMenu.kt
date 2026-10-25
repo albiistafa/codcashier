@@ -1,4 +1,6 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import dev.codcow.kasirku.ui.components.readableWidth
+import dev.codcow.kasirku.ui.components.ErrorState
 import androidx.compose.foundation.lazy.itemsIndexed
 import dev.codcow.kasirku.ui.components.ConfirmDialog
 import androidx.compose.foundation.layout.WindowInsets
@@ -39,7 +41,6 @@ import dev.codcow.kasirku.features.berandaAdmin.ui.screens.currentRoute
 import dev.codcow.kasirku.middleware.Screen
 import dev.codcow.kasirku.ui.components.SearchBar
 import dev.codcow.kasirku.ui.components.TransaksiItemDelete
-import dev.codcow.kasirku.ui.components.WelcomeTopBar
 import dev.codcow.kasirku.ui.theme.AppTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -521,15 +522,16 @@ fun TransaksiManager(
                             modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "$error",
-                                style = AppTheme.typography.paragraph1,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            // "Tidak ada data transaksi" is the API's empty answer, not a failure
+                            if (error == "Tidak ada data transaksi") {
+                                Text("Belum ada transaksi", style = AppTheme.typography.paragraph1, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            } else {
+                                ErrorState(message = error.orEmpty(), onRetry = ::refreshData)
+                            }
                         }
                     } else {
                         LazyColumn(
-                            modifier = Modifier
+                            modifier = Modifier.readableWidth()
                                 .fillMaxWidth()
                                 .background(MaterialTheme.colorScheme.background),
                             contentPadding = PaddingValues(bottom = 24.dp, top = 10.dp)

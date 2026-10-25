@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.kategoriManager.ui.screens
+import dev.codcow.kasirku.ui.components.readableWidth
 import dev.codcow.kasirku.ui.components.ListHint
 import dev.codcow.kasirku.ui.components.AddFab
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -36,7 +37,6 @@ import dev.codcow.kasirku.features.beranda.ui.components.SearchBarMenu
 import dev.codcow.kasirku.features.berandaAdmin.ui.screens.currentRoute
 import dev.codcow.kasirku.ui.components.KategoriListItem
 import dev.codcow.kasirku.ui.components.SearchBar
-import dev.codcow.kasirku.ui.components.WelcomeTopBar
 import dev.codcow.kasirku.ui.theme.AppTheme
 import dev.codcow.kasirku.middleware.Screen
 import kotlinx.coroutines.coroutineScope
@@ -147,7 +147,7 @@ fun KategoriManager(
                         .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.readableWidth().fillMaxSize(),
                                                 contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp)
                     ) {
                         when {

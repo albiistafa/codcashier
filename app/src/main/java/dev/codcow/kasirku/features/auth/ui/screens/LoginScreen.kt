@@ -1,4 +1,6 @@
 package dev.codcow.kasirku.features.auth.ui.screens
+import dev.codcow.kasirku.ui.components.readableWidth
+import androidx.compose.ui.platform.LocalConfiguration
 
 import android.content.Context
 import androidx.compose.foundation.background
@@ -82,15 +84,17 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
             .background(AppTheme.colors.hero.first())
             .imePadding()
     ) {
-        // Same mark and name as the opening animation
+        // Same mark and name as the opening animation. On a short window (phone in landscape)
+        // only the name stays, so the form keeps most of the height.
+        val roomy = LocalConfiguration.current.screenHeightDp >= 560
         Column(
-            Modifier.fillMaxWidth().statusBarsPadding().padding(top = 48.dp, bottom = 32.dp),
+            Modifier.fillMaxWidth().statusBarsPadding().padding(top = if (roomy) 48.dp else 12.dp, bottom = if (roomy) 32.dp else 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            StrukMark()
+            if (roomy) StrukMark()
             Text("Kasirku", style = AppTheme.typography.heading2Bold, color = AppTheme.colors.onHero)
-            Text(
+            if (roomy) Text(
                 "Masuk dengan nomor telepon dan password akunmu",
                 style = AppTheme.typography.paragraph1,
                 color = AppTheme.colors.onHero.copy(alpha = 0.85f),
@@ -102,6 +106,7 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController, context
             Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .readableWidth()
                 .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                 // The form scrolls on its own when the keyboard is up; the mark stays put
                 .verticalScroll(rememberScrollState())

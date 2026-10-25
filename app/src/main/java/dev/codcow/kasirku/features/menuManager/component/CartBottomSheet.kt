@@ -84,7 +84,7 @@ fun CartIndicatorBar(
     onPay: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val onDeep = Color.White
+    val onDeep = AppTheme.colors.onDeep
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = AppTheme.colors.deep,

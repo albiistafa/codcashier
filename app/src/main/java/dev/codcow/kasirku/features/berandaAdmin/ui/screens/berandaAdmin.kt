@@ -1,4 +1,6 @@
 package dev.codcow.kasirku.features.berandaAdmin.ui.screens
+import androidx.compose.ui.platform.LocalDensity
+import dev.codcow.kasirku.ui.components.readableWidth
 
 import CustomBottomNavigation
 import android.app.Activity
@@ -96,7 +98,7 @@ fun beranda(
 
     Scaffold(
         bottomBar = { CustomBottomNavigation(navController = navController) },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        containerColor = MaterialTheme.colorScheme.background,
         // The green band draws behind the status bar; it pads itself
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
@@ -113,12 +115,13 @@ fun beranda(
                     .background(
                         Brush.verticalGradient(
                             0f to hero, 0.62f to hero.copy(alpha = 0.92f),
-                            1f to MaterialTheme.colorScheme.surfaceVariant
+                            1f to MaterialTheme.colorScheme.background
                         )
                     )
                     .statusBarsPadding()
                     .padding(start = 20.dp, end = 20.dp, top = 18.dp)
             ) {
+              Column(Modifier.readableWidth()) {
                 Header(
                     name = warungName ?: "Warung",
                     onLogout = {
@@ -135,7 +138,10 @@ fun beranda(
                     onRekap = { navController.navigateToTab(Screen.Rekap.route) },
                     onSell = { navController.navigateToTab(Screen.Menu.route) }
                 )
+              }
             }
+
+          Column(Modifier.readableWidth()) {
 
             Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 tiles.chunked(4).forEach { row ->
@@ -184,6 +190,7 @@ fun beranda(
                     }
                 }
             }
+          }
         }
     }
 }
@@ -305,9 +312,14 @@ private fun TileButton(tile: Tile, modifier: Modifier) {
         ) {
             DuoIcon(tile.icon, 30.dp)
         }
+        // Four tiles share a row, so a long single word ("Subkategori") would break mid-word under a
+        // large system font. The label stops growing at 1.05x; the icon carries the meaning.
+        // ponytail: fixed cap, switch to 3 columns at large font if more labels get long.
+        val fontScale = LocalDensity.current.fontScale
+        val k = minOf(fontScale, 1.05f) / fontScale
         Text(
             tile.label, textAlign = TextAlign.Center, maxLines = 2,
-            style = AppTheme.typography.paragraph2.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp, lineHeight = 16.sp),
+            style = AppTheme.typography.paragraph2.copy(fontWeight = FontWeight.SemiBold, fontSize = (12 * k).sp, lineHeight = (16 * k).sp),
             color = MaterialTheme.colorScheme.onSurface
         )
     }

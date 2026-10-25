@@ -50,25 +50,29 @@ import kotlinx.coroutines.launch
 
 private val Ease = CubicBezierEasing(0.2f, 0.8f, 0.2f, 1f)
 
+// The full animation plays once per process; reopening the app while it is still in memory goes straight in.
+private var openingPlayed = false
+
 /**
  * The app's only opening animation (the system splash is plain green, see Theme.Kasirku):
  * the struk feeds out of the printer slot, the kunyit total lands, then "Kasirku" and the credit.
  */
 @Composable
 fun Splash(navController: NavController, viewModel: LoginViewModel, context: Context) {
-    val reduceMotion = rememberReduceMotion()
-    val paper = remember { Animatable(if (reduceMotion) 1f else 0f) }
-    val total = remember { Animatable(if (reduceMotion) 1f else 0f) }
-    val name = remember { Animatable(if (reduceMotion) 1f else 0f) }
+    val skip = rememberReduceMotion() || openingPlayed
+    val paper = remember { Animatable(if (skip) 1f else 0f) }
+    val total = remember { Animatable(if (skip) 1f else 0f) }
+    val name = remember { Animatable(if (skip) 1f else 0f) }
 
     LaunchedEffect(Unit) {
-        if (!reduceMotion) {
+        if (!skip) {
             listOf(
                 launch { delay(150); paper.animateTo(1f, tween(800, easing = Ease)) },
                 launch { delay(850); total.animateTo(1f, tween(320, easing = Ease)) },
                 launch { delay(950); name.animateTo(1f, tween(450, easing = Ease)) },
             ).joinAll()
             delay(300) // let the name settle before moving on
+            openingPlayed = true
         }
         val destination = if (viewModel.hasValidToken(context)) {
             // Pemilik ke Beranda, pegawai langsung ke Kasir

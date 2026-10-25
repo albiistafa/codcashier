@@ -225,7 +225,7 @@ fun RekapScreen(
                 )
             }
         },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
@@ -273,6 +273,10 @@ fun RekapScreen(
                     }
                 }
             }
+            val breakdown = remember(allPemasukan) {
+                allPemasukan.groupBy { it.payment_method.lowercase() }
+                    .mapValues { (_, v) -> v.sumOf { it.total_amount.toDoubleOrNull() ?: 0.0 } }
+            }
             HorizontalPager(
                 state = pagerState,
                 // Card overlaps the band, like Beranda
@@ -284,8 +288,7 @@ fun RekapScreen(
                     total = if (pemasukan) totalPemasukan else totalPengeluaran,
                     isAmountVisible = isAmountVisible,
                     onToggleAmountVisibility = { isAmountVisible = !isAmountVisible },
-                    breakdown = if (pemasukan) allPemasukan.groupBy { it.payment_method.lowercase() }
-                        .mapValues { (_, v) -> v.sumOf { it.total_amount.toDoubleOrNull() ?: 0.0 } } else null,
+                    breakdown = if (pemasukan) breakdown else null,
                     query = if (pemasukan) searchQuery else searchQueryPeng,
                     onQueryChange = { newQuery ->
                         viewModel.updateSearchQuery(newQuery)

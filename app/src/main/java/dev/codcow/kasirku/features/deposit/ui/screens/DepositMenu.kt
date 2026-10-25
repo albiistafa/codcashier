@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.deposit.ui.screens
+import dev.codcow.kasirku.ui.components.readableWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.input.KeyboardType
@@ -40,7 +41,6 @@ import dev.codcow.kasirku.features.berandaAdmin.ui.screens.currentRoute
 import dev.codcow.kasirku.features.kategoriManager.ui.screens.KategoriManagerViewModel
 import dev.codcow.kasirku.ui.components.KategoriListItem
 import dev.codcow.kasirku.ui.components.SearchBar
-import dev.codcow.kasirku.ui.components.WelcomeTopBar
 import dev.codcow.kasirku.ui.theme.AppTheme
 import dev.codcow.kasirku.middleware.Screen
 import dev.codcow.kasirku.ui.components.DepositItem
@@ -142,7 +142,7 @@ fun DepositManager(
                         .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.readableWidth().fillMaxSize(),
                                                 contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp)
                     ) {
                         when {

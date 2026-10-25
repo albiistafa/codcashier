@@ -117,7 +117,7 @@ private fun navTabs(): List<NavTab> {
 }
 
 private fun selectedTab(tabs: List<NavTab>, route: String?) =
-    tabs.firstOrNull { it.route == (if (route == Screen.MenuAdmin.route) Screen.Menu.route else route) }
+    tabs.firstOrNull { it.route == route }
 
 /** Material window size class boundary: compact < 600dp uses the bottom bar, wider gets a rail. */
 @Composable
