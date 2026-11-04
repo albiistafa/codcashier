@@ -14,8 +14,7 @@ private val PoppinsFamily = FontFamily(
     Font(R.font.font_poppins_bold, FontWeight.Bold, FontStyle.Normal),
     Font(R.font.font_poppins_semibold, FontWeight.SemiBold, FontStyle.Normal),
     Font(R.font.font_poppins_medium, FontWeight.Medium, FontStyle.Normal),
-    Font(R.font.font_poppins_regular, FontWeight.Normal, FontStyle.Normal),
-    Font(R.font.font_poppins_light, FontWeight.Light, FontStyle.Normal)
+    Font(R.font.font_poppins_regular, FontWeight.Normal, FontStyle.Normal)
 )
 
 @Immutable
@@ -290,22 +289,22 @@ val extendedTypography = AppTypography (
     ),
     paragraph2 = TextStyle(
         fontFamily = PoppinsFamily,
-        fontSize = 12.sp,
+        fontSize = 14.sp,
         fontWeight = FontWeight.Normal
     ),
     paragraph2Medium = TextStyle(
         fontFamily = PoppinsFamily,
-        fontSize = 12.sp,
+        fontSize = 14.sp,
         fontWeight = FontWeight.Medium
     ),
     paragraph2Semibold = TextStyle(
         fontFamily = PoppinsFamily,
-        fontSize = 12.sp,
+        fontSize = 14.sp,
         fontWeight = FontWeight.SemiBold
     ),
     paragraph2Bold = TextStyle(
         fontFamily = PoppinsFamily,
-        fontSize = 12.sp,
+        fontSize = 14.sp,
         fontWeight = FontWeight.Bold
     )
 )

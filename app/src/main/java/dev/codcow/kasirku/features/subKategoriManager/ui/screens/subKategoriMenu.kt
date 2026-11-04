@@ -1,5 +1,20 @@
 package dev.codcow.kasirku.kategoriManager.ui.screens
+import dev.codcow.kasirku.ui.components.readableWidth
+import dev.codcow.kasirku.features.kategoriManager.ui.screens.KategoriManagerViewModel
+import dev.codcow.kasirku.ui.components.ListHint
+import dev.codcow.kasirku.ui.components.AddFab
+import androidx.compose.foundation.lazy.itemsIndexed
+import dev.codcow.kasirku.ui.components.ConfirmDialog
+import dev.codcow.kasirku.ui.components.ErrorState
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBarsPadding
+import dev.codcow.kasirku.ui.components.GreenBand
+import dev.codcow.kasirku.ui.components.SearchPill
+import dev.codcow.kasirku.ui.components.fullBleed
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import CustomBottomNavigation
 import android.util.Log
 import androidx.compose.foundation.background
@@ -7,12 +22,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,16 +38,16 @@ import dev.codcow.kasirku.features.subKategoriManager.ui.screens.SubKategoriView
 import dev.codcow.kasirku.middleware.Screen
 import dev.codcow.kasirku.ui.components.SearchBar
 import dev.codcow.kasirku.ui.components.SubKategoriListItem
-import dev.codcow.kasirku.ui.components.WelcomeTopBar
 import dev.codcow.kasirku.ui.theme.AppTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubKategoriManager(
     navController: NavController,
     viewModel: SubKategoriViewModel = hiltViewModel(),
+    kategoriViewModel: KategoriManagerViewModel = hiltViewModel(),
     onAddClick: () -> Unit = {
         navController.navigate(Screen.CreateSubKategori.route)
     },
@@ -53,37 +64,25 @@ fun SubKategoriManager(
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            containerColor = AppTheme.colors.onSurface,
-            textContentColor = AppTheme.colors.surface,
-            title = { Text("Konfirmasi Hapus", style = AppTheme.typography.heading5Bold,
-                color = AppTheme.colors.surface) },
-            text = { Text("Apakah Anda yakin ingin menghapus sub-kategori ini?", style = AppTheme.typography.paragraph2) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        ConfirmDialog(
+            title = "Hapus subkategori?",
+            message = "Subkategori \u201C${subkategoriItems.find { it.id == selectedSubId }?.name.orEmpty()}\u201D akan dihapus dan tidak bisa dikembalikan.",
+            confirmLabel = "Hapus subkategori",
+            destructive = true,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
                         selectedSubId?.let { id ->
                             viewModel.deleteSubKategoriItem(id)
                         }
                         showDeleteDialog = false
-                    }
-                ) {
-                    Text("Ya", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.onHighlightSurface)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Tidak", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.surface)
-                }
             }
         )
     }
 
+    val kategoriItems by kategoriViewModel.kategoriItems.collectAsState()
     LaunchedEffect(Unit) {
         viewModel.fetchSubKategoriItems()
+        kategoriViewModel.fetchKategoriItems()
     }
 
     LaunchedEffect(isLoading) { // Observe perubahan pada isLoading
@@ -106,61 +105,31 @@ fun SubKategoriManager(
     }
 
     // Set up pull refresh state
-    val pullRefreshState = rememberPullRefreshState(refreshing, ::refresh)
+    val pullRefreshState = rememberPullToRefreshState()
 
     Scaffold(
-        bottomBar = {
-            CustomBottomNavigation(
-                currentRoute = currentRoute(navController = navController),
-                onNavigateToHome = {
-                    // Navigasi ke home dengan menghapus backstack
-                    navController.navigate(Screen.Menu.route) {
-                        popUpTo(Screen.Menu.route) { inclusive = true }
-                    }
-                },
-                onNavigateToRekap = {
-                    navController.navigate(Screen.Rekap.route) {
-                        popUpTo(Screen.Rekap.route) { inclusive = true }
-                    }
-                },
-                onNavigateToTransaksi = {
-                    navController.navigate(Screen.Transaksi.route) {
-                        popUpTo(Screen.Transaksi.route) { inclusive = true}
-                    }
-                }
-            )
-        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddClick,
-                shape = CircleShape,
-                containerColor = AppTheme.colors.surface,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Sub-Kategori",
-                    tint = Color.White
-                )
-            }
+            AddFab("Tambah subkategori") { onAddClick() }
         }
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(AppTheme.colors.onSurface)
-                .padding(bottom = paddingValues.calculateBottomPadding())
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues) // Scaffold insets include the status bar
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 30.dp, vertical = 30.dp)
+                    .padding(horizontal = 20.dp)
             ) {
-                WelcomeTopBar(navController = navController)
-                Spacer(modifier = Modifier.height(14.dp))
-
-                SearchBar(
-                    query = query,
+                GreenBand(
+                    title = "Subkategori",
+                    onBack = { navController.popBackStack() },
+                    modifier = Modifier.fullBleed(20.dp).background(AppTheme.colors.hero.first()).statusBarsPadding()
+                ) {
+                    SearchPill(query = query,
                     onQueryChange = { newQuery ->
                         Log.d("SearchDebug", "Query Changed: $newQuery")
                         // Cek apakah string pencarian benar-benar kosong
@@ -172,22 +141,23 @@ fun SubKategoriManager(
                             viewModel.searchSubKategoriItems(newQuery)
                         }
                     },
-                    placeholder = "Cari Sub Kategori"
-                )
+                    placeholder = "Cari subkategori"
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pullRefresh(pullRefreshState)
+                        .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
                     LazyColumn(
-                        modifier = Modifier
+                        modifier = Modifier.readableWidth()
                             .fillMaxWidth()
-                            .background(AppTheme.colors.onSurface),
+                            .background(MaterialTheme.colorScheme.background),
                         contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                                            ) {
                         // Display loading indicator if data is loading
                         if (isLoading) {
                             item {
@@ -197,37 +167,49 @@ fun SubKategoriManager(
                         // Display error message if there is an error
                         else if (error != null) {
                             item {
-                                Text(
-                                    text = "Error: $error",
-                                    color = Color.Red,
-                                    modifier = Modifier.padding(16.dp)
-                                )
+                                ErrorState(message = error ?: "", onRetry = { viewModel.fetchSubKategoriItems() })
                             }
                         }
                         // Display subkategori items
                         else {
-                            items(subkategoriItems) { subkategori ->
-                                SubKategoriListItem(
-                                    subkategori = subkategori,
-                                    onEditClick = { subKategoriId ->
-                                        navController.navigate("edit_subKategori/$subKategoriId")
-                                    },
-                                    onDeleteClick = { id ->
-                                        selectedSubId = id
-                                        showDeleteDialog = true }
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
+                            item { ListHint("Ketuk subkategori untuk mengganti namanya") }
+// Grouped under their kategori, in the kategori list's order
+                            val names = kategoriItems.associate { it.id to it.name }
+                            subkategoriItems.groupBy { it.category_id }
+                                .toList()
+                                .sortedBy { (catId, _) -> kategoriItems.indexOfFirst { it.id == catId }.let { if (it < 0) Int.MAX_VALUE else it } }
+                                .forEach { (catId, group) ->
+                                    item(key = "cat-$catId") {
+                                        Text(
+                                            names[catId] ?: "Tanpa kategori",
+                                            style = AppTheme.typography.paragraph2Semibold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
+                                        )
+                                    }
+                                    itemsIndexed(group, key = { _, it -> it.id }) { i, subkategori ->
+                                        SubKategoriListItem(
+                                            index = i,
+                                            count = group.size,
+                                            subkategori = subkategori,
+                                            onEditClick = { subKategoriId -> navController.navigate("edit_subKategori/$subKategoriId") },
+                                            onDeleteClick = { id ->
+                                                selectedSubId = id
+                                                showDeleteDialog = true
+                                            }
+                                        )
+                                    }
+                                }
                         }
                     }
 
                     // Pull refresh indicator
-                    PullRefreshIndicator(
-                        refreshing = refreshing,
+                    PullToRefreshDefaults.Indicator(
+                        isRefreshing = refreshing,
                         state = pullRefreshState,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        backgroundColor = AppTheme.colors.surface,
-                        contentColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }

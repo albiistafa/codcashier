@@ -4,66 +4,93 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 
-val PrimaryGradient = Brush.linearGradient(
-    colors = listOf(Color(0xFFEEF5D2), Color(0xFFC4DE78))
+// Everything UI reads goes through MaterialTheme.colorScheme roles.
+// AppColors only holds what Material has no role for.
+
+val LightColorScheme = lightColorScheme(
+    primary = Color(0xFF526C18),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFEEF5D2),
+    onPrimaryContainer = Color(0xFF263604),
+    // Selected segments, chips and nav indicators use secondaryContainer: keep them in the leaf family
+    secondaryContainer = Color(0xFFE2EAC8),
+    onSecondaryContainer = Color(0xFF263604),
+    // v3: pages sit on a pale leaf tint; cards and fields stay white (surface) on top of it
+    background = Color(0xFFF3F6EA),
+    onBackground = Color(0xFF20251A),
+    surface = Color.White,
+    onSurface = Color(0xFF20251A),
+    surfaceVariant = Color(0xFFF3F6EA),
+    onSurfaceVariant = Color(0xFF455038),
+    outline = Color(0xFF6D7860),
+    outlineVariant = Color(0xFFD7DDCB),
+    // Kunyit: unpaid / waiting, kept apart from the green "done" by lightness, not hue alone
+    tertiary = Color(0xFFB7790F),
+    tertiaryContainer = Color(0xFFFBEBC8),
+    onTertiaryContainer = Color(0xFF4A3000),
+    error = Color(0xFFB3261E),
+    onError = Color.White
 )
-val Primary = Color(0xFF6D8E22)
-val SecondaryBackground = Color(0xFFFFFFFF)
-val Neutral = Color(0xFFEEF5D2)
-val Based = Color(0xFFE5E5E5)
-val Success = Color(0xFF4CAF50)
-val Error = Color(0xFFFF3D30)
-val Warning = Color(0xFFFFC842)
-val Highlight = Color(0x33000000)
+
+val DarkColorScheme = darkColorScheme(
+    primary = Color(0xFFC6E889),
+    onPrimary = Color(0xFF253700),
+    primaryContainer = Color(0xFF394F0C),
+    onPrimaryContainer = Color(0xFFE0F5BA),
+    secondaryContainer = Color(0xFF3A4A28),
+    onSecondaryContainer = Color(0xFFDCE9C4),
+    background = Color(0xFF12170E),
+    onBackground = Color(0xFFE5EBDD),
+    surface = Color(0xFF1B2316),
+    onSurface = Color(0xFFE5EBDD),
+    surfaceVariant = Color(0xFF2A3524),
+    onSurfaceVariant = Color(0xFFC3D0B7),
+    outline = Color(0xFF89977E),
+    outlineVariant = Color(0xFF424C3A),
+    tertiary = Color(0xFFF2BE5C),
+    tertiaryContainer = Color(0xFF5C4100),
+    onTertiaryContainer = Color(0xFFFFDEA6),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005)
+)
 
 @Immutable
 data class AppColors(
-    val background: Color,
-    val onBackground: Color,
-    val surface: Color,
-    val onSurface: Color,
-    val secondarySurface: Color,
-    val onSecondarySurface: Color,
-    val regularSurface: Color,
-    val onRegularSurface: Color,
-    val actionSurface: Color,
-    val onActionSurface: Color,
-    val highlightSurface: Color,
-    val onHighlightSurface: Color,
-    val primaryGradient: Brush
+    /** Full-bleed brand backdrop (splash, login). */
+    val primaryGradient: Brush,
+    /** Money summary cards: stays deep green in both themes, so content sits on [onHero]. */
+    val hero: List<Color>,
+    val onHero: Color,
+    /** Paid / settled status. */
+    val success: Color,
+    /** Kunyit: only for the action that starts taking money (Mulai jualan). */
+    val money: Color = Color(0xFFF4B740),
+    val onMoney: Color = Color(0xFF2B1D00),
+    /** Daun tua: selected chips, the running struk bar, the struk slot. Light green in the dark theme so a selection stays visible. */
+    val deep: Color = Color(0xFF1E3309),
+    val onDeep: Color = Color.White
 )
 
-val LocalAppColors = staticCompositionLocalOf {
-    AppColors(
-        background = Color.Unspecified,
-        onBackground = Color.Unspecified,
-        surface = Color.Unspecified,
-        onSurface = Color.Unspecified,
-        secondarySurface = Color.Unspecified,
-        onSecondarySurface = Color.Unspecified,
-        regularSurface = Color.Unspecified,
-        onRegularSurface = Color.Unspecified,
-        actionSurface = Color.Unspecified,
-        onActionSurface = Color.Unspecified,
-        highlightSurface = Color.Unspecified,
-        onHighlightSurface = Color.Unspecified,
-        primaryGradient = PrimaryGradient
-    )
-}
+private val HeroGradient = listOf(Color(0xFF526C18), Color(0xFF394F0C), Color(0xFF526C18))
 
 val extendedColors = AppColors(
-    background = SecondaryBackground,
-    onBackground = Neutral,
-    surface = Primary,
-    onSurface = SecondaryBackground,
-    secondarySurface = Color.Unspecified,
-    onSecondarySurface = Color.Unspecified,
-    regularSurface = Color.Unspecified,
-    onRegularSurface = Color.Unspecified,
-    actionSurface = Color.Unspecified,
-    onActionSurface = Color.Unspecified,
-    highlightSurface = Highlight,
-    onHighlightSurface = Error,
-    primaryGradient = PrimaryGradient
+    primaryGradient = Brush.linearGradient(listOf(Color(0xFFEEF5D2), Color(0xFFC4DE78))),
+    hero = HeroGradient,
+    onHero = Color.White,
+    success = Color(0xFF2E7D32)
 )
+
+val darkExtendedColors = AppColors(
+    primaryGradient = Brush.linearGradient(listOf(Color(0xFF263914), Color(0xFF425A1D))),
+    hero = HeroGradient,
+    onHero = Color.White,
+    success = Color(0xFF81C784),
+    // #1E3309 on the dark surface was 1.18:1: a selected chip looked unselected
+    deep = Color(0xFFC6E889),
+    onDeep = Color(0xFF1E3309)
+)
+
+val LocalAppColors = staticCompositionLocalOf { extendedColors }

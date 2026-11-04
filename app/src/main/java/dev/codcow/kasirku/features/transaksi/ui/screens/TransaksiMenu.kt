@@ -1,5 +1,17 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import dev.codcow.kasirku.ui.components.readableWidth
+import dev.codcow.kasirku.ui.components.ErrorState
+import androidx.compose.foundation.lazy.itemsIndexed
+import dev.codcow.kasirku.ui.components.ConfirmDialog
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBarsPadding
+import dev.codcow.kasirku.ui.components.GreenBand
+import dev.codcow.kasirku.ui.components.SearchPill
+import dev.codcow.kasirku.ui.components.fullBleed
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import CustomBottomNavigation
 import android.R
 import android.app.DatePickerDialog
@@ -9,14 +21,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,7 +41,6 @@ import dev.codcow.kasirku.features.berandaAdmin.ui.screens.currentRoute
 import dev.codcow.kasirku.middleware.Screen
 import dev.codcow.kasirku.ui.components.SearchBar
 import dev.codcow.kasirku.ui.components.TransaksiItemDelete
-import dev.codcow.kasirku.ui.components.WelcomeTopBar
 import dev.codcow.kasirku.ui.theme.AppTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -44,7 +51,7 @@ import java.util.Locale
 import java.text.SimpleDateFormat
 import dev.codcow.kasirku.ui.components.TransaksiItemPengeluaran
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransaksiManager(
     navController: NavController,
@@ -56,8 +63,6 @@ fun TransaksiManager(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val isSuccess by viewModel.isSuccess.collectAsState()
-    val currentStatus by viewModel.currentStatus.collectAsState()
-    val currentPaymentMethod by viewModel.currentPaymentMethod.collectAsState()
     var activeFilter by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
@@ -232,20 +237,17 @@ fun TransaksiManager(
 
 
 
-    val pullRefreshState = rememberPullRefreshState(refreshing, ::refresh)
+    val pullRefreshState = rememberPullToRefreshState()
 
     // Delete confirmation dialog
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            containerColor = AppTheme.colors.onSurface,
-            textContentColor = AppTheme.colors.surface,
-            title = { Text("Konfirmasi Hapus", style = AppTheme.typography.heading5Bold,
-                color = AppTheme.colors.surface) },
-            text = { Text("Apakah Anda yakin ingin menghapus transaksi ini?", style = AppTheme.typography.paragraph2) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        ConfirmDialog(
+            title = "Hapus transaksi?",
+            message = "Transaksi \u201C${allTransactions.find { it.id == selectedTransaksiId }?.nama_transaksi ?: "ini"}\u201D akan dihapus dan tidak bisa dikembalikan.",
+            confirmLabel = "Hapus transaksi",
+            destructive = true,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
                         selectedTransaksiId?.let { id ->
                             viewModel.deleteTransaksi(id)
                             if (isDeletePengeluaran) {
@@ -258,29 +260,29 @@ fun TransaksiManager(
                             }
                         }
                         showDeleteDialog = false
-                    }
-                ) {
-                    Text("Ya", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.onHighlightSurface)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Tidak", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.surface)
-                }
             }
         )
     }
 
     if (showDeletePeriodeDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeletePeriodeDialog = false },
-            containerColor = AppTheme.colors.onSurface,
-            textContentColor = AppTheme.colors.surface,
-            title = { Text("Hapus Periode", style = AppTheme.typography.heading5Bold,
-                color = AppTheme.colors.surface) },
-            text = {
+        ConfirmDialog(
+            title = "Hapus transaksi satu periode?",
+            message = "Semua transaksi di antara dua tanggal ini akan dihapus dan tidak bisa dikembalikan.",
+            confirmLabel = "Hapus periode",
+            destructive = true,
+            onDismiss = { showDeletePeriodeDialog = false },
+            onConfirm = {
+                        val startDateString = startDate?.let {
+                            if (it != LocalDate.MIN) it.format(apiFormatter) else ""
+                        } ?: ""
+                        val endDateString = endDate?.let {
+                            if (it != LocalDate.MIN) it.format(apiFormatter) else ""
+                        } ?: ""
+
+                        viewModel.deletePeriode(startDateString, endDateString)
+                        showDeletePeriodeDialog = false
+            },
+            content = {
                 Column {
                     OutlinedTextField(
                         value = tanggalMulaiText,
@@ -308,30 +310,6 @@ fun TransaksiManager(
                         }
                     )
                 }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val startDateString = startDate?.let {
-                            if (it != LocalDate.MIN) it.format(apiFormatter) else ""
-                        } ?: ""
-                        val endDateString = endDate?.let {
-                            if (it != LocalDate.MIN) it.format(apiFormatter) else ""
-                        } ?: ""
-
-                        viewModel.deletePeriode(startDateString, endDateString)
-                        showDeletePeriodeDialog = false
-                    }
-                ) {
-                    Text("Hapus", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.onHighlightSurface)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeletePeriodeDialog = false }) {
-                    Text("Batal", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.surface)
-                }
             }
         )
     }
@@ -345,7 +323,7 @@ fun TransaksiManager(
                     .fillMaxWidth()
                     .padding(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = AppTheme.colors.onSurface
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
                 Column(
@@ -354,7 +332,7 @@ fun TransaksiManager(
                     Text(
                         text = "Pilih Rentang Tanggal",
                         style = AppTheme.typography.heading5Bold,
-                        color = AppTheme.colors.surface,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
@@ -398,7 +376,7 @@ fun TransaksiManager(
                             Text(
                                 "Batal",
                                 style = AppTheme.typography.paragraph2Bold,
-                                color = AppTheme.colors.surface
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
 
@@ -416,7 +394,7 @@ fun TransaksiManager(
                             Text(
                                 "Terapkan",
                                 style = AppTheme.typography.paragraph2Bold,
-                                color = AppTheme.colors.onHighlightSurface
+                                color = MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -426,61 +404,31 @@ fun TransaksiManager(
     }
 
     Scaffold(
-        bottomBar = {
-            CustomBottomNavigation(
-                currentRoute = currentRoute(navController = navController),
-                onNavigateToHome = {
-                    navController.navigate(Screen.Menu.route) {
-                        popUpTo(Screen.Menu.route) { inclusive = true }
-                    }
-                },
-                onNavigateToRekap = {
-                    navController.navigate(Screen.Rekap.route) {
-                        popUpTo(Screen.Rekap.route) { inclusive = true }
-                    }
-                },
-                onNavigateToTransaksi = {
-                    navController.navigate(Screen.Transaksi.route) {
-                        popUpTo(Screen.Transaksi.route) { inclusive = true}
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showDeletePeriodeDialog = true },
-                shape = CircleShape,
-                containerColor = AppTheme.colors.onHighlightSurface,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Hapus Periode",
-                    tint = Color.White
-                )
-            }
-        }
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(AppTheme.colors.onSurface)
-                .padding(bottom = paddingValues.calculateBottomPadding())
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues) // Scaffold insets include the status bar
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 30.dp, vertical = 30.dp)
+                    .padding(horizontal = 20.dp)
             ) {
-                WelcomeTopBar(navController = navController)
-
+                GreenBand(
+                    title = "Kelola transaksi",
+                    onBack = { navController.popBackStack() },
+                    modifier = Modifier.fullBleed(20.dp).background(AppTheme.colors.hero.first()).statusBarsPadding()
+                )
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     FilterChip(
                         selected = isPendingActive,
@@ -490,19 +438,15 @@ fun TransaksiManager(
                         },
                         label = {
                             Text(
-                                "Pending",
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center
+                                "Belum dibayar",
+                                maxLines = 1
                             )
                         },
-                        modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AppTheme.colors.surface,
-                            selectedLabelColor = Color.White
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp))
 
                     FilterChip(
                         selected = isLunasActive,
@@ -513,18 +457,14 @@ fun TransaksiManager(
                         label = {
                             Text(
                                 "Lunas",
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center
+                                maxLines = 1
                             )
                         },
-                        modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AppTheme.colors.surface,
-                            selectedLabelColor = Color.White
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp))
 
                     FilterChip(
                         selected = isDateActive,
@@ -556,10 +496,9 @@ fun TransaksiManager(
                                 )
                             }
                         },
-                        modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AppTheme.colors.surface,
-                            selectedLabelColor = Color.White
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )
                 }
@@ -567,49 +506,50 @@ fun TransaksiManager(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pullRefresh(pullRefreshState)
+                        .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
                     if (isLoading) {
                         Box(
-                            modifier = Modifier.fillMaxSize()
-                                .pullRefresh(pullRefreshState),
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
 
                         }
                     } else if (error != null) {
                         Box(
-                            modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
-                                .pullRefresh(pullRefreshState),
+                            modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "$error",
-                                style = AppTheme.typography.paragraph1,
-                                color = Color.Gray
-                            )
+                            // "Tidak ada data transaksi" is the API's empty answer, not a failure
+                            if (error == "Tidak ada data transaksi") {
+                                Text("Belum ada transaksi", style = AppTheme.typography.paragraph1, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            } else {
+                                ErrorState(message = error.orEmpty(), onRetry = ::refreshData)
+                            }
                         }
                     } else {
                         LazyColumn(
-                            modifier = Modifier
+                            modifier = Modifier.readableWidth()
                                 .fillMaxWidth()
-                                .background(AppTheme.colors.onSurface),
-                            contentPadding = PaddingValues(bottom = 80.dp, top = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                .background(MaterialTheme.colorScheme.background),
+                            contentPadding = PaddingValues(bottom = 24.dp, top = 10.dp)
                         ) {
                             if (allTransactions.isNotEmpty()) {
                                 item {
                                     Text(
-                                        text = "Semua Transaksi",
-                                        style = AppTheme.typography.paragraph1Semibold,
-                                        color = AppTheme.colors.surface,
+                                        text = "Transaksi",
+                                        style = AppTheme.typography.paragraph2Semibold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(bottom = 8.dp)
                                     )
                                 }
 
-                                items(allTransactions) { transaksi ->
-                                    TransaksiItemDelete(
+                                // Prefixed keys: a transaction and an expense can share the same numeric id
+                                itemsIndexed(allTransactions, key = { _, t -> "t${t.id}" }) { i, transaksi ->
+                                    Box(Modifier.animateItem()) { TransaksiItemDelete(
                                         transaksi = transaksi,
+                                        index = i,
+                                        count = allTransactions.size,
                                         onDeleteClick = { id ->
                                             selectedTransaksiId = id
                                             isDeletePengeluaran = false  // Mark as regular transaction deletion
@@ -623,7 +563,7 @@ fun TransaksiManager(
                                             }
 //                                            navController.navigate(Screen.Detail.createRoute(id))
                                         }
-                                    )
+                                    ) }
                                 }
 
                                 item {
@@ -634,22 +574,36 @@ fun TransaksiManager(
                             if (allPengeluaran.isNotEmpty()) {
                                 item {
                                     Text(
-                                        text = "Semua Pengeluaran",
-                                        style = AppTheme.typography.paragraph1Semibold,
-                                        color = AppTheme.colors.surface,
+                                        text = "Pengeluaran",
+                                        style = AppTheme.typography.paragraph2Semibold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(bottom = 8.dp)
                                     )
                                 }
 
-                                items(allPengeluaran) { pengeluaran ->
-                                    TransaksiItemPengeluaran(
+                                itemsIndexed(allPengeluaran, key = { _, p -> "p${p.id}" }) { i, pengeluaran ->
+                                    Box(Modifier.animateItem()) { TransaksiItemPengeluaran(
                                         pengeluaran = pengeluaran,
+                                        index = i,
+                                        count = allPengeluaran.size,
                                         onDeleteClick = { id ->
                                             selectedTransaksiId = id
                                             isDeletePengeluaran = true  // Mark as pengeluaran deletion
                                             showDeleteDialog = true
                                         }
-                                    )
+                                    ) }
+                                }
+                            }
+
+                            // Deleting a whole period is rare and irreversible: a plain red link at the end, not a floating button
+                            item {
+                                TextButton(
+                                    onClick = { showDeletePeriodeDialog = true },
+                                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 48.dp)
+                                ) {
+                                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Hapus transaksi satu periode…", style = AppTheme.typography.paragraph2Semibold, color = MaterialTheme.colorScheme.error)
                                 }
                             }
 
@@ -665,7 +619,7 @@ fun TransaksiManager(
                                         Text(
                                             text = "Tidak ada transaksi",
                                             style = AppTheme.typography.paragraph1,
-                                            color = AppTheme.colors.surface
+                                            color = MaterialTheme.colorScheme.primary
                                         )
                                     }
                                 }
@@ -673,12 +627,12 @@ fun TransaksiManager(
                         }
                     }
 
-                    PullRefreshIndicator(
-                        refreshing = refreshing,
+                    PullToRefreshDefaults.Indicator(
+                        isRefreshing = refreshing,
                         state = pullRefreshState,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        backgroundColor = AppTheme.colors.surface,
-                        contentColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }

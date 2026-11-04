@@ -1,4 +1,6 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
+import androidx.compose.ui.semantics.Role
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -7,10 +9,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Panorama
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -106,28 +110,13 @@ fun BuatMenuScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .imePadding()
+            .background(MaterialTheme.colorScheme.surface)
     ) {
         // Top Bar
-        TopAppBar(
-            title = {
-                Text(
-                    "Buat Menu",
-                    style = AppTheme.typography.labelBold,
-                    textAlign = TextAlign.Center
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.White
-            )
-        )
+        BandTopBar(title = "Tambah menu", onBack = onNavigateBack)
 
-        Divider()
+        HorizontalDivider()
 
         // Form Content
         Column(
@@ -135,12 +124,13 @@ fun BuatMenuScreen(
                 .fillMaxWidth()
                 .padding(16.dp)
                 .weight(1f)
+                .verticalScroll(rememberScrollState())
         ) {
             // Nama Menu Field
             Text(
                 text = "Nama Menu *",
                 style = AppTheme.typography.paragraph2,
-                color = Color.DarkGray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
@@ -151,8 +141,8 @@ fun BuatMenuScreen(
                     .height(56.dp),
                 placeholder = { Text("") },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.LightGray,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.primary
                 ),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
@@ -163,7 +153,7 @@ fun BuatMenuScreen(
             Text(
                 text = "Harga *",
                 style = AppTheme.typography.paragraph2,
-                color = Color.DarkGray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
@@ -179,8 +169,8 @@ fun BuatMenuScreen(
                 placeholder = { Text("") },
                 leadingIcon = { Text("Rp", modifier = Modifier.padding(start = 8.dp)) },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.LightGray,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.primary
                 ),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
@@ -191,7 +181,7 @@ fun BuatMenuScreen(
             Text(
                 text = "Kategori *",
                 style = AppTheme.typography.paragraph2,
-                color = Color.DarkGray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(4.dp))
             ExposedDropdownMenuBox(
@@ -212,8 +202,8 @@ fun BuatMenuScreen(
                         .fillMaxWidth()
                         .height(56.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.LightGray,
-                        unfocusedBorderColor = Color.LightGray
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary
                     ),
                     shape = RoundedCornerShape(8.dp),
                     placeholder = { Text("Pilih Kategori") }
@@ -223,7 +213,7 @@ fun BuatMenuScreen(
                     expanded = showCategoryDropdown,
                     onDismissRequest = { showCategoryDropdown = false },
                     modifier = Modifier
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.surface)
                         .exposedDropdownSize()
                 ) {
                     categories.forEach { category ->
@@ -253,7 +243,7 @@ fun BuatMenuScreen(
             Text(
                 text = "Sub-Kategori",
                 style = AppTheme.typography.paragraph2,
-                color = Color.DarkGray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(4.dp))
             ExposedDropdownMenuBox(
@@ -279,10 +269,10 @@ fun BuatMenuScreen(
                         .fillMaxWidth()
                         .height(56.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.LightGray,
-                        unfocusedBorderColor = Color.LightGray,
-                        disabledBorderColor = Color.LightGray.copy(alpha = 0.5f),
-                        disabledTextColor = Color.Gray
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     shape = RoundedCornerShape(8.dp),
                     placeholder = { Text("Pilih Sub-kategori") }
@@ -292,7 +282,7 @@ fun BuatMenuScreen(
                     expanded = showSubCategoryDropdown,
                     onDismissRequest = { showSubCategoryDropdown = false },
                     modifier = Modifier
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.surface)
                         .exposedDropdownSize()
                 ) {
                     val filteredSubCategories = subCategories.filter {
@@ -327,8 +317,8 @@ fun BuatMenuScreen(
                     .fillMaxWidth()
                     .height(160.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                    .clickable { imagePicker.launch("image/*") },
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                    .clickable(onClickLabel = "Pilih foto menu", role = Role.Button) { imagePicker.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
                 if (imageUri != null) {
@@ -338,7 +328,7 @@ fun BuatMenuScreen(
                                 .data(imageUri)
                                 .build()
                         ),
-                        contentDescription = "Selected Image",
+                        contentDescription = "Foto menu",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -348,8 +338,8 @@ fun BuatMenuScreen(
                     ) {
                         Icon(
                             Icons.Default.Panorama,
-                            contentDescription = "Upload Image",
-                            tint = Color.Gray,
+                            contentDescription = "Pilih foto menu",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -396,7 +386,7 @@ fun BuatMenuScreen(
                                     imageFile = imageFile
                                 )
                             } else {
-                                viewModel.setError("Gagal memproses gambar")
+                                viewModel.setError("Foto belum bisa dipakai. Pilih foto lain dari galeri.")
                             }
                         } else {
                             // Tidak ada gambar, gunakan metode createMenu biasa
@@ -419,12 +409,13 @@ fun BuatMenuScreen(
                 .height(56.dp)
                 .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = AppTheme.colors.surface,
-                disabledContainerColor = Color.Gray
+                containerColor = MaterialTheme.colorScheme.primary,
+                disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ),
             enabled = menuName.isNotEmpty() && price.isNotEmpty() && selectedCategoryId != null
         ) {
-            Text("Buat Menu", color = Color.White, style = AppTheme.typography.paragraph1)
+            Text("Buat Menu", style = AppTheme.typography.paragraph1)
         }
     }
 
@@ -441,10 +432,10 @@ fun BuatMenuScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.4f)),
+                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f)),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = Color.White)
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         }
     }
 }

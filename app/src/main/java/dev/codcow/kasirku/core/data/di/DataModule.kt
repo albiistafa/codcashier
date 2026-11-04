@@ -43,9 +43,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 import okhttp3.logging.HttpLoggingInterceptor
+import dev.codcow.kasirku.BuildConfig
 
 
-const val BASE_URL = "https://codcashier.codcowdigital.site"
+const val BASE_URL = "https://kasirku-app.my.id/"
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app_preferences")
 
 @InstallIn(SingletonComponent::class)
@@ -81,7 +82,8 @@ object DataModule {
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            // Bodies carry the login password and Bearer token: never log them outside debug builds
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
         }
 
         return OkHttpClient.Builder()

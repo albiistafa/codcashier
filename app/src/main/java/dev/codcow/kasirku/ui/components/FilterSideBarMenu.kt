@@ -1,5 +1,8 @@
 package dev.codcow.kasirku.ui.components
 
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.EnterTransition
+import dev.codcow.kasirku.ui.util.rememberReduceMotion
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.slideInHorizontally
@@ -14,11 +17,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
@@ -56,90 +61,44 @@ fun FilterSidebarMenu(
     onApplyFilter: (categoryIds: List<Int>, subCategoryIds: List<Int>) -> Unit = { _, _ -> },
     shadowElevation: Dp = 8.dp
 ) {
-    // Debug: Log input parameters
-    LaunchedEffect(Unit) {
-        println("FilterDebug: Initial Parameters")
-        println("FilterDebug: Categories count: ${categories.size}")
-        println("FilterDebug: SubCategories count: ${subCategories.size}")
-        println("FilterDebug: SubCategoryToCategoryMap size: ${subCategoryToCategoryMap.size}")
-        println("FilterDebug: SubCategoryToCategoryMap content: $subCategoryToCategoryMap")
-    }
-
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val sidebarWidth = screenWidth * 3 / 4
-    val offsetAnimation by animateDpAsState(targetValue = if (isVisible) 0.dp else sidebarWidth, label = "sidebarOffset")
 
     val selectedCategoryIds = remember { mutableStateOf(setOf<Int>()) }
     val selectedSubCategoryIds = remember { mutableStateOf(setOf<Int>()) }
 
-    // Debug: Log state changes
-    LaunchedEffect(selectedCategoryIds.value) {
-        println("FilterDebug: Selected Categories Changed")
-        println("FilterDebug: New selected categories: ${selectedCategoryIds.value}")
-    }
-
-    // Derived state untuk mengecek apakah ada kategori yang terpilih
-    val isCategorySelected by remember {
-        derivedStateOf { 
-            val selected = selectedCategoryIds.value.isNotEmpty()
-            println("FilterDebug: isCategorySelected changed to: $selected")
-            selected 
-        }
-    }
+    val isCategorySelected = selectedCategoryIds.value.isNotEmpty()
 
     val filteredSubCategories by remember(selectedCategoryIds.value, subCategories, subCategoryToCategoryMap) {
         derivedStateOf {
             if (selectedCategoryIds.value.isEmpty()) {
-                println("FilterDebug: No categories selected, returning empty subcategories")
                 emptyList()
             } else {
-                // Debug: Log mapping dan filtering
-                println("FilterDebug: Filtering subcategories")
-                println("FilterDebug: Selected categories: ${selectedCategoryIds.value}")
-                println("FilterDebug: SubCategory mapping: $subCategoryToCategoryMap")
-                println("FilterDebug: Available subCategories: ${subCategories.map { "${it.id}-${it.label}" }}")
-
-                // Filter subkategori berdasarkan kategori yang dipilih
                 val filtered = subCategories.filter { subCategory ->
                     val categoryId = subCategoryToCategoryMap[subCategory.id]
                     val isIncluded = categoryId != null && selectedCategoryIds.value.contains(categoryId)
-                    println("FilterDebug: SubCategory ${subCategory.id}(${subCategory.label}) -> categoryId: $categoryId, included: $isIncluded")
                     isIncluded
                 }
-
-                println("FilterDebug: Filtered subCategories count: ${filtered.size}")
-                println("FilterDebug: Filtered subCategories: ${filtered.map { "${it.id}-${it.label}" }}")
                 filtered
             }
         }
     }
 
-    // Debug: Log visibility changes
-    LaunchedEffect(isVisible) {
-        println("FilterDebug: Sidebar visibility changed to: $isVisible")
-    }
-
-    // Debug: Log filtered subcategories changes
-    LaunchedEffect(filteredSubCategories) {
-        println("FilterDebug: Filtered subcategories updated")
-        println("FilterDebug: New filtered subcategories count: ${filteredSubCategories.size}")
-    }
-
+    val reduceMotion = rememberReduceMotion()
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInHorizontally(initialOffsetX = { it }),
-        exit = slideOutHorizontally(targetOffsetX = { it })
+        enter = if (reduceMotion) EnterTransition.None else slideInHorizontally(initialOffsetX = { it }),
+        exit = if (reduceMotion) ExitTransition.None else slideOutHorizontally(targetOffsetX = { it })
     ) {
         Box(
             modifier = modifier
                 .fillMaxHeight()
                 .width(sidebarWidth)
-                .offset(x = offsetAnimation)
                 .graphicsLayer(shadowElevation = shadowElevation.value)
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(16.dp)
         ) {
-            Column {
+            Column(modifier = Modifier.fillMaxHeight()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("Filter", style = AppTheme.typography.labelBold)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -148,8 +107,9 @@ fun FilterSidebarMenu(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 LazyColumn(
+                    modifier = Modifier.weight(1f),
                     content = {
-                        val displayedCategories = categories.take(9)
+                        val displayedCategories = categories
                         items(displayedCategories.chunked(2)) { rowCategories ->
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
                                 rowCategories.forEach { category ->
@@ -186,12 +146,12 @@ fun FilterSidebarMenu(
                                                 )
                                             }
                                         },
-                                        modifier = Modifier.weight(1f),
+                                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                                         colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = Color(0xFF6D8E22),
-                                            selectedLabelColor = Color.White,
-                                            containerColor = Color(0xFFECECEC),
-                                            labelColor = Color.Black
+                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                         ),
                                         border = FilterChipDefaults.filterChipBorder(
                                             borderColor = Color.Transparent,
@@ -218,8 +178,9 @@ fun FilterSidebarMenu(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         LazyColumn(
+                            modifier = Modifier.heightIn(max = 200.dp),
                             content = {
-                                val displayedSubCategories = filteredSubCategories.take(9)
+                                val displayedSubCategories = filteredSubCategories
                                 items(displayedSubCategories.chunked(2)) { rowSubCategories ->
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(4.dp), // Konsisten dengan kategori
@@ -250,12 +211,12 @@ fun FilterSidebarMenu(
                                                         )
                                                     }
                                                 },
-                                                modifier = Modifier.weight(1f),
+                                                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                                                 colors = FilterChipDefaults.filterChipColors(
-                                                    selectedContainerColor = Color(0xFF6D8E22),
-                                                    selectedLabelColor = Color.White,
-                                                    containerColor = Color(0xFFECECEC),
-                                                    labelColor = Color.Black
+                                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                                 ),
                                                 border = FilterChipDefaults.filterChipBorder(
                                                     borderColor = Color.Transparent,
@@ -290,9 +251,9 @@ fun FilterSidebarMenu(
                         shape = RoundedCornerShape(25.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = Color.Transparent,
-                            contentColor = Color(0xFF6D8E22)
+                            contentColor = MaterialTheme.colorScheme.primary
                         ),
-                        border = BorderStroke(1.dp, color = Color(0xFF6D8E22))
+                        border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary)
                     ) {
                         Text("Atur Ulang", style = AppTheme.typography.paragraph2)
                     }
@@ -308,8 +269,8 @@ fun FilterSidebarMenu(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(25.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color(0xFF6D8E22),
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
                         Text("Pakai", style = AppTheme.typography.paragraph2)

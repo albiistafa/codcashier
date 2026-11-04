@@ -1,10 +1,13 @@
 package dev.codcow.kasirku.features.subKategoriManager.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -50,32 +53,17 @@ fun CreateSubKategori(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Buat Sub-Kategori",
-                        style = AppTheme.typography.labelBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
-                )
-            )
+            BandTopBar(title = "Tambah subkategori", onBack = onNavigateBack)
         }
     ) { paddingValues ->
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .background(AppTheme.colors.onSurface)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -87,11 +75,11 @@ fun CreateSubKategori(
                 Text(
                     text = "Nama Sub-Kategori",
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "*",
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(start = 4.dp)
                 )
             }
@@ -104,10 +92,10 @@ fun CreateSubKategori(
                     .padding(top = 8.dp),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = AppTheme.colors.surface,
-                    unfocusedBorderColor = Color.Gray
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
 
@@ -117,7 +105,7 @@ fun CreateSubKategori(
             Text(
                 text = "Kategori *",
                 style = AppTheme.typography.paragraph2,
-                color = Color.DarkGray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(4.dp))
             ExposedDropdownMenuBox(
@@ -138,8 +126,8 @@ fun CreateSubKategori(
                         .fillMaxWidth()
                         .height(56.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.LightGray,
-                        unfocusedBorderColor = Color.LightGray
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary
                     ),
                     shape = RoundedCornerShape(8.dp),
                     placeholder = { Text("Pilih Kategori") }
@@ -149,7 +137,7 @@ fun CreateSubKategori(
                     expanded = showCategoryDropdown,
                     onDismissRequest = { showCategoryDropdown = false },
                     modifier = Modifier
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.surface)
                         .exposedDropdownSize()
                 ) {
                     categories.forEach { category ->
@@ -173,7 +161,7 @@ fun CreateSubKategori(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Tombol Simpan di bagian bawah
             Button(
@@ -196,21 +184,21 @@ fun CreateSubKategori(
                     .height(56.dp)
                     .padding(bottom = 16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = AppTheme.colors.surface,
-                    disabledContainerColor = Color.Gray
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 enabled = !isLoading && namaKategori.isNotBlank()
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
                     Text(
                         text = "Simpan",
-                        style = AppTheme.typography.paragraph1,
-                        color = Color.White
+                        style = AppTheme.typography.paragraph1
                     )
                 }
             }
@@ -219,7 +207,7 @@ fun CreateSubKategori(
             if (error != null) {
                 Text(
                     text = error ?: "",
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     style = AppTheme.typography.paragraph2,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )

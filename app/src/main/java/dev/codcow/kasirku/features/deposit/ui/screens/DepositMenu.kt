@@ -1,5 +1,24 @@
 package dev.codcow.kasirku.features.deposit.ui.screens
+import dev.codcow.kasirku.ui.components.readableWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import dev.codcow.kasirku.ui.util.formatRupiah
+import dev.codcow.kasirku.ui.components.InitialsAvatar
+import dev.codcow.kasirku.ui.components.ListHint
+import dev.codcow.kasirku.ui.components.AddFab
+import androidx.compose.foundation.lazy.itemsIndexed
+import dev.codcow.kasirku.ui.components.ConfirmDialog
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBarsPadding
+import dev.codcow.kasirku.ui.components.GreenBand
+import dev.codcow.kasirku.ui.components.SearchPill
+import dev.codcow.kasirku.ui.components.fullBleed
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import CustomBottomNavigation
 import android.util.Log
 import androidx.compose.foundation.background
@@ -7,12 +26,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,14 +41,13 @@ import dev.codcow.kasirku.features.berandaAdmin.ui.screens.currentRoute
 import dev.codcow.kasirku.features.kategoriManager.ui.screens.KategoriManagerViewModel
 import dev.codcow.kasirku.ui.components.KategoriListItem
 import dev.codcow.kasirku.ui.components.SearchBar
-import dev.codcow.kasirku.ui.components.WelcomeTopBar
 import dev.codcow.kasirku.ui.theme.AppTheme
 import dev.codcow.kasirku.middleware.Screen
 import dev.codcow.kasirku.ui.components.DepositItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DepositManager(
     navController: NavController,
@@ -57,35 +71,7 @@ fun DepositManager(
 
     var selectedDepositId by remember { mutableStateOf<Int?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            containerColor = AppTheme.colors.onSurface,
-            textContentColor = AppTheme.colors.surface,
-            title = { Text("Konfirmasi Hapus", style = AppTheme.typography.heading5Bold,
-                color = AppTheme.colors.surface) },
-            text = { Text("Apakah Anda yakin ingin menghapus deposit ini?", style = AppTheme.typography.paragraph2) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        selectedDepositId?.let { id ->
-                            viewModel.deleteDeposit(id)
-                        }
-                        showDeleteDialog = false
-                    }
-                ) {
-                    Text("Ya", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.onHighlightSurface)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Tidak", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.surface)
-                }
-            }
-        )
-    }
+    
 
     LaunchedEffect(Unit) {
         viewModel.getAllDeposits()
@@ -107,60 +93,31 @@ fun DepositManager(
         }
     }
 
-    val pullRefreshState = rememberPullRefreshState(refreshing, ::refresh)
+    val pullRefreshState = rememberPullToRefreshState()
 
     Scaffold(
-        bottomBar = {
-            CustomBottomNavigation(
-                currentRoute = currentRoute(navController = navController),
-                onNavigateToHome = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
-                    }
-                },
-                onNavigateToRekap = {
-                    navController.navigate(Screen.Rekap.route) {
-                        popUpTo(Screen.Rekap.route) { inclusive = true }
-                    }
-                },
-                onNavigateToTransaksi = {
-                    navController.navigate(Screen.Transaksi.route) {
-                        popUpTo(Screen.Transaksi.route) { inclusive = true}
-                    }
-                }
-            )
-        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate("create_deposit") },
-                shape = CircleShape,
-                containerColor = AppTheme.colors.surface,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Deposit",
-                    tint = Color.White
-                )
-            }
+            AddFab("Tambah pelanggan") { navController.navigate("create_deposit") }
         }
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(AppTheme.colors.onSurface)
-                .padding(bottom = paddingValues.calculateBottomPadding())
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues) // Scaffold insets include the status bar
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 30.dp, vertical = 30.dp)
+                    .padding(horizontal = 20.dp)
             ) {
-                WelcomeTopBar(navController = navController)
-                Spacer(modifier = Modifier.height(14.dp))
-
-                SearchBar(
-                    query = query,
+                GreenBand(
+                    title = "Deposit",
+                    onBack = { navController.popBackStack() },
+                    modifier = Modifier.fullBleed(20.dp).background(AppTheme.colors.hero.first()).statusBarsPadding()
+                ) {
+                    SearchPill(query = query,
                     onQueryChange = { newQuery ->
                         // Tambahkan log untuk debugging
                         Log.d("SearchDebug", "Query Changed: $newQuery")
@@ -173,19 +130,20 @@ fun DepositManager(
                             viewModel.searchDepositItems(newQuery)
                         }
                     },
-                    placeholder = "Cari Deposit"
-                )
+                    placeholder = "Cari pelanggan deposit"
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pullRefresh(pullRefreshState)
+                        .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp)
+                        modifier = Modifier.readableWidth().fillMaxSize(),
+                                                contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp)
                     ) {
                         when {
                             isLoading -> item {
@@ -193,30 +151,29 @@ fun DepositManager(
                             }
 
                             else -> {
-                                items(depositItems) { deposit ->
+                                item { ListHint("Ketuk pelanggan untuk mengubah data atau menghapusnya") }
+itemsIndexed(depositItems, key = { _, it -> it.id }) { i, deposit ->
                                     DepositItem(
+                                        index = i,
+                                        count = depositItems.size,
                                         deposit = deposit,
-                                        onEditClick = {
+                                        onTopUpClick = {
                                             selectedDeposit = deposit
-                                            showTopUpSheet = true},
-                                        onDeleteClick = {
-                                                id ->
-                                            selectedDepositId = deposit.customer_id
-                                            showDeleteDialog = true
+                                            showTopUpSheet = true
                                         },
-                                        onItemClick = {navController.navigate(Screen.EditDeposit.createRoute(deposit.customer_id))}
+                                        onItemClick = { navController.navigate(Screen.EditDeposit.createRoute(deposit.customer_id)) }
                                     )
                                 }
                             }
                         }
                     }
 
-                    PullRefreshIndicator(
-                        refreshing = refreshing,
+                    PullToRefreshDefaults.Indicator(
+                        isRefreshing = refreshing,
                         state = pullRefreshState,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        backgroundColor = AppTheme.colors.surface,
-                        contentColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
 
                     if (showTopUpSheet && selectedDeposit != null) {
@@ -226,57 +183,63 @@ fun DepositManager(
                                 selectedDeposit = null
                             },
                             sheetState = bottomSheetState,
-                            containerColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.surface
                         ) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(16.dp)
-                            ) {
-                                Text("Top Up untuk: ${selectedDeposit!!.customer_name}",
-                                    style = AppTheme.typography.paragraph1Semibold)
-                                Spacer(modifier = Modifier.height(12.dp))
-
+                            ){
+                                val d = selectedDeposit!!
+                                val now = d.balance.toDoubleOrNull() ?: 0.0
+                                val add = amountText.toLongOrNull() ?: 0L
+                                fun rp(v: Double) = formatRupiah(v.toString()).replace("Rp ", "Rp")
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    InitialsAvatar(d.customer_name)
+                                    Column {
+                                        Text("Isi saldo ${d.customer_name}", style = AppTheme.typography.heading5Bold)
+                                        Text("Saldo sekarang ${rp(now)}", style = AppTheme.typography.paragraph2, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
                                 OutlinedTextField(
                                     value = amountText,
-                                    onValueChange = { newText ->
-                                        // Hanya izinkan angka saja
-                                        if (newText.all { it.isDigit() }) {
-                                            amountText = newText
-                                        }
-                                    },
-                                    label = { Text("Jumlah Top Up") },
-                                    leadingIcon = { Text("Rp", modifier = Modifier.padding(start = 8.dp)) },
-                                    placeholder = { Text("Masukkan nominal dalam angka") },
+                                    onValueChange = { newText -> if (newText.all { it.isDigit() } && newText.length <= 9) amountText = newText },
+                                    label = { Text("Jumlah isi saldo") },
+                                    prefix = { Text("Rp") },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     singleLine = true,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = Color.White,
-                                        unfocusedContainerColor = Color.White,
-                                        focusedBorderColor = AppTheme.colors.surface,
-                                        unfocusedBorderColor = Color.Gray
-                                    )
+                                    textStyle = AppTheme.typography.heading5Bold,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
-
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Row(
+                                    Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(18.dp)).padding(horizontal = 16.dp, vertical = 14.dp)
+                                ) {
+                                    Text("Saldo setelah diisi", style = AppTheme.typography.paragraph1Semibold, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.weight(1f))
+                                    Text(rp(now + add), style = AppTheme.typography.paragraph1Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                }
                                 Spacer(modifier = Modifier.height(16.dp))
-
                                 Button(
                                     onClick = {
-                                        val amount = amountText.toIntOrNull() ?: 0
-                                        viewModel.topUpBalance(id = selectedDeposit!!.customer_id, amount = amount)
+                                        viewModel.topUpBalance(id = d.customer_id, amount = add.toInt())
                                         showTopUpSheet = false
                                         selectedDeposit = null
                                         amountText = ""
                                     },
                                     enabled = isAmountValid,
+                                    shape = CircleShape,
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = AppTheme.colors.surface,
-                                        disabledContainerColor = Color.Gray
+                                        containerColor = AppTheme.colors.money,
+                                        contentColor = AppTheme.colors.onMoney,
+                                        disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     ),
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
                                 ) {
-                                    Text("Konfirmasi Top Up")
+                                    Text(if (add > 0) "Isi saldo ${rp(add.toDouble())}" else "Isi jumlahnya dulu", style = AppTheme.typography.paragraph1Bold)
                                 }
+                                Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
                     }

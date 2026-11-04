@@ -1,5 +1,7 @@
 package dev.codcow.kasirku.features.warung.ui.screens
 
+import dev.codcow.kasirku.ui.util.toUserMessage
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -66,7 +68,7 @@ class warungViewModel @Inject constructor(
                     }
                 }
                 .onFailure { exception ->
-                    _error.value = exception.message
+                    _error.value = exception.toUserMessage("Nama warung belum bisa dimuat")
                 }
             _isLoading.value = false
         }
@@ -83,7 +85,7 @@ class warungViewModel @Inject constructor(
                     _warung.value = data
                 }
                 .onFailure { exception ->
-                    _error.value = exception.message
+                    _error.value = exception.toUserMessage("Nama warung belum bisa dimuat")
                 }
 
             _isLoading.value = false
@@ -98,16 +100,13 @@ class warungViewModel @Inject constructor(
             try {
                 warungRepository.postWarung(name)
                     .onSuccess { updatedName ->
-                        println("Menu created successfully: $updatedName")
                         _isSuccess.value = true
                     }
                     .onFailure { exception ->
-                        println("Failed to create nameWarung: ${exception.message}")
-                        _error.value = exception.message ?: "Gagal membuat nama warung"
+                        _error.value = exception.toUserMessage("Nama warung belum tersimpan")
                     }
             } catch (e: Exception) {
-                println("Exception in updatedWarung: ${e.message}")
-                _error.value = "Terjadi kesalahan: ${e.message}"
+                _error.value = e.toUserMessage("Nama warung belum tersimpan")
             } finally {
                 _isLoading.value = false
             }

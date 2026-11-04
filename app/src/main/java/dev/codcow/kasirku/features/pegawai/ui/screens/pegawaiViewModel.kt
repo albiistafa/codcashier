@@ -1,5 +1,7 @@
 package dev.codcow.kasirku.features.pegawai.ui.screens
 
+import dev.codcow.kasirku.ui.util.toUserMessage
+
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -52,7 +54,7 @@ class PegawaiManagerViewModel @Inject constructor(
                 _pegawaiItems.value = pegawais
                 _isLoading.value = false
             }.onFailure { exception ->
-                _error.value = "Failed to load employee data: ${exception.message}"
+                _error.value = exception.toUserMessage("Data pegawai belum bisa dimuat")
                 _isLoading.value = false
             }
         }
@@ -69,7 +71,7 @@ class PegawaiManagerViewModel @Inject constructor(
                     fetchPegawaiItems() // Refresh the list after deletion
                 }
                 .onFailure { exception ->
-                    _error.value = "Failed to delete employee: ${exception.message}"
+                    _error.value = exception.toUserMessage("Pegawai belum terhapus")
                 }
 
             _isLoading.value = false
@@ -89,10 +91,10 @@ class PegawaiManagerViewModel @Inject constructor(
                         fetchPegawaiItems()
                     }
                     .onFailure { exception ->
-                        _error.value = exception.message ?: "Failed to create employee"
+                        _error.value = exception.toUserMessage("Pegawai belum tersimpan")
                     }
             } catch (e: Exception) {
-                _error.value = "An error occurred: ${e.message}"
+                _error.value = e.toUserMessage("Pegawai belum tersimpan")
             } finally {
                 _isLoading.value = false
             }
@@ -108,7 +110,7 @@ class PegawaiManagerViewModel @Inject constructor(
                     _selectedPegawai.value = response.data
                 }
                 .onFailure { exception ->
-                    _error.value = exception.message
+                    _error.value = exception.toUserMessage("Data pegawai belum bisa dibuka")
                 }
 
             _isLoading.value = false
@@ -127,10 +129,10 @@ class PegawaiManagerViewModel @Inject constructor(
                         fetchPegawaiItems() // Refresh the list after update
                     }
                     .onFailure { exception ->
-                        _error.value = exception.message ?: "Failed to update employee"
+                        _error.value = exception.toUserMessage("Perubahan data pegawai belum tersimpan")
                     }
             } catch (e: Exception) {
-                _error.value = "An error occurred: ${e.message}"
+                _error.value = e.toUserMessage("Perubahan data pegawai belum tersimpan")
             } finally {
                 _isLoading.value = false
             }
@@ -152,7 +154,7 @@ class PegawaiManagerViewModel @Inject constructor(
                     _isLoading.value = false
                 }
                 .onFailure { exception ->
-                    _error.value = "Search failed: ${exception.message}"
+                    _error.value = exception.toUserMessage("Pencarian pegawai belum berhasil")
                     _isLoading.value = false
                 }
         }

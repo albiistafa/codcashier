@@ -1,5 +1,7 @@
 package dev.codcow.kasirku.features.kategoriManager.ui.screens
 
+import dev.codcow.kasirku.ui.util.toUserMessage
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,7 +49,7 @@ class KategoriManagerViewModel @Inject constructor(
                 allKategoriItems = kategoris
                 _isLoading.value = false
             }.onFailure { exception ->
-                _error.value = exception.message
+                _error.value = exception.toUserMessage("Kategori belum bisa dimuat")
                 _isLoading.value = false
             }
         }
@@ -62,7 +64,7 @@ class KategoriManagerViewModel @Inject constructor(
                 _selectedKategori.value = response.data
                 _isLoading.value = false
             }.onFailure { exception ->
-                _error.value = exception.message
+                _error.value = exception.toUserMessage("Kategori belum bisa dibuka")
                 _selectedKategori.value = null
                 _isLoading.value = false
             }
@@ -77,7 +79,7 @@ class KategoriManagerViewModel @Inject constructor(
                 // Refresh the list after deletion
                 fetchKategoriItems()
             }.onFailure { exception ->
-                _error.value = exception.message
+                _error.value = exception.toUserMessage("Kategori belum terhapus")
                 _isLoading.value = false
             }
         }
@@ -92,7 +94,7 @@ class KategoriManagerViewModel @Inject constructor(
                 emit(Result.Success(Unit))
             }
             .onFailure { exception ->
-                _error.value = exception.message
+                _error.value = exception.toUserMessage("Kategori belum tersimpan")
                 emit(Result.Error(exception))
             }
 
@@ -106,7 +108,7 @@ class KategoriManagerViewModel @Inject constructor(
                 _isSuccess.value = true
                 fetchKategoriItems()
             }.onFailure { exception ->
-                _error.value = exception.message
+                _error.value = exception.toUserMessage("Perubahan kategori belum tersimpan")
                 _isLoading.value = false
             }
         }
@@ -122,7 +124,7 @@ class KategoriManagerViewModel @Inject constructor(
                 _isLoading.value = false
 
             }.onFailure { exception ->
-                _error.value = "Search failed: ${exception.message}"
+                _error.value = exception.toUserMessage("Pencarian kategori belum berhasil")
                 _isLoading.value = false
             }
         }

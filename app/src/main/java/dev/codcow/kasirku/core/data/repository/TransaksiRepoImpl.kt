@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.core.data.repository
+import com.google.gson.JsonSyntaxException
 
 import android.util.Log
 import dev.codcow.kasirku.core.data.model.SearchRekap.DataSearch
@@ -26,6 +27,7 @@ import dev.codcow.kasirku.core.data.remote.TransaksiApiService
 import dev.codcow.kasirku.core.domain.repository.TokenRepository
 import dev.codcow.kasirku.core.domain.repository.TransaksiRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
 import retrofit2.HttpException
@@ -158,12 +160,25 @@ class TransaksiRepoImpl @Inject constructor(
         }
     }
 
+    /**
+     * Calls one page of a paged list. The API answers a page past the end with `"data": []`, which Gson
+     * cannot read as an object; after page 1 that means "no more pages", not a failure of the whole list.
+     * (A list of exactly 50, 100... used to come back as "Tidak ada data transaksi".)
+     */
+    private inline fun <T> pageOrEnd(page: Int, call: () -> T): T? = try {
+        call()
+    } catch (e: JsonSyntaxException) {
+        if (page > 1) null else throw e
+    }
+
     private suspend fun <T> safeApiCall(apiCall: suspend () -> T): Result<T> {
         return withContext(Dispatchers.IO) {
             try {
                 Result.success(apiCall())
             } catch (throwable: Throwable) {
                 when (throwable) {
+                    // A cancelled load (newer search, screen reopened) must stop, not turn into an error result
+                    is CancellationException -> throw throwable
                     is IOException -> {
                         Log.e("TransaksiRepo", "Network Error", throwable)
                         Result.failure(NetworkException("Network error occurred", throwable))
@@ -250,7 +265,7 @@ class TransaksiRepoImpl @Inject constructor(
 
             while (hasMoreData){
                 Log.d("Transaksi Repo", "Fetching page $currentPage")
-                val response = transaksiApiService.getPengeluaranPaginated(startDate, endDate, currentPage, pageSize, token)
+                val response = pageOrEnd(currentPage) { transaksiApiService.getPengeluaranPaginated(startDate, endDate, currentPage, pageSize, token) } ?: break
                 if (!response.isSuccessful || response.body() == null){
                     throw HttpException(response)
                 }
@@ -316,13 +331,13 @@ class TransaksiRepoImpl @Inject constructor(
 
             while (hasMoreData){
                 Log.d("Transaksi Repo", "Fetching pemasukan page $currentPage with date range: $startDate to $endDate")
-                val response = transaksiApiService.getPemasukanPaginated(
+                val response = pageOrEnd(currentPage) { transaksiApiService.getPemasukanPaginated(
                     startDate,
                     endDate,
                     currentPage,
                     pageSize,
                     token
-                )
+                ) } ?: break
 
                 if (!response.isSuccessful || response.body() == null){
                     throw HttpException(response)
@@ -376,7 +391,7 @@ class TransaksiRepoImpl @Inject constructor(
             while (hasMoreData) {
                 // Fetch current page
                 Log.d("TransaksiRepo", "Fetching page $currentPage")
-                val response = transaksiApiService.getTransactionsPaginated(paymentMethod, status, startDate, endDate, currentPage, pageSize, token)
+                val response = pageOrEnd(currentPage) { transaksiApiService.getTransactionsPaginated(paymentMethod, status, startDate, endDate, currentPage, pageSize, token) } ?: break
                 if (!response.isSuccessful || response.body() == null) {
                     throw HttpException(response)
                 }
@@ -436,7 +451,7 @@ class TransaksiRepoImpl @Inject constructor(
             while (hasMoreData) {
                 // Fetch current page
                 Log.d("TransaksiRepo", "Fetching page $currentPage")
-                val response = transaksiApiService.getTransactionsNoFilter(currentPage, pageSize, token)
+                val response = pageOrEnd(currentPage) { transaksiApiService.getTransactionsNoFilter(currentPage, pageSize, token) } ?: break
                 if (!response.isSuccessful || response.body() == null) {
                     throw HttpException(response)
                 }

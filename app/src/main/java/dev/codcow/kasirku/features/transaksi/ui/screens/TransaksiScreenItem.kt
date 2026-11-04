@@ -8,15 +8,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.text.style.TextOverflow
+import dev.codcow.kasirku.ui.components.AppIcons
+import dev.codcow.kasirku.ui.components.DuoIcon
 import dev.codcow.kasirku.core.data.model.transaksi.Transaction
 import dev.codcow.kasirku.ui.theme.AppTheme
 import dev.codcow.kasirku.ui.util.formatRupiah
@@ -27,116 +30,69 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun TransaksiItemTransaksi(
     transaction: Transaction,
+    divider: Boolean = false,
     onFinishTransaction: (Transaction) -> Unit = {},
     onAntarTransaction: (Transaction) -> Unit = {},
     onItemClick: (Transaction) -> Unit = {}
-    ) {
-    Card(
-        modifier = Modifier
+) {
+    val pending = transaction.status.equals("pending", ignoreCase = true)
+    val undelivered = transaction.is_delivered.equals("no", ignoreCase = true)
+    val method = transaction.payment_method.orEmpty().lowercase()
+    val icon = when (method) {
+        "tunai", "cash" -> AppIcons.cash
+        "deposit" -> AppIcons.card
+        else -> AppIcons.qr
+    }
+    Column(
+        Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .clickable(onClickLabel = "Lihat detail") { onItemClick(transaction) }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+        Row(Modifier.heightIn(min = 68.dp).padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center
+            ) { DuoIcon(icon, 22.dp) }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
                 Text(
-                    text = formatJamSaja(transaction.created_at),
-                    style = AppTheme.typography.paragraph2,
-                    color = Color.Gray
+                    transaction.nama_transaksi.takeIf { !it.isNullOrEmpty() } ?: "Tanpa nama",
+                    style = AppTheme.typography.paragraph1Semibold,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "#${transaction.id}", // Assuming your Transaction model has an 'id'
+                    "${formatJamSaja(transaction.created_at)}, ${if (pending) "belum dibayar" else "lunas"}",
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Gray
+                    color = if (pending) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = transaction.nama_transaksi.takeIf { !it.isNullOrEmpty() } ?: "No Name",
-                style = AppTheme.typography.paragraph1Bold,
-                color = Color.Black
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+            Text(formatRupiah(transaction.total_amount).replace("Rp ", "Rp"), style = AppTheme.typography.paragraph1Bold)
+        }
+        if (pending || undelivered) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+                Modifier.fillMaxWidth().padding(start = 52.dp, bottom = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "Total Pembayaran :",
-                    style = AppTheme.typography.paragraph2,
-                    color = Color.Gray
-                )
-                Text(
-                    text = formatRupiah(transaction.total_amount),
-                    style = AppTheme.typography.paragraph2,
-                    color = AppTheme.colors.surface
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row (verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()){
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StatusTag(text = transaction.status)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    if (!transaction.payment_method.isNullOrEmpty()) {
-                        StatusTag(text = transaction.payment_method)
-                    }
+                if (undelivered) {
+                    Button(
+                        onClick = { onAntarTransaction(transaction) },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(horizontal = 14.dp),
+                        modifier = Modifier.heightIn(min = 40.dp)
+                    ) { Text("Sudah diantar", style = AppTheme.typography.paragraph2Semibold) }
                 }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (transaction.is_delivered.equals("no", ignoreCase = true)) {
-                        Button(
-                            onClick = { onAntarTransaction(transaction) },
-                            colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.surface), // Use your primary color
-                            shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(horizontal = 14.dp),
-                            modifier = Modifier.height(24.dp)
-                        ) {
-                            Text(
-                                "Selesai",
-                                color = Color.White,
-                                style = AppTheme.typography.paragraph2
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    if (transaction.status.equals("pending", ignoreCase = true)) {
-                        Button(
-                            onClick = { onFinishTransaction(transaction) },
-                            colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.surface), // Use your primary color
-                            shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(horizontal = 14.dp),
-                            modifier = Modifier.height(24.dp)
-                        ) {
-                            Text(
-                                "Bayar",
-                                color = Color.White,
-                                style = AppTheme.typography.paragraph2
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Icon(
-                        imageVector = Icons.Default.ArrowForward,
-                        contentDescription = "Detail",
-                        tint = AppTheme.colors.surface,
-                        modifier = Modifier.clickable { onItemClick(transaction) } // Make the arrow clickable too
-                    )
+                if (pending) {
+                    Button(
+                        onClick = { onFinishTransaction(transaction) },
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        modifier = Modifier.heightIn(min = 40.dp)
+                    ) { Text("Bayar", style = AppTheme.typography.paragraph2Semibold) }
                 }
             }
         }
+        if (divider) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 
@@ -144,37 +100,27 @@ fun TransaksiItemTransaksi(
 fun StatusTag(text: String) {
     val lowerText = text.lowercase()
 
+    val scheme = MaterialTheme.colorScheme
     val backgroundColor = when (lowerText) {
-        "lunas" -> Color(0xFF0386DE)
-        "pending" -> Color(0xFFFF8040)
-        "digital", "tunai", "deposit" -> Color.White
-        else -> Color.Transparent
+        "lunas" -> scheme.primaryContainer
+        "pending" -> scheme.secondaryContainer
+        else -> scheme.surfaceVariant
     }
-
-    val isWhiteBackground = backgroundColor == Color.White
-    val hasBackground = backgroundColor != Color.Transparent
-
-    val textColor = when {
-        isWhiteBackground -> Color(0xFF8BC34A)
-        hasBackground -> Color.White
-        else -> Color(0xFF8BC34A)
+    val textColor = when (lowerText) {
+        "lunas" -> scheme.onPrimaryContainer
+        "pending" -> scheme.onSecondaryContainer
+        else -> scheme.onSurfaceVariant
     }
-
-    val borderWidth = if (isWhiteBackground || !hasBackground) 1.dp else 0.dp
-    val borderColor = Color(0xFF8BC34A)
     val shape = RoundedCornerShape(10.dp)
-    val horizontalPadding = if (hasBackground) 8.dp else 7.dp
-    val verticalPadding = if (hasBackground) 4.dp else 3.dp
 
     Box(
         modifier = Modifier
-            .border(width = borderWidth, color = borderColor, shape = shape)
             .background(color = backgroundColor, shape = shape)
-            .padding(horizontal = horizontalPadding, vertical = verticalPadding)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Text(
             text = "#${text.replaceFirstChar { it.uppercaseChar() }}",
-            style = AppTheme.typography.paragraph2.copy(fontWeight = FontWeight.Light),
+            style = AppTheme.typography.paragraph2,
             color = textColor,
         )
     }

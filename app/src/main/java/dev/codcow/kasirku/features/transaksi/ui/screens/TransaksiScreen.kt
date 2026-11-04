@@ -1,7 +1,10 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import dev.codcow.kasirku.ui.components.ConfirmDialog
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import CustomBottomNavigation
-import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -9,14 +12,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.ui.unit.sp
+import dev.codcow.kasirku.ui.components.BandPill
+import dev.codcow.kasirku.ui.components.GreenBand
+import dev.codcow.kasirku.ui.components.SearchPill
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,18 +31,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import dev.codcow.kasirku.core.data.model.kategori.FilterChipItem
 import dev.codcow.kasirku.core.data.model.transaksi.MenuItemUpdate
 import dev.codcow.kasirku.core.data.model.transaksi.Transaction
-import dev.codcow.kasirku.features.beranda.ui.components.SearchBarMenu
 import dev.codcow.kasirku.features.berandaAdmin.ui.screens.currentRoute
 import dev.codcow.kasirku.middleware.Screen
-import dev.codcow.kasirku.ui.components.FilterSideTransaksi
 import dev.codcow.kasirku.ui.components.FilterSidebarMenu
 import dev.codcow.kasirku.ui.components.SearchBar
 import dev.codcow.kasirku.ui.theme.AppTheme
@@ -52,7 +57,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransaksiScreen(
     navController: NavController,
@@ -60,10 +65,6 @@ fun TransaksiScreen(
     onNavigateToDetail: (Int) -> Unit,
     onNavigateToPayment: (Int) -> Unit
 ) {
-    val currentSearchQuery by viewModel.currentSearchQuery.collectAsState()
-    val currentPaymentMethod by viewModel.currentPaymentMethod.collectAsState()
-    val currentStatus by viewModel.currentStatus.collectAsState()
-    val isFilterVisible by viewModel.isFilterVisible.collectAsState()
     val transaksiItems by viewModel.transaksiItems.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -72,7 +73,6 @@ fun TransaksiScreen(
     var query by remember { mutableStateOf("") }
 
     val allTransactions by viewModel.allTransactions.collectAsState()
-    val filteredTransactions by viewModel.filteredTransactions.collectAsState()
 
     var selectedTransactionId by remember { mutableStateOf<Int?>(null) }
     val currentTransaction by viewModel.currentTransaction.collectAsState()
@@ -81,21 +81,15 @@ fun TransaksiScreen(
     var showAntarTransactionDialog by remember { mutableStateOf(false) }
     var currentSelectedTransaction by remember { mutableStateOf<Transaction?>(null) }
 
-    val isPdfLoading by viewModel.isPdfLoading.collectAsState()
-    val isPdfSuccess by viewModel.isPdfSuccess.collectAsState()
-    val pdfError by viewModel.pdfError.collectAsState()
-    val pdfFile by viewModel.pdfFile.collectAsState()
+    val pdf by viewModel.pdf.collectAsState()
+    val isPdfLoading = pdf == TransaksiViewModel.PdfState.Loading
 
     var refreshing by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
-    val context = LocalContext.current
 
     var isUpdatingStatus by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = isFilterVisible) {
-        viewModel.closeFilterSidebar()
-    }
 
     fun refresh() {
         coroutineScope.launch {
@@ -106,46 +100,7 @@ fun TransaksiScreen(
         }
     }
 
-    val pullRefreshState = rememberPullRefreshState(refreshing, ::refresh)
-
-    LaunchedEffect(pdfFile, pdfError, isPdfSuccess) {
-        pdfFile?.let { file ->
-            try {
-                // Check if the transaction list is empty based on the API response message
-                // This handles the case where API returns:
-                // {"status":true,"code":200,"message":"No transactions found","data":[]}
-                if (pdfError?.contains("No transactions found", ignoreCase = true) == true ||
-                    pdfError?.contains("transaction not found", ignoreCase = true) == true) {
-                    Log.i("PDF", "No transactions to display in PDF, skipping file open")
-                    // Reset PDF state without trying to open the file
-                    viewModel.resetPdfState()
-                    return@let
-                }
-
-                // Only proceed if the file exists and has content
-                if (file.exists() && file.length() > 0) {
-                    val uri = FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        file
-                    )
-                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(uri, "application/pdf")
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    }
-                    context.startActivity(intent)
-                } else {
-                    Log.e("PDF", "PDF file is empty or does not exist")
-                }
-
-                // Reset PDF state after handling
-                viewModel.resetPdfState()
-            } catch (e: Exception) {
-                Log.e("PDF", "Failed to open PDF: ${e.message}")
-                viewModel.resetPdfState()
-            }
-        }
-    }
+    val pullRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(isSuccess) {
         if (isSuccess) {
@@ -180,26 +135,13 @@ fun TransaksiScreen(
 
     if (showFinishTransactionDialog && currentSelectedTransaction != null) {
         if (currentSelectedTransaction?.status == "pending") {
-            AlertDialog(
-                onDismissRequest = { showFinishTransactionDialog = false },
-                containerColor = AppTheme.colors.onSurface,
-                textContentColor = AppTheme.colors.surface,
-                title = {
-                    Text(
-                        "Konfirmasi Pembayaran",
-                        style = AppTheme.typography.heading5Bold,
-                        color = AppTheme.colors.surface
-                    )
-                },
-                text = {
-                    Text(
-                        "Apakah Anda yakin ingin menyelesaikan transaksi ini? Pastikan pesanan telah sesuai.",
-                        style = AppTheme.typography.paragraph2
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
+            ConfirmDialog(
+                title = "Tandai lunas?",
+                message = "Pesanan \u201C${currentSelectedTransaction?.nama_transaksi.orEmpty()}\u201D ditandai lunas. Pastikan uangnya sudah diterima.",
+                confirmLabel = "Tandai lunas",
+                destructive = false,
+                onDismiss = { showFinishTransactionDialog = false },
+                onConfirm = {
                             currentSelectedTransaction?.let { transaction ->
                                 viewModel.getTransactionById(transaction.id)
 
@@ -213,23 +155,6 @@ fun TransaksiScreen(
                                 isUpdatingStatus = true
                             }
                             showFinishTransactionDialog = false
-                        }
-                    ) {
-                        Text(
-                            "Ya",
-                            style = AppTheme.typography.paragraph2Bold,
-                            color = AppTheme.colors.onHighlightSurface
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showFinishTransactionDialog = false }) {
-                        Text(
-                            "Tidak",
-                            style = AppTheme.typography.paragraph2Bold,
-                            color = AppTheme.colors.surface
-                        )
-                    }
                 }
             )
         }
@@ -237,26 +162,13 @@ fun TransaksiScreen(
 
     if (showAntarTransactionDialog && currentSelectedTransaction != null) {
         if (currentSelectedTransaction?.is_delivered == "no") {
-            AlertDialog(
-                onDismissRequest = { showAntarTransactionDialog = false },
-                containerColor = AppTheme.colors.onSurface,
-                textContentColor = AppTheme.colors.surface,
-                title = {
-                    Text(
-                        "Tandai sebagai diantar",
-                        style = AppTheme.typography.heading5Bold,
-                        color = AppTheme.colors.surface
-                    )
-                },
-                text = {
-                    Text(
-                        "Apakah Anda yakin ingin menyelesaikan transaksi ini? Pastikan pesanan telah diterima oleh pelanggan.",
-                        style = AppTheme.typography.paragraph2
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
+            ConfirmDialog(
+                title = "Tandai sudah diantar?",
+                message = "Pesanan \u201C${currentSelectedTransaction?.nama_transaksi.orEmpty()}\u201D ditandai sudah diterima pelanggan.",
+                confirmLabel = "Sudah diantar",
+                destructive = false,
+                onDismiss = { showAntarTransactionDialog = false },
+                onConfirm = {
                             currentSelectedTransaction?.let { transaction ->
                                 viewModel.getTransactionById(transaction.id)
 
@@ -270,208 +182,166 @@ fun TransaksiScreen(
                                 isUpdatingStatus = true
                             }
                             showAntarTransactionDialog = false
-                        }
-                    ) {
-                        Text(
-                            "Ya",
-                            style = AppTheme.typography.paragraph2Bold,
-                            color = AppTheme.colors.onHighlightSurface
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showAntarTransactionDialog = false }) {
-                        Text(
-                            "Tidak",
-                            style = AppTheme.typography.paragraph2Bold,
-                            color = AppTheme.colors.surface
-                        )
-                    }
                 }
             )
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFFFFFFF))
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 20.dp)
-                    .weight(1f)
-                    .background(Color(0xFFFFFFFF)),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    "Transaksi",
-                    style = AppTheme.typography.labelBold,
-                )
+    // Same filters as the old side panel: one status, one payment method, tap again to clear
+    var status by remember { mutableStateOf("") }
+    var method by remember { mutableStateOf("") }
+    val pendingCount by viewModel.pendingCount.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) { viewModel.refreshPendingCount() }
+    PdfStateEffect(pdf, snackbarHostState, viewModel::resetPdfState)
 
-                Spacer(modifier = Modifier.height(24.dp))
+    // Typing filters the loaded list on the phone (visibleTransactions); only the chips go to the server
+    fun applyFilter() {
+        if (method.isEmpty() && status.isEmpty()) {
+            viewModel.fetchAllTransaksiNoFilter()
+        } else {
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time)
+            viewModel.fetchAllTransaksiAcrossPages(method, status, today, today)
+        }
+    }
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 22.dp, end = 22.dp)
-                ) {
-                    SearchBarMenu(
-                        query = query,
-                        onQueryChange = { newQuery ->
-                            Log.d("SearchDebug", "Query Changed: $newQuery")
-                            query = newQuery
-                            viewModel.updateSearchQuery(newQuery)
-                            if (newQuery.isEmpty() && currentPaymentMethod.isEmpty() && currentStatus.isEmpty()) {
-                                viewModel.fetchAllTransaksiNoFilter()
-                            } else if (query.isEmpty()) {
-                                val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time)
-                                viewModel.fetchAllTransaksiAcrossPages(currentPaymentMethod, currentStatus, today, today)
-                            } else {
-                                viewModel.searchTransactions(newQuery, currentPaymentMethod, currentStatus)
-                            }
-                        },
-                        placeholder = "Cari Nama Transaksi",
-                        onFilterClick = { viewModel.toggleFilterSidebar() }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Divider()
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pullRefresh(pullRefreshState)
-                ) {
-                    if (isLoading) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .pullRefresh(pullRefreshState)
-                                .padding(horizontal = 22.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-
-                        }
-                    } else if (error != null) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
-                                .pullRefresh(pullRefreshState),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "$error",
-                                style = AppTheme.typography.paragraph1,
-                                color = Color.Gray
-                            )
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(start = 16.dp, end = 16.dp)
-                        ) {
-                            items(allTransactions.filter {
-                                it.nama_transaksi?.contains(query, ignoreCase = true) ?: false
-                            }) { transaction ->
-                                TransaksiItemTransaksi(
-                                    transaction = transaction,
-                                    onFinishTransaction = { selectedTransaction ->
-                                        // Ubah logika disini
-                                        if (selectedTransaction.status == "pending") {
-                                            // Ambil data transaksi terlebih dahulu
-                                            viewModel.getTransactionById(selectedTransaction.id)
-
-                                            // Navigasi ke halaman pembayaran untuk update payment method
-                                            Log.d("TransaksiScreen", "Navigating to payment for transaction ID: ${selectedTransaction.id}")
-                                            onNavigateToPayment(selectedTransaction.id)
-                                        } else {
-                                            // Untuk transaksi non-pending, tetap gunakan dialog konfirmasi lama
-                                            showFinishTransactionDialog = true
-                                            currentSelectedTransaction = selectedTransaction
-                                        }
-                                    },
-                                    onItemClick = { clickedTransaction ->
-                                        onNavigateToDetail(clickedTransaction.id ?: -1)
-                                    },
-                                    onAntarTransaction = { selectedTransaction ->
-                                        if (selectedTransaction.is_delivered == "no") {
-                                            showAntarTransactionDialog = true
-                                            currentSelectedTransaction = selectedTransaction
-                                        }
-
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-                        }
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = { CustomBottomNavigation(navController = navController) },
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            GreenBand(
+                title = "Transaksi",
+                modifier = Modifier.background(AppTheme.colors.hero.first()).statusBarsPadding(),
+                actions = {
+                    BandPill(onClick = {
+                        val fileName = "transaksi_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                        viewModel.downloadTransaksiPdf(status, method, fileName)
+                    }, enabled = !isPdfLoading) {
+                        if (isPdfLoading) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = AppTheme.colors.onHero)
+                        else Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text("Unduh PDF", style = AppTheme.typography.paragraph2Semibold)
                     }
-
-                    // Place the PullRefreshIndicator inside the Box that has pullRefresh modifier
-                    PullRefreshIndicator(
-                        refreshing = refreshing,
-                        state = pullRefreshState,
-                        modifier = Modifier.align(Alignment.TopCenter),
-                        backgroundColor = AppTheme.colors.surface,
-                        contentColor = Color.White
-                    )
+                }
+            ) {
+                SearchPill(query, { q -> query = q }, "Cari nama transaksi")
+            }
+            Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                FilterRow("Status", listOf("pending" to "Belum dibayar", "lunas" to "Lunas"), status, badge = { if (it == "pending") pendingCount else 0 }) {
+                    status = if (status == it) "" else it; applyFilter()
+                }
+                FilterRow("Bayar", listOf("tunai" to "Tunai", "digital" to "Digital", "deposit" to "Deposit"), method) {
+                    method = if (method == it) "" else it; applyFilter()
                 }
             }
-
-            // Bottom navigation stays outside the refreshable content
-            CustomBottomNavigation(
-                currentRoute = currentRoute(navController = navController),
-                onNavigateToHome = {
-                    navController.navigate(Screen.Menu.route) {
-                        popUpTo(Screen.Menu.route) { inclusive = true }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
+            ) {
+                if (error != null && !isLoading) {
+                    Text(
+                        text = if (error == "Tidak ada data transaksi") "Belum ada transaksi" else error.orEmpty(),
+                        style = AppTheme.typography.paragraph1,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(top = 32.dp, start = 20.dp, end = 20.dp)
+                    )
+                } else if (!isLoading) {
+                    val visibleTransactions = allTransactions.filter {
+                        it.nama_transaksi?.contains(query, ignoreCase = true) ?: false
                     }
-                },
-                onNavigateToRekap = {
-                    navController.navigate(Screen.Rekap.route) {
-                        popUpTo(Screen.Rekap.route) { inclusive = true }
-                    }
-                },
-                onNavigateToTransaksi = {
-                    navController.navigate(Screen.Transaksi.route) {
-                        popUpTo(Screen.Transaksi.route) { inclusive = true }
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp)
+                    ) {
+                        if (visibleTransactions.isEmpty()) {
+                            item {
+                                Text(
+                                    text = if (query.isBlank()) "Belum ada transaksi" else "Tidak ada transaksi untuk \"$query\"",
+                                    style = AppTheme.typography.paragraph1,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
+                                )
+                            }
+                        }
+                        itemsIndexed(visibleTransactions, key = { _, t -> t.id }) { i, transaction ->
+                            // A finished order slides out and the rest close the gap instead of jumping
+                            Box(Modifier.animateItem()) { TransaksiItemTransaksi(
+                                transaction = transaction,
+                                divider = i < visibleTransactions.lastIndex,
+                                onFinishTransaction = { selectedTransaction ->
+                                    if (selectedTransaction.status == "pending") {
+                                        // Load the order first, then pay it on the payment screen
+                                        viewModel.getTransactionById(selectedTransaction.id)
+                                        onNavigateToPayment(selectedTransaction.id)
+                                    } else {
+                                        showFinishTransactionDialog = true
+                                        currentSelectedTransaction = selectedTransaction
+                                    }
+                                },
+                                onItemClick = { clicked -> onNavigateToDetail(clicked.id) },
+                                onAntarTransaction = { selectedTransaction ->
+                                    if (selectedTransaction.is_delivered == "no") {
+                                        showAntarTransactionDialog = true
+                                        currentSelectedTransaction = selectedTransaction
+                                    }
+                                }
+                            ) }
+                        }
                     }
                 }
-            )
+                PullToRefreshDefaults.Indicator(
+                    isRefreshing = refreshing,
+                    state = pullRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            }
         }
+    }
+}
 
-        // Filter sidebar should be outside the main layout
-        Box(modifier = Modifier.fillMaxHeight().align(Alignment.TopEnd)) {
-            FilterSideTransaksi(
-                isVisible = isFilterVisible,
-                onDismiss = { viewModel.closeFilterSidebar() },
-                searchQuery = query,
-                onResetFilter = { viewModel.fetchAllTransaksiNoFilter() },
-                onApplyFilter = { query, paymentMethod, status ->
-                    if (query.isEmpty() && paymentMethod.isEmpty() && status.isEmpty()) {
-                        viewModel.fetchAllTransaksiNoFilter()
-                    } else if (query.isEmpty()) {
-                        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time)
-                        viewModel.fetchAllTransaksiAcrossPages(paymentMethod, status, today, today)
-                    } else {
-                        viewModel.searchTransactions(query, paymentMethod, status)
+/** One filter group as chips: picking the selected chip again clears it. */
+@Composable
+private fun FilterRow(
+    label: String,
+    options: List<Pair<String, String>>,
+    selected: String,
+    badge: (String) -> Int = { 0 },
+    onPick: (String) -> Unit
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(label, style = AppTheme.typography.paragraph2Semibold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(48.dp))
+        options.forEach { (value, text) ->
+            val on = selected == value
+            FilterChip(
+                selected = on,
+                onClick = { onPick(value) },
+                label = { Text(text, style = AppTheme.typography.paragraph2Semibold) },
+                trailingIcon = badge(value).takeIf { it > 0 }?.let { n ->
+                    {
+                        Box(Modifier.defaultMinSize(20.dp, 20.dp).background(AppTheme.colors.money, CircleShape).padding(horizontal = 5.dp), contentAlignment = Alignment.Center) {
+                            Text("$n", color = AppTheme.colors.onMoney, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+                        }
                     }
                 },
-                onDownloadPdf = { status, paymentMethod ->
-                    val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-                    val currentTime = dateFormat.format(Date())
-                    val fileName = "transaksi_${currentTime}"
-                    viewModel.downloadTransaksiPdf(status, paymentMethod, fileName)
-                },
-                isPdfLoading = isPdfLoading,
-                isPdfSuccess = isPdfSuccess,
-                pdfError = pdfError
+                shape = RoundedCornerShape(20.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = AppTheme.colors.deep,
+                    selectedLabelColor = AppTheme.colors.onDeep,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    labelColor = MaterialTheme.colorScheme.onSurface
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true, selected = on,
+                    borderColor = MaterialTheme.colorScheme.outlineVariant, selectedBorderColor = AppTheme.colors.deep
+                ),
+                modifier = Modifier.height(40.dp)
             )
         }
     }

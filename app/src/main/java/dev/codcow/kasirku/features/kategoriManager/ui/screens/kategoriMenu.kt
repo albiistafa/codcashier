@@ -1,5 +1,19 @@
 package dev.codcow.kasirku.features.kategoriManager.ui.screens
+import dev.codcow.kasirku.ui.components.readableWidth
+import dev.codcow.kasirku.ui.components.ListHint
+import dev.codcow.kasirku.ui.components.AddFab
+import androidx.compose.foundation.lazy.itemsIndexed
+import dev.codcow.kasirku.ui.components.ConfirmDialog
+import dev.codcow.kasirku.ui.components.ErrorState
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBarsPadding
+import dev.codcow.kasirku.ui.components.GreenBand
+import dev.codcow.kasirku.ui.components.SearchPill
+import dev.codcow.kasirku.ui.components.fullBleed
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import CustomBottomNavigation
 import android.util.Log
 import androidx.compose.foundation.background
@@ -7,12 +21,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,14 +37,13 @@ import dev.codcow.kasirku.features.beranda.ui.components.SearchBarMenu
 import dev.codcow.kasirku.features.berandaAdmin.ui.screens.currentRoute
 import dev.codcow.kasirku.ui.components.KategoriListItem
 import dev.codcow.kasirku.ui.components.SearchBar
-import dev.codcow.kasirku.ui.components.WelcomeTopBar
 import dev.codcow.kasirku.ui.theme.AppTheme
 import dev.codcow.kasirku.middleware.Screen
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KategoriManager(
     navController: NavController,
@@ -53,31 +62,17 @@ fun KategoriManager(
     var selectedKategoriId by remember { mutableStateOf<Int?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            containerColor = AppTheme.colors.onSurface,
-            textContentColor = AppTheme.colors.surface,
-            title = { Text("Konfirmasi Hapus", style = AppTheme.typography.heading5Bold,
-                color = AppTheme.colors.surface) },
-            text = { Text("Apakah Anda yakin ingin menghapus kategori ini?", style = AppTheme.typography.paragraph2) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        ConfirmDialog(
+            title = "Hapus kategori?",
+            message = "Kategori \u201C${kategoriItems.find { it.id == selectedKategoriId }?.name.orEmpty()}\u201D akan dihapus dan tidak bisa dikembalikan.",
+            confirmLabel = "Hapus kategori",
+            destructive = true,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
                         selectedKategoriId?.let { id ->
                             viewModel.deleteKategoriItem(id)
                         }
                         showDeleteDialog = false
-                    }
-                ) {
-                    Text("Ya", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.onHighlightSurface)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Tidak", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.surface)
-                }
             }
         )
     }
@@ -103,60 +98,31 @@ fun KategoriManager(
         }
     }
 
-    val pullRefreshState = rememberPullRefreshState(refreshing, ::refresh)
+    val pullRefreshState = rememberPullToRefreshState()
 
     Scaffold(
-        bottomBar = {
-            CustomBottomNavigation(
-                currentRoute = currentRoute(navController = navController),
-                onNavigateToHome = {
-                    navController.navigate(Screen.Menu.route) {
-                        popUpTo(Screen.Menu.route) { inclusive = true }
-                    }
-                },
-                onNavigateToRekap = {
-                    navController.navigate(Screen.Rekap.route) {
-                        popUpTo(Screen.Rekap.route) { inclusive = true }
-                    }
-                },
-                onNavigateToTransaksi = {
-                    navController.navigate(Screen.Transaksi.route) {
-                        popUpTo(Screen.Transaksi.route) { inclusive = true}
-                    }
-                }
-            )
-        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate("create_kategori") },
-                shape = CircleShape,
-                containerColor = AppTheme.colors.surface,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Kategori",
-                    tint = Color.White
-                )
-            }
+            AddFab("Tambah kategori") { navController.navigate("create_kategori") }
         }
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(AppTheme.colors.onSurface)
-                .padding(bottom = paddingValues.calculateBottomPadding())
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues) // Scaffold insets include the status bar
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 30.dp, vertical = 30.dp)
+                    .padding(horizontal = 20.dp)
             ) {
-                WelcomeTopBar(navController = navController)
-                Spacer(modifier = Modifier.height(14.dp))
-
-                SearchBar(
-                    query = query,
+                GreenBand(
+                    title = "Kategori",
+                    onBack = { navController.popBackStack() },
+                    modifier = Modifier.fullBleed(20.dp).background(AppTheme.colors.hero.first()).statusBarsPadding()
+                ) {
+                    SearchPill(query = query,
                     onQueryChange = { newQuery ->
                         // Tambahkan log untuk debugging
                         Log.d("SearchDebug", "Query Changed: $newQuery")
@@ -169,34 +135,34 @@ fun KategoriManager(
                             viewModel.searchKategoriItems(newQuery)
                         }
                     },
-                    placeholder = "Cari Kategori"
-                )
+                    placeholder = "Cari kategori"
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pullRefresh(pullRefreshState)
+                        .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp)
+                        modifier = Modifier.readableWidth().fillMaxSize(),
+                                                contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp)
                     ) {
                         when {
                             isLoading -> item {
 
                             }
                             error != null -> item {
-                                Text(
-                                    text = "Error: $error",
-                                    color = Color.Red,
-                                    modifier = Modifier.padding(16.dp)
-                                )
+                                ErrorState(message = error ?: "", onRetry = { viewModel.fetchKategoriItems() })
                             }
                             else -> {
-                                items(kategoriItems) { kategori ->
+                                item { ListHint("Ketuk kategori untuk mengganti namanya") }
+itemsIndexed(kategoriItems, key = { _, it -> it.id }) { i, kategori ->
                                     KategoriListItem(
+                                        index = i,
+                                        count = kategoriItems.size,
                                         kategori = kategori,
                                         onEditClick = { id ->
                                             navController.navigate("edit_kategori/$id")
@@ -210,12 +176,12 @@ fun KategoriManager(
                         }
                     }
 
-                    PullRefreshIndicator(
-                        refreshing = refreshing,
+                    PullToRefreshDefaults.Indicator(
+                        isRefreshing = refreshing,
                         state = pullRefreshState,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        backgroundColor = AppTheme.colors.surface,
-                        contentColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }

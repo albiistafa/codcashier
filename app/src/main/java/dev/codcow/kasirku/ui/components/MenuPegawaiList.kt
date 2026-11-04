@@ -1,12 +1,13 @@
 package dev.codcow.kasirku.ui.components
 
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,7 +35,7 @@ fun MenuPegawaiScreen(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
     ) {
         LazyColumn {
             items(count = items.size) { index ->
@@ -52,14 +53,14 @@ fun MenuPegawaiItem(icon: ImageVector, title: String, onClick: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp, bottom = 16.dp)
-                .clickable { onClick() },
+                .clickable(onClickLabel = "Buka $title", role = Role.Button) { onClick() },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = title,
                 modifier = Modifier.size(24.dp),
-                tint = Color.Black
+                tint = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -69,7 +70,7 @@ fun MenuPegawaiItem(icon: ImageVector, title: String, onClick: () -> Unit) {
                 style = AppTheme.typography.paragraph1
             )
         }
-        Divider(color = Color.Gray.copy(alpha = 0.3f), thickness = 0.5.dp)
+        HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f), thickness = 0.5.dp)
     }
 }
 

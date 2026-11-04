@@ -1,5 +1,19 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
+import dev.codcow.kasirku.ui.components.readableWidth
+import dev.codcow.kasirku.ui.components.CategoryChips
+import dev.codcow.kasirku.ui.components.ListHint
+import dev.codcow.kasirku.ui.components.AddFab
+import androidx.compose.foundation.lazy.itemsIndexed
+import dev.codcow.kasirku.ui.components.ConfirmDialog
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBarsPadding
+import dev.codcow.kasirku.ui.components.GreenBand
+import dev.codcow.kasirku.ui.components.SearchPill
+import dev.codcow.kasirku.ui.components.fullBleed
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import CustomBottomNavigation
 import android.util.Log
 import androidx.activity.compose.BackHandler
@@ -8,10 +22,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -26,14 +36,12 @@ import dev.codcow.kasirku.core.data.model.kategori.FilterChipItem
 import dev.codcow.kasirku.features.beranda.ui.components.SearchBarMenu
 import dev.codcow.kasirku.features.berandaAdmin.ui.screens.currentRoute
 import dev.codcow.kasirku.middleware.Screen
-import dev.codcow.kasirku.ui.components.FilterSidebarMenu
 import dev.codcow.kasirku.ui.components.MenuCard
-import dev.codcow.kasirku.ui.components.WelcomeTopBar
 import dev.codcow.kasirku.ui.theme.AppTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuManager(
     navController: NavController,
@@ -43,10 +51,11 @@ fun MenuManager(
     },
     onEditClick: (Int) -> Unit = {}
 ) {
-    var showFilter by remember { mutableStateOf(false) }
     val menuItems by viewModel.menuItems.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val subCategories by viewModel.subCategories.collectAsState()
+    val selectedCategoryIds by viewModel.selectedCategoryIds.collectAsState()
+    val selectedSubCategoryIds by viewModel.selectedSubCategoryIds.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
@@ -62,38 +71,20 @@ fun MenuManager(
         subCategories.associate { it.id to it.name }
     }
 
-    BackHandler(enabled = showFilter) {
-        showFilter = false
-    }
-
     var selectedMenuId by remember { mutableStateOf<Int?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            containerColor = AppTheme.colors.onSurface,
-            textContentColor = AppTheme.colors.surface,
-            title = { Text("Konfirmasi Hapus", style = AppTheme.typography.heading5Bold,
-                color = AppTheme.colors.surface) },
-            text = { Text("Apakah Anda yakin ingin menghapus menu ini?", style = AppTheme.typography.paragraph2) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        ConfirmDialog(
+            title = "Hapus menu?",
+            message = "Menu \u201C${menuItems.find { it.id == selectedMenuId }?.name.orEmpty()}\u201D akan dihapus dan tidak bisa dikembalikan. Riwayat transaksi yang sudah ada tidak berubah.",
+            confirmLabel = "Hapus menu",
+            destructive = true,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
                         selectedMenuId?.let { id ->
                             viewModel.deleteMenuItem(id)
                         }
                         showDeleteDialog = false
-                    }
-                ) {
-                    Text("Ya", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.onHighlightSurface)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Tidak", style = AppTheme.typography.paragraph2Bold,
-                        color = AppTheme.colors.surface)
-                }
             }
         )
     }
@@ -126,105 +117,68 @@ fun MenuManager(
     }
 
     // Set up pull refresh state
-    val pullRefreshState = rememberPullRefreshState(refreshing, ::refresh)
+    val pullRefreshState = rememberPullToRefreshState()
 
     Scaffold(
-        bottomBar = {
-            CustomBottomNavigation(
-                currentRoute = currentRoute(navController = navController),
-                onNavigateToHome = {
-                    // Navigasi ke home dengan menghapus backstack
-                    navController.navigate(Screen.Menu.route) {
-                        popUpTo(Screen.Menu.route) { inclusive = true }
-                    }
-                },
-                onNavigateToRekap = {
-                    navController.navigate(Screen.Rekap.route) {
-                        popUpTo(Screen.Rekap.route) { inclusive = true }
-                    }
-                },
-                onNavigateToTransaksi = {
-                    navController.navigate(Screen.Transaksi.route) {
-                        popUpTo(Screen.Transaksi.route) { inclusive = true}
-                    }
-                }
-            )
-        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddClick,
-                shape = CircleShape,
-                containerColor = AppTheme.colors.surface,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Item",
-                    tint = Color.White
-                )
-            }
+            AddFab("Tambah menu") { onAddClick() }
         }
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(AppTheme.colors.onSurface)
-                .padding(bottom = paddingValues.calculateBottomPadding())
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues) // Scaffold insets include the status bar
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 30.dp, vertical = 30.dp)
+                    .padding(horizontal = 20.dp)
             ) {
-                WelcomeTopBar(navController = navController)
-                Spacer(modifier = Modifier.height(14.dp))
-
-                SearchBarMenu(
-                    query = query,
+                GreenBand(
+                    title = "Menu",
+                    onBack = { navController.popBackStack() },
+                    modifier = Modifier.fullBleed(20.dp).background(AppTheme.colors.hero.first()).statusBarsPadding()
+                ) {
+                    SearchPill(query = query,
                     onQueryChange = { newQuery ->
-                        // Tambahkan log untuk debugging
-                        Log.d("SearchDebug", "Query Changed: $newQuery")
-                        // Update query state
                         query = newQuery
-
-                        // Cek apakah string pencarian benar-benar kosong
-                        if (newQuery.isEmpty()) {
-                            // Jika query kosong, gunakan filter kategori dan subkategori yang aktif
-                            val selectedCategoryIds = viewModel.selectedCategoryIds.value
-                            val selectedSubCategoryIds = viewModel.selectedSubCategoryIds.value
-
-                            if (selectedCategoryIds.isEmpty() && selectedSubCategoryIds.isEmpty()) {
-                                // Jika tidak ada filter yang aktif, fetch semua item menu
-                                viewModel.fetchMenuItems()
-                            } else {
-                                // Jika ada filter aktif, terapkan filter tanpa query pencarian
-                                viewModel.filterMenuItems(selectedCategoryIds, selectedSubCategoryIds)
-                            }
-                        } else {
-                            // Jika query tidak kosong, lakukan pencarian dengan mempertimbangkan filter aktif
-                            viewModel.searchMenuItems(newQuery)
-                        }
+                        viewModel.searchMenuItems(newQuery)
                     },
-                    placeholder = "Cari Menu",
-                    onFilterClick = { showFilter = true }
+                    placeholder = "Cari menu"
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                CategoryChips(
+                    categories = categories,
+                    subCategories = subCategories,
+                    selectedCategoryId = selectedCategoryIds.firstOrNull(),
+                    selectedSubCategoryId = selectedSubCategoryIds.firstOrNull(),
+                    onSelect = { categoryId, subCategoryId ->
+                        viewModel.filterMenuItems(listOfNotNull(categoryId), listOfNotNull(subCategoryId))
+                    }
                 )
+
 
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pullRefresh(pullRefreshState)
+                        .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
                     LazyColumn(
-                        modifier = Modifier
+                        modifier = Modifier.readableWidth()
                             .fillMaxWidth()
-                            .background(AppTheme.colors.onSurface),
+                            .background(MaterialTheme.colorScheme.background),
                         contentPadding = PaddingValues(bottom = 80.dp,top = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        items(menuItems) { menu ->
+                                            ) {
+                        item { ListHint("Ketuk menu untuk mengubah nama, harga, atau fotonya") }
+itemsIndexed(menuItems, key = { _, it -> it.id }) { i, menu ->
                             MenuCard(
+                                        index = i,
+                                        count = menuItems.size,
                                 menu = menu,
                                 categories = categoryMap,
                                 subCategories = subCategoryMap,
@@ -239,36 +193,16 @@ fun MenuManager(
                     }
 
                     // Pull refresh indicator
-                    PullRefreshIndicator(
-                        refreshing = refreshing,
+                    PullToRefreshDefaults.Indicator(
+                        isRefreshing = refreshing,
                         state = pullRefreshState,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        backgroundColor = AppTheme.colors.surface,
-                        contentColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
-            Box(modifier = Modifier.fillMaxHeight().align(Alignment.TopEnd)) {
-                FilterSidebarMenu(
-                    isVisible = showFilter,
-                    onDismiss = { showFilter = false },
-                    modifier = Modifier.align(Alignment.TopEnd),
-                    categories = viewModel.categories.collectAsState().value.map {
-                        FilterChipItem(it.id, it.name)
-                    },
-                    subCategories = viewModel.subCategories.collectAsState().value.map {
-                        FilterChipItem(it.id, it.name)
-                    },
-                    onResetFilter = {
-                        // Reset filter dengan mengirim list kosong
-                        viewModel.filterMenuItems(emptyList(), emptyList())
-                    },
-                    onApplyFilter = { categoryIds, subCategoryIds ->
-                        // Terapkan filter kategori dan subkategori
-                        viewModel.filterMenuItems(categoryIds, subCategoryIds)
-                    }
-                )
-            }
+
         }
     }
 }

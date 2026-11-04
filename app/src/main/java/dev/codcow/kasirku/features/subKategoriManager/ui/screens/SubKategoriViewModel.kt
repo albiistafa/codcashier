@@ -1,5 +1,7 @@
 package dev.codcow.kasirku.features.subKategoriManager.ui.screens
 
+import dev.codcow.kasirku.ui.util.toUserMessage
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -45,7 +47,7 @@ class SubKategoriViewModel @Inject constructor(
                 allSubKategoriItems = subKategori
                 _isLoading.value = false
             }.onFailure { exception ->
-                _error.value = exception.message
+                _error.value = exception.toUserMessage("Subkategori belum bisa dimuat")
                 _isLoading.value = false
             }
         }
@@ -59,7 +61,7 @@ class SubKategoriViewModel @Inject constructor(
                 // Refresh the list after deletion
                 fetchSubKategoriItems()
             }.onFailure { exception ->
-                _error.value = exception.message
+                _error.value = exception.toUserMessage("Subkategori belum terhapus")
                 _isLoading.value = false
             }
         }
@@ -88,7 +90,7 @@ class SubKategoriViewModel @Inject constructor(
                 _isSuccess.value = true
                 fetchSubKategoriItems() // Refresh the list after creation
             }.onFailure { exception ->
-                _error.value = exception.message
+                _error.value = exception.toUserMessage("Subkategori belum tersimpan")
                 _isLoading.value = false
             }
         }
@@ -103,7 +105,7 @@ class SubKategoriViewModel @Inject constructor(
                 _selectedSubKategori.value = response.data
                 _isLoading.value = false
             }.onFailure { exception ->
-                _error.value = exception.message
+                _error.value = exception.toUserMessage("Subkategori belum bisa dibuka")
                 _selectedSubKategori.value = null
                 _isLoading.value = false
             }
@@ -119,7 +121,7 @@ class SubKategoriViewModel @Inject constructor(
                 _isSuccess.value = true
                 fetchSubKategoriItems()
             }.onFailure { exception ->
-                _error.value = exception.message
+                _error.value = exception.toUserMessage("Perubahan subkategori belum tersimpan")
                 _isLoading.value = false
             }
         }
@@ -135,7 +137,7 @@ class SubKategoriViewModel @Inject constructor(
                 _isLoading.value = false
 
             }.onFailure { exception ->
-                _error.value = "Search failed: ${exception.message}"
+                _error.value = exception.toUserMessage("Pencarian subkategori belum berhasil")
                 _isLoading.value = false
             }
         }

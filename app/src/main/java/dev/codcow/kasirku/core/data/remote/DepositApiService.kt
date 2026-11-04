@@ -1,6 +1,5 @@
 package dev.codcow.kasirku.core.data.remote
 
-import androidx.compose.compiler.plugins.kotlin.inference.Token
 import dev.codcow.kasirku.core.data.model.deposit.CreateDataDeposit
 import dev.codcow.kasirku.core.data.model.deposit.DataDeposit
 import dev.codcow.kasirku.core.data.model.deposit.DepositResponse

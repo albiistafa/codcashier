@@ -1,6 +1,18 @@
 package dev.codcow.kasirku.middleware
 
+import androidx.core.view.WindowCompat
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.runtime.SideEffect
+import androidx.compose.foundation.isSystemInDarkTheme
+import android.app.Activity
+import AppNavigationRail
+import isWideWindow
+import navigateToTab
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
@@ -10,7 +22,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dev.codcow.kasirku.core.data.model.addToCart.CartItem
 import dev.codcow.kasirku.features.auth.ui.screens.LoginScreen
-import dev.codcow.kasirku.features.beranda.ui.screens.BerandaPegawai
 import dev.codcow.kasirku.features.berandaAdmin.ui.screens.beranda
 import dev.codcow.kasirku.features.deposit.ui.screens.CreateDeposit
 import dev.codcow.kasirku.features.deposit.ui.screens.DepositManager
@@ -20,7 +31,6 @@ import dev.codcow.kasirku.features.kategoriManager.ui.screens.KategoriManager
 import dev.codcow.kasirku.features.kategoriManager.ui.screens.EditKategori
 import dev.codcow.kasirku.features.menuManager.ui.screens.BuatMenuScreen
 import dev.codcow.kasirku.features.menuManager.ui.screens.EditMenuScreen
-import dev.codcow.kasirku.features.menuManager.ui.screens.MenuAdmin
 import dev.codcow.kasirku.kategoriManager.ui.screens.SubKategoriManager
 import dev.codcow.kasirku.features.menuManager.ui.screens.MenuManager
 import dev.codcow.kasirku.features.menuManager.ui.screens.MenuPegawai
@@ -38,19 +48,22 @@ import dev.codcow.kasirku.features.transaksi.ui.screens.TransaksiManager
 import dev.codcow.kasirku.features.transaksi.ui.screens.TransaksiScreen
 import dev.codcow.kasirku.features.warung.ui.screens.EditWarung
 import dev.codcow.kasirku.features.transaksi.ui.screens.DetailPesananScreenUpdate
-import dev.codcow.kasirku.features.transaksi.ui.screens.PaymentUpdateScreen
+
+private val railRoutes = setOf(
+    Screen.Menu.route, Screen.Transaksi.route, Screen.Rekap.route,
+    Screen.Home.route, Screen.Pegawai.route, Screen.Deposit.route,
+    Screen.Kategori.route, Screen.SubKategori.route, Screen.MenuManager.route, Screen.TransaksiManager.route
+)
 
 sealed class Screen(val route: String) {
     object Splash : Screen("splash")
     object Login : Screen("login")
     object Home : Screen("home")
-    object HomePegawai : Screen("homePegawai")
 
     object Pegawai : Screen("pegawai")
     object CreatePegawai : Screen("create_pegawai")
 
     object Menu : Screen("menu")
-    object MenuAdmin : Screen("menuadmin")
 
     object MenuManager : Screen("menuManager")
     object CreateMenu : Screen("create_menu")
@@ -99,9 +112,10 @@ sealed class Screen(val route: String) {
     // Add this new route for cart details (no transaction ID needed)
     object CartDetail : Screen("cart_detail")
 
-    object DetailPembayaran : Screen("detail_pembayaran/{transactionId}") {
-        fun createRoute(transactionId: Int): String {
-            return "detail_pembayaran/$transactionId"
+    // received = cash handed over (Tunai), so the done screen can show the change; -1 = none
+    object DetailPembayaran : Screen("detail_pembayaran/{transactionId}?received={received}") {
+        fun createRoute(transactionId: Int, received: Long? = null): String {
+            return "detail_pembayaran/$transactionId?received=${received ?: -1}"
         }
     }
 }
@@ -109,8 +123,22 @@ sealed class Screen(val route: String) {
 @Composable
 fun AppNavGraph(startDestination: String = Screen.Splash.route) {
     val navController = rememberNavController()
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    // ponytail: mirrors the screens that render CustomBottomNavigation; add a route here when a screen gains it
+    val showRail = isWideWindow() && currentRoute in railRoutes
+    // Every screen, Login included, has leaf green behind the status bar: white status-bar icons
+    val view = LocalView.current
+    val darkTheme = isSystemInDarkTheme()
+    val greenTop = currentRoute != null
+    if (!view.isInEditMode) SideEffect {
+        WindowCompat.getInsetsController((view.context as Activity).window, view).isAppearanceLightStatusBars = !darkTheme && !greenTop
+    }
 
-    NavHost(navController = navController, startDestination = startDestination) {
+    Row(modifier = Modifier.fillMaxSize()) {
+    if (showRail) {
+        AppNavigationRail(currentRoute = currentRoute, onSelect = navController::navigateToTab)
+    }
+    NavHost(navController = navController, startDestination = startDestination, modifier = Modifier.weight(1f)) {
         composable(Screen.Splash.route) {
             val context = LocalContext.current
             Splash(navController = navController,
@@ -134,11 +162,6 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
                 onNavigateToDeposit = { navController.navigate(Screen.Deposit.route) },
                 onNavigateToTransaksi = { navController.navigate(Screen.TransaksiManager.route) },
                 onNavigateToWarung = { navController.navigate(Screen.EditWarung.route)}
-            )
-        }
-        composable(Screen.HomePegawai.route){
-            BerandaPegawai(
-                navController = navController
             )
         }
         composable(Screen.Pegawai.route) {
@@ -165,11 +188,6 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
         }
         composable(Screen.Menu.route) {
             MenuPegawai(
-                navController = navController
-            )
-        }
-        composable(Screen.MenuAdmin.route) {
-            MenuAdmin(
                 navController = navController
             )
         }
@@ -213,9 +231,10 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
         ) { backStackEntry ->
             val transactionId = backStackEntry.arguments?.getInt("transactionId")
             transactionId?.let {
-                PaymentUpdateScreen(
+                DetailPesananScreenUpdate(
                     navController = navController,
-                    transactionId = it
+                    transactionId = it,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }
@@ -333,13 +352,18 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
         }
         composable(
             route = Screen.DetailPembayaran.route,
-            arguments = listOf(navArgument("transactionId") { type = NavType.IntType })
+            arguments = listOf(
+                navArgument("transactionId") { type = NavType.IntType },
+                navArgument("received") { type = NavType.LongType; defaultValue = -1L }
+            )
         ) { backStackEntry ->
             val transactionId = backStackEntry.arguments?.getInt("transactionId")
+            val received = backStackEntry.arguments?.getLong("received")?.takeIf { it >= 0 }
             transactionId?.let {
                 DetailPembayaran(
                     navController = navController,
                     transactionId = it,
+                    received = received,
                     onNavigateBack = { navController.popBackStack() } // Optional: Handle back navigation
                 )
             }
@@ -360,4 +384,5 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
             }
         }
     }
+}
 }

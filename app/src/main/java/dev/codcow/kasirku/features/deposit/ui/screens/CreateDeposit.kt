@@ -1,9 +1,12 @@
 package dev.codcow.kasirku.features.deposit.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -45,32 +48,17 @@ fun CreateDeposit(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        text = "Catat Deposit Customer",
-                        style = AppTheme.typography.labelBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
-                )
-            )
+            BandTopBar(title = "Catat deposit", onBack = onNavigateBack)
         }
     ) { paddingValues ->
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .background(AppTheme.colors.onSurface)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -82,11 +70,11 @@ fun CreateDeposit(
                 Text(
                     text = "Nama Pelanggan",
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "*",
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(start = 4.dp)
                 )
             }
@@ -99,10 +87,10 @@ fun CreateDeposit(
                     .padding(top = 8.dp),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = AppTheme.colors.surface,
-                    unfocusedBorderColor = Color.Gray
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
 
@@ -114,11 +102,11 @@ fun CreateDeposit(
                 Text(
                     text = "Nomor HP",
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "*",
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(start = 4.dp)
                 )
             }
@@ -131,10 +119,10 @@ fun CreateDeposit(
                     .padding(top = 8.dp),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = AppTheme.colors.surface,
-                    unfocusedBorderColor = Color.Gray
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
 
@@ -146,11 +134,11 @@ fun CreateDeposit(
                 Text(
                     text = "Saldo",
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "*",
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(start = 4.dp)
                 )
             }
@@ -167,14 +155,14 @@ fun CreateDeposit(
                     .padding(top = 8.dp),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = AppTheme.colors.surface,
-                    unfocusedBorderColor = Color.Gray
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Tombol Simpan di bagian bawah
             Button(
@@ -206,21 +194,21 @@ fun CreateDeposit(
                     .height(56.dp)
                     .padding(bottom = 16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = AppTheme.colors.surface,
-                    disabledContainerColor = Color.Gray
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 enabled = !isLoading && namaDeposit.isNotBlank() && phoneDeposit.isNotBlank() && balance.isNotBlank()
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
                     Text(
                         text = "Simpan",
-                        style = AppTheme.typography.paragraph1,
-                        color = Color.White
+                        style = AppTheme.typography.paragraph1
                     )
                 }
             }
@@ -229,7 +217,7 @@ fun CreateDeposit(
             if (error != null) {
                 Text(
                     text = error ?: "",
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     style = AppTheme.typography.paragraph2,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )

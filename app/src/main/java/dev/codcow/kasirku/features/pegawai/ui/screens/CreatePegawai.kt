@@ -1,9 +1,12 @@
 package dev.codcow.kasirku.features.pegawai.ui.screens
+import dev.codcow.kasirku.ui.components.BandTopBar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -46,32 +49,17 @@ fun CreatePegawai(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Tambah Pegawai",
-                        style = AppTheme.typography.labelBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
-                )
-            )
+            BandTopBar(title = "Tambah pegawai", onBack = onNavigateBack)
         }
     ) { paddingValues ->
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .background(AppTheme.colors.onSurface)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -83,11 +71,11 @@ fun CreatePegawai(
                 Text(
                     text = "Nama Pegawai",
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "*",
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(start = 4.dp)
                 )
             }
@@ -102,10 +90,10 @@ fun CreatePegawai(
                     .padding(top = 8.dp),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = AppTheme.colors.surface,
-                    unfocusedBorderColor = Color.Gray
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
 
@@ -116,13 +104,13 @@ fun CreatePegawai(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Nomor Pegawai",
+                    text = "Nomor HP",
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "*",
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(start = 4.dp)
                 )
             }
@@ -138,11 +126,13 @@ fun CreatePegawai(
                     .fillMaxWidth()
                     .padding(top = 8.dp),
                 singleLine = true,
+                supportingText = { Text("Dipakai pegawai untuk masuk ke Kasirku", style = AppTheme.typography.paragraph2) },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = AppTheme.colors.surface,
-                    unfocusedBorderColor = Color.Gray
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
 
@@ -155,11 +145,11 @@ fun CreatePegawai(
                 Text(
                     text = "Password",
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "*",
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(start = 4.dp)
                 )
             }
@@ -173,10 +163,10 @@ fun CreatePegawai(
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = AppTheme.colors.surface,
-                    unfocusedBorderColor = Color.Gray
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
 
@@ -187,13 +177,13 @@ fun CreatePegawai(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Konfirmasi Password",
+                    text = "Ulangi password",
                     style = AppTheme.typography.paragraph2,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "*",
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(start = 4.dp)
                 )
             }
@@ -207,10 +197,10 @@ fun CreatePegawai(
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = AppTheme.colors.surface,
-                    unfocusedBorderColor = Color.Gray
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 ),
                 isError = passwordError != null
             )
@@ -218,20 +208,20 @@ fun CreatePegawai(
             if (passwordError != null) {
                 Text(
                     text = passwordError!!,
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     style = AppTheme.typography.paragraph2,
                     modifier = Modifier.padding(start = 8.dp, top = 4.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Tombol Simpan di bagian bawah
             Button(
                 onClick = {
                     // Validate fields
                     if (password != konfirmasiPassword) {
-                        passwordError = "Password tidak sama"
+                        passwordError = "Password belum sama. Ketik ulang password yang sama."
                         return@Button
                     } else {
                         passwordError = null
@@ -253,25 +243,25 @@ fun CreatePegawai(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .heightIn(min = 56.dp)
                     .padding(bottom = 16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = AppTheme.colors.surface,
-                    disabledContainerColor = Color.Gray
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    disabledContainerColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 enabled = !isLoading && namaPegawai.isNotBlank() && nomorPegawai.isNotBlank()
                         && password.isNotBlank() && konfirmasiPassword.isNotBlank()
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
                     Text(
-                        text = "Simpan",
-                        style = AppTheme.typography.paragraph1,
-                        color = Color.White
+                        text = "Simpan pegawai",
+                        style = AppTheme.typography.paragraph1
                     )
                 }
             }
@@ -280,7 +270,7 @@ fun CreatePegawai(
             if (error != null) {
                 Text(
                     text = error ?: "",
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     style = AppTheme.typography.paragraph2,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -290,7 +280,7 @@ fun CreatePegawai(
             viewModel.errorMessage?.let { message ->
                 Text(
                     text = message,
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     style = AppTheme.typography.paragraph2,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
