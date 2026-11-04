@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.codcow.kasirku.core.data.local.ListCache
 import dev.codcow.kasirku.core.data.model.login.LoginRequest
 import dev.codcow.kasirku.core.domain.model.AuthResult
 import dev.codcow.kasirku.core.domain.repository.LoginRepository
@@ -139,6 +140,8 @@ class LoginViewModel @Inject constructor(
                 val authResult = result.getOrNull()
 
                 if (authResult != null) {
+                    // This account may be another warung: drop menus saved for the previous one
+                    ListCache(context).clear()
                     Log.d("LoginViewModel", "Login Berhasil! AuthResult: $authResult, Status: 200")
                     Log.d("LoginViewModel", "Role to save: ${authResult.role}")
                     val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
@@ -174,6 +177,7 @@ class LoginViewModel @Inject constructor(
     }
 
     fun logout() {
+        ListCache(context).clear()
         val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         with(sharedPreferences.edit()) {
             remove("auth_token")

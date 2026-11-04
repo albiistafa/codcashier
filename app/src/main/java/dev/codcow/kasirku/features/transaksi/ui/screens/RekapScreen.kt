@@ -23,7 +23,6 @@ import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import dev.codcow.kasirku.ui.util.rememberReduceMotion
 import CustomBottomNavigation
-import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.LinearEasing
@@ -58,7 +57,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import dev.codcow.kasirku.features.beranda.ui.components.SearchBarMenu
@@ -98,12 +96,9 @@ fun RekapScreen(
     val errorPengeluaran by viewModel.errorPengeluaran.collectAsState()
     val allPemasukan by viewModel.allPemasukan.collectAsState()
     val allPengeluaran by viewModel.allPengeluaran.collectAsState()
-    val isFilterVisible by viewModel.isFilterVisible.collectAsState()
 
-    val currentRekapPemasukanStartDate by viewModel.currentRekapPemasukanStartDate.collectAsState()
-    val currentRekapPemasukanEndDate by viewModel.currentRekapPemasukanEndDate.collectAsState()
-    val currentRekapPengeluaranStartDate by viewModel.currentRekapPengeluaranStartDate.collectAsState()
-    val currentRekapPengeluaranEndDate by viewModel.currentRekapPengeluaranEndDate.collectAsState()
+    val pemasukanPeriod by viewModel.pemasukanPeriod.collectAsState()
+    val pengeluaranPeriod by viewModel.pengeluaranPeriod.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
     var searchQueryPeng by remember { mutableStateOf("") }
@@ -115,19 +110,16 @@ fun RekapScreen(
 
     val selectedTabIndex = pagerState.currentPage
 
-    val isPdfLoading by viewModel.isPdfLoading.collectAsState()
-    val isPdfSuccess by viewModel.isPdfSuccess.collectAsState()
-    val pdfError by viewModel.pdfError.collectAsState()
-    val pdfFile by viewModel.pdfFile.collectAsState()
+    val pdf by viewModel.pdf.collectAsState()
+    val isPdfLoading = pdf == TransaksiViewModel.PdfState.Loading
 
-    val context = LocalContext.current
     var refreshing by remember { mutableStateOf(false) }
 
     fun refresh() {
         coroutineScope.launch {
             refreshing = true
-            viewModel.fetchAllPemasukanAcrossPages(currentRekapPemasukanStartDate, currentRekapPemasukanEndDate)
-            viewModel.fetchAllPengeluaranAcrossPages(currentRekapPengeluaranStartDate, currentRekapPengeluaranEndDate)
+            if (selectedTabIndex == 0) viewModel.fetchAllPemasukanAcrossPages(pemasukanPeriod.start, pemasukanPeriod.end)
+            else viewModel.fetchAllPengeluaranAcrossPages(pengeluaranPeriod.start, pengeluaranPeriod.end)
             delay(800)
             refreshing = false
         }
@@ -144,31 +136,14 @@ fun RekapScreen(
         }
     }
 
-    LaunchedEffect(pdfFile) {
-        pdfFile?.let { file ->
-            try {
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    file
-                )
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(uri, "application/pdf")
-                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                }
-                context.startActivity(intent)
-
-                // Reset PDF state after viewing
-                viewModel.resetPdfState()
-            } catch (e: Exception) {
-                ("Failed to open PDF: ${e.message}")
-            }
+    // Load a tab the first time it comes into view on this visit (today); the other one waits until
+    // swiped to. targetPage, not currentPage, so loading starts as the swipe begins.
+    val loadedTabs = remember { mutableSetOf<Int>() }
+    LaunchedEffect(pagerState.targetPage) {
+        if (loadedTabs.add(pagerState.targetPage)) {
+            if (pagerState.targetPage == 0) viewModel.fetchAllPemasukanAcrossPages("", "")
+            else viewModel.fetchAllPengeluaranAcrossPages("", "")
         }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.fetchAllPemasukanAcrossPages("", "")
-        viewModel.fetchAllPengeluaranAcrossPages("", "")
     }
 
     val totalPemasukan = remember(allPemasukan) {
@@ -191,22 +166,21 @@ fun RekapScreen(
 
 
     val today = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time) }
-    val start = (if (selectedTabIndex == 0) currentRekapPemasukanStartDate else currentRekapPengeluaranStartDate).ifEmpty { today }
-    val end = (if (selectedTabIndex == 0) currentRekapPemasukanEndDate else currentRekapPengeluaranEndDate).ifEmpty { today }
+    val period = if (selectedTabIndex == 0) pemasukanPeriod else pengeluaranPeriod
+    val start = period.start.ifEmpty { today }
+    val end = period.end.ifEmpty { today }
     var showDates by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(pdfError) {
-        pdfError?.let { snackbarHostState.showSnackbar(it); viewModel.resetPdfState() }
-    }
+    PdfStateEffect(pdf, snackbarHostState, viewModel::resetPdfState)
 
     // Same date filter the side panel had: applies to the open tab, keeps the search
     fun applyDates(startDate: String, endDate: String) {
         if (selectedTabIndex == 0) {
             if (searchQuery.isEmpty()) viewModel.fetchAllPemasukanAcrossPages(startDate, endDate)
-            else { viewModel.applyRekapPemasukanFilters(startDate, endDate); viewModel.searchRekapPemasukan(searchQuery, startDate, endDate) }
+            else viewModel.searchRekapPemasukan(searchQuery, startDate, endDate)
         } else {
             if (searchQueryPeng.isEmpty()) viewModel.fetchAllPengeluaranAcrossPages(startDate, endDate)
-            else { viewModel.applyRekapPengeluaranFilters(startDate, endDate); viewModel.searchRekapPengeluaran(searchQueryPeng, startDate, endDate) }
+            else viewModel.searchRekapPengeluaran(searchQueryPeng, startDate, endDate)
         }
     }
 
@@ -291,14 +265,13 @@ fun RekapScreen(
                     breakdown = if (pemasukan) breakdown else null,
                     query = if (pemasukan) searchQuery else searchQueryPeng,
                     onQueryChange = { newQuery ->
-                        viewModel.updateSearchQuery(newQuery)
                         if (pemasukan) {
                             searchQuery = newQuery
                             if (newQuery.isEmpty()) viewModel.fetchAllPemasukanAcrossPages(start, end) else viewModel.searchRekapPemasukan(newQuery, start, end)
                         } else {
                             searchQueryPeng = newQuery
-                            if (newQuery.isEmpty()) viewModel.fetchAllPengeluaranAcrossPages(currentRekapPengeluaranStartDate, currentRekapPengeluaranEndDate)
-                            else viewModel.searchRekapPengeluaran(newQuery, currentRekapPengeluaranStartDate, currentRekapPengeluaranEndDate)
+                            if (newQuery.isEmpty()) viewModel.fetchAllPengeluaranAcrossPages(pengeluaranPeriod.start, pengeluaranPeriod.end)
+                            else viewModel.searchRekapPengeluaran(newQuery, pengeluaranPeriod.start, pengeluaranPeriod.end)
                         }
                     },
                     historyTitle = if (pemasukan) "Riwayat pemasukan" else "Riwayat pengeluaran",

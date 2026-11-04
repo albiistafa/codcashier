@@ -1,5 +1,6 @@
 package dev.codcow.kasirku.regression
 
+import dev.codcow.kasirku.core.data.local.ListCache
 import dev.codcow.kasirku.core.data.model.addToCart.Cart
 import dev.codcow.kasirku.core.data.model.menu.DataMenu
 import dev.codcow.kasirku.core.data.repository.CartRepository
@@ -31,8 +32,10 @@ class MenuSearchTest {
         override suspend fun getAllMenus() = Result.success(listOf(menu(3, 1), menu(4, 2)))
     }
     private fun menu(id: Int, category: Int = 1) = DataMenu(id, "Menu $id", "1000", category, null, null, null, null)
+    @get:Rule val tmp = org.junit.rules.TemporaryFolder()
     private fun viewModel() = MenuManagerViewModel(repository, mock(KategoriRepository::class.java),
-        mock(SubKategoriRepository::class.java), cart, mock(TransaksiRepository::class.java))
+        mock(SubKategoriRepository::class.java), cart, mock(TransaksiRepository::class.java),
+        ListCache(tmp.root, dispatcher))
 
     @Before fun setup() = runBlocking {
         Dispatchers.setMain(dispatcher)

@@ -14,8 +14,7 @@ private val PoppinsFamily = FontFamily(
     Font(R.font.font_poppins_bold, FontWeight.Bold, FontStyle.Normal),
     Font(R.font.font_poppins_semibold, FontWeight.SemiBold, FontStyle.Normal),
     Font(R.font.font_poppins_medium, FontWeight.Medium, FontStyle.Normal),
-    Font(R.font.font_poppins_regular, FontWeight.Normal, FontStyle.Normal),
-    Font(R.font.font_poppins_light, FontWeight.Light, FontStyle.Normal)
+    Font(R.font.font_poppins_regular, FontWeight.Normal, FontStyle.Normal)
 )
 
 @Immutable

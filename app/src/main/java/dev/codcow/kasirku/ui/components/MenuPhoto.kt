@@ -14,7 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 @Composable
 fun MenuPhoto(photo: String?, modifier: Modifier = Modifier) {
@@ -25,7 +27,8 @@ fun MenuPhoto(photo: String?, modifier: Modifier = Modifier) {
             DuoIcon(AppIcons.menu, if (maxWidth >= 90.dp) 36.dp else 24.dp)
         } else {
             AsyncImage(
-                model = photo,
+                // Fade in over the soft tile instead of popping in mid-scroll
+                model = ImageRequest.Builder(LocalContext.current).data(photo).crossfade(true).build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),

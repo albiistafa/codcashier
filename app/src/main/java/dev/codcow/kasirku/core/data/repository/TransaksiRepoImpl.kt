@@ -27,6 +27,7 @@ import dev.codcow.kasirku.core.data.remote.TransaksiApiService
 import dev.codcow.kasirku.core.domain.repository.TokenRepository
 import dev.codcow.kasirku.core.domain.repository.TransaksiRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
 import retrofit2.HttpException
@@ -176,6 +177,8 @@ class TransaksiRepoImpl @Inject constructor(
                 Result.success(apiCall())
             } catch (throwable: Throwable) {
                 when (throwable) {
+                    // A cancelled load (newer search, screen reopened) must stop, not turn into an error result
+                    is CancellationException -> throw throwable
                     is IOException -> {
                         Log.e("TransaksiRepo", "Network Error", throwable)
                         Result.failure(NetworkException("Network error occurred", throwable))

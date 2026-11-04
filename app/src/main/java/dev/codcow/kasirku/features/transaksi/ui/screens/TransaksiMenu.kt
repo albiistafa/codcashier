@@ -63,8 +63,6 @@ fun TransaksiManager(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val isSuccess by viewModel.isSuccess.collectAsState()
-    val currentStatus by viewModel.currentStatus.collectAsState()
-    val currentPaymentMethod by viewModel.currentPaymentMethod.collectAsState()
     var activeFilter by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
@@ -546,8 +544,9 @@ fun TransaksiManager(
                                     )
                                 }
 
-                                itemsIndexed(allTransactions) { i, transaksi ->
-                                    TransaksiItemDelete(
+                                // Prefixed keys: a transaction and an expense can share the same numeric id
+                                itemsIndexed(allTransactions, key = { _, t -> "t${t.id}" }) { i, transaksi ->
+                                    Box(Modifier.animateItem()) { TransaksiItemDelete(
                                         transaksi = transaksi,
                                         index = i,
                                         count = allTransactions.size,
@@ -564,7 +563,7 @@ fun TransaksiManager(
                                             }
 //                                            navController.navigate(Screen.Detail.createRoute(id))
                                         }
-                                    )
+                                    ) }
                                 }
 
                                 item {
@@ -582,8 +581,8 @@ fun TransaksiManager(
                                     )
                                 }
 
-                                itemsIndexed(allPengeluaran) { i, pengeluaran ->
-                                    TransaksiItemPengeluaran(
+                                itemsIndexed(allPengeluaran, key = { _, p -> "p${p.id}" }) { i, pengeluaran ->
+                                    Box(Modifier.animateItem()) { TransaksiItemPengeluaran(
                                         pengeluaran = pengeluaran,
                                         index = i,
                                         count = allPengeluaran.size,
@@ -592,7 +591,7 @@ fun TransaksiManager(
                                             isDeletePengeluaran = true  // Mark as pengeluaran deletion
                                             showDeleteDialog = true
                                         }
-                                    )
+                                    ) }
                                 }
                             }
 

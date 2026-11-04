@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -75,6 +77,7 @@ fun MenuPegawai(
     val pendingCount by transaksiViewModel.pendingCount.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val showingSavedMenu by viewModel.showingSavedMenu.collectAsState()
     val cart by viewModel.cart.collectAsState()
     val showCartIndicator by remember {
         derivedStateOf {
@@ -164,6 +167,18 @@ fun MenuPegawai(
                             viewModel.filterMenuItems(listOfNotNull(categoryId), listOfNotNull(subCategoryId))
                         }
                     )
+                    if (showingSavedMenu) {
+                        Text(
+                            "Belum tersambung ke server, jadi ini menu yang tersimpan di HP. Pesanan tetap bisa dibuat; tarik ke bawah untuk memuat ulang.",
+                            style = AppTheme.typography.paragraph2,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                                .semantics { liveRegion = LiveRegionMode.Polite }
+                        )
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
                 }
             }
@@ -177,7 +192,7 @@ fun MenuPegawai(
                         .fillMaxSize()
                         .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
                 ) {
-                    if (isLoading) {
+                    if (isLoading && menuItems.isEmpty()) {
                         LazyVerticalGrid(
                             columns = GridCells.Adaptive(minSize = 150.dp),
                             modifier = Modifier.fillMaxWidth(),
@@ -215,10 +230,12 @@ fun MenuPegawai(
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             contentPadding = PaddingValues(bottom = 120.dp)
                         ) {
-                            item(key = "header", span = { GridItemSpan(maxLineSpan) }) { header() }
-                            items(menuItems, key = { it.id }) { menu ->
+                            item(key = "header", span = { GridItemSpan(maxLineSpan) }, contentType = "header") { header() }
+                            items(menuItems, key = { it.id }, contentType = { "menu" }) { menu ->
                                 val quantity = itemQuantities[menu.id] ?: 0
                                 MenuCardPemesanan(
+                                    // Cards glide to their new spot when a category filter or search changes the list
+                                    modifier = Modifier.animateItem(),
                                     menu = menu,
                                     quantity = quantity,
                                     onIncrement = { selectedMenu ->

@@ -14,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.CircleShape
@@ -121,7 +120,7 @@ fun StatusTag(text: String) {
     ) {
         Text(
             text = "#${text.replaceFirstChar { it.uppercaseChar() }}",
-            style = AppTheme.typography.paragraph2.copy(fontWeight = FontWeight.Light),
+            style = AppTheme.typography.paragraph2,
             color = textColor,
         )
     }

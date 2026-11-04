@@ -37,7 +37,6 @@ import kotlinx.coroutines.launch
 import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import captureComposableToBitmap
 import dev.codcow.kasirku.features.pdf.ReceiptContent
 import dev.codcow.kasirku.features.pdf.createReceiptBitmap
 import dev.codcow.kasirku.features.pdf.saveBitmapAsPdf

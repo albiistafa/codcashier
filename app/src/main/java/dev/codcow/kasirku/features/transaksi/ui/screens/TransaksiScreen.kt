@@ -5,7 +5,6 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import CustomBottomNavigation
-import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -35,7 +34,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import dev.codcow.kasirku.core.data.model.kategori.FilterChipItem
@@ -67,10 +65,6 @@ fun TransaksiScreen(
     onNavigateToDetail: (Int) -> Unit,
     onNavigateToPayment: (Int) -> Unit
 ) {
-    val currentSearchQuery by viewModel.currentSearchQuery.collectAsState()
-    val currentPaymentMethod by viewModel.currentPaymentMethod.collectAsState()
-    val currentStatus by viewModel.currentStatus.collectAsState()
-    val isFilterVisible by viewModel.isFilterVisible.collectAsState()
     val transaksiItems by viewModel.transaksiItems.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -79,7 +73,6 @@ fun TransaksiScreen(
     var query by remember { mutableStateOf("") }
 
     val allTransactions by viewModel.allTransactions.collectAsState()
-    val filteredTransactions by viewModel.filteredTransactions.collectAsState()
 
     var selectedTransactionId by remember { mutableStateOf<Int?>(null) }
     val currentTransaction by viewModel.currentTransaction.collectAsState()
@@ -88,15 +81,12 @@ fun TransaksiScreen(
     var showAntarTransactionDialog by remember { mutableStateOf(false) }
     var currentSelectedTransaction by remember { mutableStateOf<Transaction?>(null) }
 
-    val isPdfLoading by viewModel.isPdfLoading.collectAsState()
-    val isPdfSuccess by viewModel.isPdfSuccess.collectAsState()
-    val pdfError by viewModel.pdfError.collectAsState()
-    val pdfFile by viewModel.pdfFile.collectAsState()
+    val pdf by viewModel.pdf.collectAsState()
+    val isPdfLoading = pdf == TransaksiViewModel.PdfState.Loading
 
     var refreshing by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
-    val context = LocalContext.current
 
     var isUpdatingStatus by remember { mutableStateOf(false) }
 
@@ -111,45 +101,6 @@ fun TransaksiScreen(
     }
 
     val pullRefreshState = rememberPullToRefreshState()
-
-    LaunchedEffect(pdfFile, pdfError, isPdfSuccess) {
-        pdfFile?.let { file ->
-            try {
-                // Check if the transaction list is empty based on the API response message
-                // This handles the case where API returns:
-                // {"status":true,"code":200,"message":"No transactions found","data":[]}
-                if (pdfError?.contains("No transactions found", ignoreCase = true) == true ||
-                    pdfError?.contains("transaction not found", ignoreCase = true) == true) {
-                    Log.i("PDF", "No transactions to display in PDF, skipping file open")
-                    // Reset PDF state without trying to open the file
-                    viewModel.resetPdfState()
-                    return@let
-                }
-
-                // Only proceed if the file exists and has content
-                if (file.exists() && file.length() > 0) {
-                    val uri = FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        file
-                    )
-                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(uri, "application/pdf")
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    }
-                    context.startActivity(intent)
-                } else {
-                    Log.e("PDF", "PDF file is empty or does not exist")
-                }
-
-                // Reset PDF state after handling
-                viewModel.resetPdfState()
-            } catch (e: Exception) {
-                Log.e("PDF", "Failed to open PDF: ${e.message}")
-                viewModel.resetPdfState()
-            }
-        }
-    }
 
     LaunchedEffect(isSuccess) {
         if (isSuccess) {
@@ -242,18 +193,15 @@ fun TransaksiScreen(
     val pendingCount by viewModel.pendingCount.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(Unit) { viewModel.refreshPendingCount() }
-    LaunchedEffect(pdfError) {
-        pdfError?.let { snackbarHostState.showSnackbar(it); viewModel.resetPdfState() }
-    }
+    PdfStateEffect(pdf, snackbarHostState, viewModel::resetPdfState)
 
-    fun applyFilter(q: String = query) {
-        if (q.isEmpty() && method.isEmpty() && status.isEmpty()) {
+    // Typing filters the loaded list on the phone (visibleTransactions); only the chips go to the server
+    fun applyFilter() {
+        if (method.isEmpty() && status.isEmpty()) {
             viewModel.fetchAllTransaksiNoFilter()
-        } else if (q.isEmpty()) {
+        } else {
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time)
             viewModel.fetchAllTransaksiAcrossPages(method, status, today, today)
-        } else {
-            viewModel.searchTransactions(q, method, status)
         }
     }
 
@@ -278,11 +226,7 @@ fun TransaksiScreen(
                     }
                 }
             ) {
-                SearchPill(query, { q ->
-                    query = q
-                    viewModel.updateSearchQuery(q)
-                    applyFilter(q)
-                }, "Cari nama transaksi")
+                SearchPill(query, { q -> query = q }, "Cari nama transaksi")
             }
             Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 FilterRow("Status", listOf("pending" to "Belum dibayar", "lunas" to "Lunas"), status, badge = { if (it == "pending") pendingCount else 0 }) {
@@ -325,7 +269,8 @@ fun TransaksiScreen(
                             }
                         }
                         itemsIndexed(visibleTransactions, key = { _, t -> t.id }) { i, transaction ->
-                            TransaksiItemTransaksi(
+                            // A finished order slides out and the rest close the gap instead of jumping
+                            Box(Modifier.animateItem()) { TransaksiItemTransaksi(
                                 transaction = transaction,
                                 divider = i < visibleTransactions.lastIndex,
                                 onFinishTransaction = { selectedTransaction ->
@@ -345,7 +290,7 @@ fun TransaksiScreen(
                                         currentSelectedTransaction = selectedTransaction
                                     }
                                 }
-                            )
+                            ) }
                         }
                     }
                 }

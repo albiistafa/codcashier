@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.codcow.kasirku.core.data.local.ListCache
 import dev.codcow.kasirku.core.data.model.addToCart.Cart
 import dev.codcow.kasirku.core.data.model.kategori.DataKategori
 import dev.codcow.kasirku.core.data.model.menu.DataMenu
@@ -36,7 +37,8 @@ class MenuManagerViewModel @Inject constructor(
     private val kategoriRepository: KategoriRepository,
     private val subKategoriRepository: SubKategoriRepository,
     private val cartRepository: CartRepository,
-    private val transaksiRepository: TransaksiRepository
+    private val transaksiRepository: TransaksiRepository,
+    private val listCache: ListCache
 ) : ViewModel() {
     private val _menuItems = MutableStateFlow<List<DataMenu>>(emptyList())
     val menuItems = _menuItems.asStateFlow()
@@ -55,6 +57,10 @@ class MenuManagerViewModel @Inject constructor(
 
     private val _error = MutableStateFlow<String?>(null)
     val error = _error.asStateFlow()
+
+    /** True while the grid shows the copy saved on this phone because the server could not be reached. */
+    private val _showingSavedMenu = MutableStateFlow(false)
+    val showingSavedMenu = _showingSavedMenu.asStateFlow()
 
     private val _selectedMenu = MutableStateFlow<DataMenu?>(null)
     val selectedMenu: StateFlow<DataMenu?> = _selectedMenu.asStateFlow()
@@ -76,22 +82,27 @@ class MenuManagerViewModel @Inject constructor(
         _errorMessage.value = null
     }
 
+    // Saved copy first, server second: the chips are there at once and survive a dropped connection
     fun fetchCategories() {
         viewModelScope.launch {
+            if (_categories.value.isEmpty()) listCache.read<DataKategori>(ListCache.CATEGORIES)?.let { _categories.value = it }
             kategoriRepository.getAllKategori().onSuccess { fetchedCategories ->
                 _categories.value = fetchedCategories
+                listCache.write(ListCache.CATEGORIES, fetchedCategories)
             }.onFailure { exception ->
-                _error.value = exception.toUserMessage("Kategori belum bisa dimuat")
+                if (_categories.value.isEmpty()) _error.value = exception.toUserMessage("Kategori belum bisa dimuat")
             }
         }
     }
 
     fun fetchSubCategories() {
         viewModelScope.launch {
+            if (_subCategories.value.isEmpty()) listCache.read<DataSubkategori>(ListCache.SUBCATEGORIES)?.let { _subCategories.value = it }
             subKategoriRepository.getAllSubKategori().onSuccess { fetchedSubCategories ->
                 _subCategories.value = fetchedSubCategories
+                listCache.write(ListCache.SUBCATEGORIES, fetchedSubCategories)
             }.onFailure { exception ->
-                _error.value = exception.toUserMessage("Subkategori belum bisa dimuat")
+                if (_subCategories.value.isEmpty()) _error.value = exception.toUserMessage("Subkategori belum bisa dimuat")
             }
         }
     }
@@ -112,19 +123,38 @@ class MenuManagerViewModel @Inject constructor(
         val subCategoryIds = _selectedSubCategoryIds.value.toSet()
         _isLoading.value = true
         _error.value = null
+        fun List<DataMenu>.shown() = filter { menu ->
+            (query.isBlank() || menu.name.contains(query.trim(), ignoreCase = true)) &&
+                (categoryIds.isEmpty() || menu.category_id in categoryIds) &&
+                (subCategoryIds.isEmpty() || menu.sub_category_id in subCategoryIds)
+        }
         menuLoadJob = viewModelScope.launch {
             if (debounce) delay(250)
+            // Opening Kasir: show the saved menu straight away, the server answer replaces it
+            if (query.isBlank() && _menuItems.value.isEmpty()) {
+                listCache.read<DataMenu>(ListCache.MENUS)?.let { _menuItems.value = it.shown() }
+            }
             val result = if (query.isBlank()) menuRepository.getAllMenus()
                          else menuRepository.searchMenu(query)
             coroutineContext.ensureActive()
             if (version != menuLoadVersion) return@launch
             result.onSuccess { menus ->
+                if (query.isBlank()) listCache.write(ListCache.MENUS, menus)
+                _showingSavedMenu.value = false
+                // The server already matched the search; only the category chips are applied here
                 _menuItems.value = menus.filter { menu ->
                     (categoryIds.isEmpty() || menu.category_id in categoryIds) &&
                         (subCategoryIds.isEmpty() || menu.sub_category_id in subCategoryIds)
                 }
             }.onFailure { exception ->
-                _error.value = exception.toUserMessage("Menu belum bisa dimuat")
+                val saved = listCache.read<DataMenu>(ListCache.MENUS)
+                if (saved != null) {
+                    // No server: keep selling from the saved menu (search runs on the phone); the server prices the order
+                    _menuItems.value = saved.shown()
+                    _showingSavedMenu.value = true
+                } else {
+                    _error.value = exception.toUserMessage("Menu belum bisa dimuat")
+                }
             }
             _isLoading.value = false
         }

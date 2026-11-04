@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.File
@@ -78,8 +79,6 @@ class TransaksiViewModel @Inject constructor(
     private val _totalPemasukan = MutableStateFlow("Rp 0")
     val totalPemasukan = _totalPemasukan.asStateFlow()
 
-    private val _todayLunasTransactions = MutableStateFlow<List<Transaction>>(emptyList())
-    val todayLunasTransactions = _todayLunasTransactions.asStateFlow()
 
     // In TransaksiViewModel
     private val _allTransactions = MutableStateFlow<List<Transaction>>(emptyList())
@@ -88,22 +87,10 @@ class TransaksiViewModel @Inject constructor(
     private val _allPengeluaran = MutableStateFlow<List<TransactionPengeluaran>>(emptyList())
     val allPengeluaran = _allPengeluaran.asStateFlow()
 
-    private val _allTransactionsn = MutableStateFlow<List<Transaction>>(emptyList())
-    val allTransactionsn = _allTransactionsn.asStateFlow()
 
-    // Add a state flow for transactions filtered by date
-    private val _filteredTransactions = MutableStateFlow<List<Transaction>>(emptyList())
-    val filteredTransactions = _filteredTransactions.asStateFlow()
 
-    private val _filteredSearchTransactions = MutableStateFlow<List<TransactionX>>(emptyList())
-    val filteredSearchTransactions = _filteredSearchTransactions.asStateFlow()
 
-    private val _filteredTransactionsn = MutableStateFlow<List<Transaction>>(emptyList())
-    val filteredTransactionsn = _filteredTransactionsn.asStateFlow()
 
-    // Add a state flow for date filter
-    private val _dateFilter = MutableStateFlow(DateFilter.TODAY)
-    val dateFilter = _dateFilter.asStateFlow()
 
     private val _currentTransactionId = MutableStateFlow<Int?>(null)
     val currentTransactionId: StateFlow<Int?> = _currentTransactionId
@@ -126,20 +113,20 @@ class TransaksiViewModel @Inject constructor(
         }
     }
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery = _searchQuery.asStateFlow()
+    /** The date range a Rekap tab last loaded; empty strings until the first load. */
+    data class RekapPeriod(val start: String = "", val end: String = "")
 
-    private val _currentRekapPemasukanStartDate = MutableStateFlow("")
-    val currentRekapPemasukanStartDate = _currentRekapPemasukanStartDate.asStateFlow()
+    private val _pemasukanPeriod = MutableStateFlow(RekapPeriod())
+    val pemasukanPeriod = _pemasukanPeriod.asStateFlow()
 
-    private val _currentRekapPemasukanEndDate = MutableStateFlow("")
-    val currentRekapPemasukanEndDate = _currentRekapPemasukanEndDate.asStateFlow()
+    private val _pengeluaranPeriod = MutableStateFlow(RekapPeriod())
+    val pengeluaranPeriod = _pengeluaranPeriod.asStateFlow()
 
-    private val _currentRekapPengeluaranStartDate = MutableStateFlow("")
-    val currentRekapPengeluaranStartDate = _currentRekapPengeluaranStartDate.asStateFlow()
-
-    private val _currentRekapPengeluaranEndDate = MutableStateFlow("")
-    val currentRekapPengeluaranEndDate = _currentRekapPengeluaranEndDate.asStateFlow()
+    // One load per Rekap tab: a search per keystroke or a reopened screen cancels the load before it,
+    // so a slow older search can never land after (and overwrite) the period now on screen
+    private var pemasukanLoad: Job? = null
+    private var transaksiLoad: Job? = null
+    private var pengeluaranLoad: Job? = null
 
     private val CUSTOMER_HISTORY_KEY = "customer_name_history"
 
@@ -192,12 +179,12 @@ class TransaksiViewModel @Inject constructor(
 
 
     fun searchRekapPemasukan(query: String, startDate: String, endDate: String) {
-        viewModelScope.launch {
+        pemasukanLoad?.cancel()
+        pemasukanLoad = viewModelScope.launch {
+            delay(300) // a pause in typing; the next keystroke cancels this load first
             _isLoading.value = true
             _errorPemasukan.value = null
-            _searchQuery.value = query
-            _currentRekapPemasukanStartDate.value = startDate
-            _currentRekapPemasukanEndDate.value = endDate
+            _pemasukanPeriod.value = RekapPeriod(startDate, endDate)
 
             transaksiRepository.searchRekapAcrossPages(query, startDate, endDate, "pemasukan")
                 .onSuccess { dataSearch ->
@@ -228,6 +215,8 @@ class TransaksiViewModel @Inject constructor(
                     Log.d("TransaksiVM", "Filtered pemasukan results: ${pemasukanList.size}")
                 }
                 .onFailure { exception ->
+                    // An empty day comes back as a failure too: never keep the previous period or search on screen
+                    _allPemasukan.value = emptyList()
                     when (exception) {
                         is JsonSyntaxException -> {
                             _errorPemasukan.value = "Tidak ada data pemasukan"
@@ -248,12 +237,12 @@ class TransaksiViewModel @Inject constructor(
     }
 
     fun searchRekapPengeluaran(query: String, startDate: String, endDate: String) {
-        viewModelScope.launch {
+        pengeluaranLoad?.cancel()
+        pengeluaranLoad = viewModelScope.launch {
+            delay(300) // a pause in typing; the next keystroke cancels this load first
             _isLoading.value = true
             _errorPengeluaran.value = null
-            _searchQuery.value = query
-            _currentRekapPengeluaranStartDate.value = startDate
-            _currentRekapPengeluaranEndDate.value = endDate
+            _pengeluaranPeriod.value = RekapPeriod(startDate, endDate)
 
             transaksiRepository.searchRekapAcrossPages(query, startDate, endDate, "pengeluaran")
                 .onSuccess { dataSearch ->
@@ -284,9 +273,11 @@ class TransaksiViewModel @Inject constructor(
                     Log.d("TransaksiVM", "Filtered pengeluaran results: ${pengeluaranList.size}")
                 }
                 .onFailure { exception ->
+                    // An empty day comes back as a failure too: never keep the previous period or search on screen
+                    _allPengeluaran.value = emptyList()
                     when (exception) {
                         is JsonSyntaxException -> {
-                            _errorPengeluaran.value = "Tidak ada data pemasukan"
+                            _errorPengeluaran.value = "Tidak ada data pengeluaran"
                         }
                         is IOException,
                         is UnknownHostException -> {
@@ -299,28 +290,6 @@ class TransaksiViewModel @Inject constructor(
                 }
 
             _isLoading.value = false
-        }
-    }
-
-    fun applyRekapPemasukanFilters(startDate: String, endDate: String) {
-        _currentRekapPemasukanStartDate.value = startDate
-        _currentRekapPemasukanEndDate.value = endDate
-
-        if (startDate.isEmpty() && endDate.isEmpty() && _searchQuery.value.isEmpty()) {
-            fetchAllPemasukanAcrossPages(_currentRekapPemasukanStartDate.value, _currentRekapPemasukanEndDate.value)
-        } else {
-            searchRekapPemasukan(_searchQuery.value, startDate, endDate)
-        }
-    }
-
-    fun applyRekapPengeluaranFilters(startDate: String, endDate: String) {
-        _currentRekapPengeluaranStartDate.value = startDate
-        _currentRekapPengeluaranEndDate.value = endDate
-
-        if (startDate.isEmpty() && endDate.isEmpty() && _searchQuery.value.isEmpty()) {
-            fetchAllPengeluaranAcrossPages(_currentRekapPengeluaranStartDate.value, _currentRekapPengeluaranEndDate.value)
-        } else {
-            searchRekapPengeluaran(_searchQuery.value, startDate, endDate)
         }
     }
 
@@ -347,22 +316,12 @@ class TransaksiViewModel @Inject constructor(
         }
     }
 
-    enum class DateFilter {
-        TODAY,
-        YESTERDAY,
-        LAST_7_DAYS,
-        THIS_MONTH,
-        ALL,
-        CUSTOM_RANGE
-    }
 
     fun fetchAllTransaksiAcrossPages(paymentMethod: String, status: String, startDate: String, endDate: String) {
-        viewModelScope.launch {
+        transaksiLoad?.cancel()
+        transaksiLoad = viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
-
-            _currentPaymentMethod.value = paymentMethod
-            _currentStatus.value = status
 
             Log.d("TransaksiVM", "Starting to fetch all transactions across pages...")
 
@@ -409,7 +368,8 @@ class TransaksiViewModel @Inject constructor(
     }
 
     fun fetchAllTransaksiNoFilter() {
-        viewModelScope.launch {
+        transaksiLoad?.cancel()
+        transaksiLoad = viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
 
@@ -461,7 +421,8 @@ class TransaksiViewModel @Inject constructor(
         startDate: String,
         endDate: String
     ){
-        viewModelScope.launch {
+        pengeluaranLoad?.cancel()
+        pengeluaranLoad = viewModelScope.launch {
             _isLoading.value = true
             _errorPengeluaran.value = null
 
@@ -469,8 +430,7 @@ class TransaksiViewModel @Inject constructor(
             val finalStartDate = if (startDate.isNotEmpty()) startDate else today
             val finalEndDate = if (endDate.isNotEmpty()) endDate else today
 
-            _currentRekapPengeluaranStartDate.value = finalStartDate
-            _currentRekapPengeluaranEndDate.value = finalEndDate
+            _pengeluaranPeriod.value = RekapPeriod(finalStartDate, finalEndDate)
 
             transaksiRepository.getPengeluaranAcrossPage(finalStartDate, finalEndDate)
                 .onSuccess { data ->
@@ -478,6 +438,8 @@ class TransaksiViewModel @Inject constructor(
                     Log.d("TransaksiVM", "Fetched ${data.transactions.size} total pengeluaran")
                 }
                 .onFailure { exception ->
+                    // An empty day comes back as a failure too: never keep the previous period or search on screen
+                    _allPengeluaran.value = emptyList()
                     when (exception) {
                         is JsonSyntaxException -> {
                             _errorPengeluaran.value = "Tidak ada data pengeluaran"
@@ -495,11 +457,7 @@ class TransaksiViewModel @Inject constructor(
         }
     }
 
-    private val _startDateFilter = MutableStateFlow<LocalDate?>(null)
-    val startDateFilter = _startDateFilter.asStateFlow()
 
-    private val _endDateFilter = MutableStateFlow<LocalDate?>(null)
-    val endDateFilter = _endDateFilter.asStateFlow()
 
 
     private suspend fun findCustomerIdByTransactionName(transactionName: String): Int? {
@@ -596,8 +554,6 @@ class TransaksiViewModel @Inject constructor(
     private val _totalPengeluaran = MutableStateFlow("Rp 0")
     val totalPengeluaran = _totalPengeluaran.asStateFlow()
 
-    private val _filteredPengeluaran = MutableStateFlow<List<TransactionPengeluaran>>(emptyList())
-    val filteredPengeluaran = _filteredPengeluaran.asStateFlow()
 
     private fun calculateTotalPengeluaran(pengeluarans: List<TransactionPengeluaran>) {
         val total = pengeluarans.sumOf {
@@ -609,15 +565,14 @@ class TransaksiViewModel @Inject constructor(
     private val _allPemasukan = MutableStateFlow<List<TransactionPemasukan>>(emptyList())
     val allPemasukan: StateFlow<List<TransactionPemasukan>> = _allPemasukan
 
-    private val _filteredPemasukan = MutableStateFlow<List<TransactionPemasukan>>(emptyList())
-    val filteredPemasukan: StateFlow<List<TransactionPemasukan>> = _filteredPemasukan
 
 
     fun fetchAllPemasukanAcrossPages(
         startDate: String,
         endDate: String
     ) {
-        viewModelScope.launch {
+        pemasukanLoad?.cancel()
+        pemasukanLoad = viewModelScope.launch {
             _isLoading.value = true
             _errorPemasukan.value = null
 
@@ -625,8 +580,7 @@ class TransaksiViewModel @Inject constructor(
             val finalStartDate = if (startDate.isNotEmpty()) startDate else today
             val finalEndDate = if (endDate.isNotEmpty()) endDate else today
 
-            _currentRekapPemasukanStartDate.value = finalStartDate
-            _currentRekapPemasukanEndDate.value = finalEndDate
+            _pemasukanPeriod.value = RekapPeriod(finalStartDate, finalEndDate)
 
 
             transaksiRepository.getPemasukanAcrossPage(finalStartDate, finalEndDate)
@@ -635,6 +589,8 @@ class TransaksiViewModel @Inject constructor(
                     Log.d("TransaksiVM", "Fetched ${data.transactions.size} total pemasukan")
                 }
                 .onFailure { exception ->
+                    // An empty day comes back as a failure too: never keep the previous period or search on screen
+                    _allPemasukan.value = emptyList()
                     when (exception) {
                         is JsonSyntaxException -> {
                             _errorPemasukan.value = "Tidak ada data pemasukan"
@@ -672,7 +628,7 @@ class TransaksiViewModel @Inject constructor(
             transaksiRepository.createPengeluaran(request)
                 .onSuccess {
                     _pengeluaranSuccess.value = true
-                    fetchAllPengeluaranAcrossPages(_currentRekapPengeluaranStartDate.value, _currentRekapPengeluaranEndDate.value) // Refresh pengeluaran data
+                    _pengeluaranPeriod.value.let { fetchAllPengeluaranAcrossPages(it.start, it.end) } // Refresh pengeluaran data
                 }
                 .onFailure { exception ->
                     _error.value = exception.toUserMessage("Pengeluaran belum tersimpan")
@@ -682,201 +638,37 @@ class TransaksiViewModel @Inject constructor(
         }
     }
 
-    private val _isFilterVisible = MutableStateFlow(false)
-    val isFilterVisible: StateFlow<Boolean> = _isFilterVisible
-
-    // Current search parameters
-    private val _currentSearchQuery = MutableStateFlow("")
-    val currentSearchQuery: StateFlow<String> = _currentSearchQuery
-
-    private val _currentPaymentMethod = MutableStateFlow("")
-    val currentPaymentMethod: StateFlow<String> = _currentPaymentMethod
-
-    private val _currentStatus = MutableStateFlow("")
-    val currentStatus: StateFlow<String> = _currentStatus
-
-    private val _currentStartDate = MutableStateFlow("")
-    val currentStartDate: StateFlow<String> = _currentStartDate
-
-    private val _currentEndDate = MutableStateFlow("")
-    val currentEndDate: StateFlow<String> = _currentEndDate
-
-    fun toggleFilterSidebar() {
-        _isFilterVisible.value = !_isFilterVisible.value
+    /** One value instead of four flags, so "loading and failed at once" cannot happen. */
+    sealed interface PdfState {
+        data object Idle : PdfState
+        data object Loading : PdfState
+        data class Ready(val file: File) : PdfState
+        data class Failed(val message: String) : PdfState
     }
 
-    fun closeFilterSidebar() {
-        _isFilterVisible.value = false
-    }
+    private val _pdf = MutableStateFlow<PdfState>(PdfState.Idle)
+    val pdf = _pdf.asStateFlow()
 
-    fun updateSearchQuery(query: String) {
-        _currentSearchQuery.value = query
-    }
+    fun downloadRekapPdf(startDate: String, endDate: String, type: String, fileName: String) =
+        downloadPdf(fileName) { transaksiRepository.downloadRekapPdf(startDate, endDate, type) }
 
-    fun resetFilters() {
-        _currentSearchQuery.value = ""
-        _currentPaymentMethod.value = ""
-        _currentStatus.value = ""
-        searchTransactions("", "", "")
-    }
+    fun downloadTransaksiPdf(status: String, paymentMethod: String, fileName: String) =
+        downloadPdf(fileName) { transaksiRepository.downloadTransaksiPdf(status, paymentMethod) }
 
-    fun searchTransactions(query: String, paymentMethod: String, status: String) {
-        _currentSearchQuery.value = query
-        _currentPaymentMethod.value = paymentMethod
-        _currentStatus.value = status
-
+    private fun downloadPdf(fileName: String, fetch: suspend () -> Result<ByteArray>) {
+        if (_pdf.value == PdfState.Loading) return // a second tap while the first PDF is on its way
+        _pdf.value = PdfState.Loading
         viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-
-            transaksiRepository.searchTransactionAcrossPages(query, paymentMethod, status)
-                .onSuccess { dataSearch ->
-                    val pemasukanList = dataSearch.transactions.map { transaction ->
-                        val pemasukanTransactionDetails = transaction.transaction_details?.map { detail ->
-                            TransactionDetail(
-                                menu_id = detail.menu_id ?: 0,
-                                menu_name = detail.menu_name ?: "Item Tidak Diketahui", // Default value untuk non-null parameter
-                                menu_price = detail.menu_price ?: 0,
-                                quantity = detail.quantity ?: 0,
-                                subtotal = detail.subtotal ?: 0
-                            )
-                        } ?: emptyList()
-
-                        TransactionPemasukan(
-                            id = transaction.id,
-                            nama_transaksi = transaction.nama_transaksi,
-                            total_amount = transaction.total_amount,
-                            payment_method = transaction.payment_method,
-                            status = transaction.status,
-                            created_at = transaction.created_at,
-                            updated_at = transaction.updated_at,
-                            transaction_details = pemasukanTransactionDetails,
-                            user_id = transaction.user_id
-                        )
-                    }
-                    _allPemasukan.value = pemasukanList
-                    Log.d("TransaksiVM", "Filtered pemasukan results: ${pemasukanList.size}")
-                }
-                .onFailure { exception ->
-                    when (exception) {
-                        is JsonSyntaxException -> {
-                            _error.value = "Tidak ada data transaksi"
-                        }
-                        is IOException,
-                        is UnknownHostException -> {
-                            _error.value = "Periksa koneksi internet Anda"
-                        }
-                        else -> {
-                            _error.value = exception.toUserMessage("Pencarian transaksi belum berhasil")
-                        }
-                    }
-                }
-
-            _isLoading.value = false
-        }
-    }
-//
-    fun applyFiltersSide(
-        query: String = _currentSearchQuery.value,
-        paymentMethod: String = _currentPaymentMethod.value,
-        status: String = _currentStatus.value
-    ) {
-        _currentSearchQuery.value = query
-        _currentPaymentMethod.value = paymentMethod
-        _currentStatus.value = status
-
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-
-            try {
-                val filtered = _allTransactions.value.filter { transaction ->
-                    val matchesQuery = if (query.isNotEmpty()) {
-                        transaction.nama_transaksi?.contains(query, ignoreCase = true) ?: false
-                    } else true
-
-                    val matchesPaymentMethod = if (paymentMethod.isNotEmpty()) {
-                        transaction.payment_method == paymentMethod
-                    } else true
-
-                    val matchesStatus = if (status.isNotEmpty()) {
-                        transaction.status == status
-                    } else true
-
-                    matchesQuery && matchesPaymentMethod && matchesStatus
-                }
-
-                _filteredTransactions.value = filtered
-                Log.d("TransaksiVM", "Filtered to ${filtered.size} transactions with query: $query, " +
-                        "payment method: $paymentMethod, status: $status, date filter: ${_dateFilter.value}")
-            } catch (e: Exception) {
-                Log.e("TransaksiViewModel", "Error applying filters: ${e.message}", e)
-                _error.value = e.toUserMessage("Filter belum bisa diterapkan")
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    private val _pdfFile = MutableStateFlow<File?>(null)
-    val pdfFile = _pdfFile.asStateFlow()
-
-    private val _isPdfLoading = MutableStateFlow(false)
-    val isPdfLoading = _isPdfLoading.asStateFlow()
-
-    private val _pdfError = MutableStateFlow<String?>(null)
-    val pdfError = _pdfError.asStateFlow()
-
-    private val _isPdfSuccess = MutableStateFlow(false)
-    val isPdfSuccess = _isPdfSuccess.asStateFlow()
-
-    fun downloadRekapPdf(startDate: String, endDate: String, type: String, fileName: String) {
-        viewModelScope.launch {
-            _isPdfLoading.value = true
-            _pdfError.value = null
-            _isPdfSuccess.value = false
-            _pdfFile.value = null
-
-            transaksiRepository.downloadRekapPdf(startDate, endDate, type)
-                .onSuccess { byteArray ->
+            _pdf.value = fetch().fold(
+                onSuccess = { bytes ->
                     try {
-                        val file = saveByteArrayToFile(byteArray, fileName)
-                        _pdfFile.value = file
-                        _isPdfSuccess.value = true
+                        PdfState.Ready(saveByteArrayToFile(bytes, fileName))
                     } catch (e: Exception) {
-                        _pdfError.value = e.toUserMessage("PDF belum bisa disimpan di HP")
+                        PdfState.Failed(e.toUserMessage("PDF belum bisa disimpan di HP"))
                     }
-                }
-                .onFailure { exception ->
-                    _pdfError.value = exception.toUserMessage("PDF belum bisa dibuat")
-                }
-
-            _isPdfLoading.value = false
-        }
-    }
-
-    fun downloadTransaksiPdf(status: String, paymentMethod: String, fileName: String) {
-        viewModelScope.launch {
-            _isPdfLoading.value = true
-            _pdfError.value = null
-            _isPdfSuccess.value = false
-            _pdfFile.value = null
-
-            transaksiRepository.downloadTransaksiPdf(status, paymentMethod)
-                .onSuccess { byteArray ->
-                    try {
-                        val file = saveByteArrayToFile(byteArray, fileName)
-                        _pdfFile.value = file
-                        _isPdfSuccess.value = true
-                    } catch (e: Exception) {
-                        _pdfError.value = e.toUserMessage("PDF belum bisa disimpan di HP")
-                    }
-                }
-                .onFailure { exception ->
-                    _pdfError.value = exception.toUserMessage("PDF belum bisa dibuat")
-                }
-
-            _isPdfLoading.value = false
+                },
+                onFailure = { PdfState.Failed(it.toUserMessage("PDF belum bisa dibuat")) }
+            )
         }
     }
 
@@ -889,11 +681,7 @@ class TransaksiViewModel @Inject constructor(
     }
 
     fun resetPdfState() {
-        _isPdfLoading.value = false
-        _pdfError.value = null
-        _isPdfSuccess.value = false
-        _pdfFile.value = null
-
+        _pdf.value = PdfState.Idle
     }
 
     fun deleteTransaksi(id: Int) {

@@ -1,6 +1,14 @@
 package dev.codcow.kasirku.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,11 +61,12 @@ fun MenuCardPemesanan(
     menu: DataMenu,
     quantity: Int,
     onIncrement: (DataMenu) -> Unit,
-    onDecrement: (DataMenu) -> Unit
+    onDecrement: (DataMenu) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val selected = quantity > 0
     val price = formatRupiah(menu.price).replace("Rp ", "Rp")
-    Box {
+    Box(modifier) {
         Card(
             onClick = { onIncrement(menu) },
             shape = RoundedCornerShape(24.dp),
@@ -100,7 +109,7 @@ fun MenuCardPemesanan(
                 modifier = Modifier.align(Alignment.TopEnd).padding(10.dp).widthIn(min = 26.dp).height(26.dp)
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 7.dp)) {
-                    Text(quantity.toString(), style = AppTheme.typography.paragraph2.copy(fontWeight = FontWeight.ExtraBold), textAlign = TextAlign.Center)
+                    RollingCount(quantity, AppTheme.typography.paragraph2.copy(fontWeight = FontWeight.ExtraBold))
                 }
             }
         }
@@ -120,16 +129,28 @@ private fun Stepper(menu: DataMenu, quantity: Int, onIncrement: (DataMenu) -> Un
         RoundButton(Icons.Default.Remove, "Kurangi ${menu.name}", MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.onPrimaryContainer, 40) {
             onDecrement(menu)
         }
-        Text(
-            quantity.toString(),
-            style = AppTheme.typography.paragraph1Bold,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.weight(1f)
-        )
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            RollingCount(quantity, AppTheme.typography.paragraph1Bold, MaterialTheme.colorScheme.onPrimaryContainer)
+        }
         RoundButton(Icons.Default.Add, "Tambah ${menu.name}", MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary, 40) {
             onIncrement(menu)
         }
+    }
+}
+
+/** Quantity that rolls up on +1 and down on −1, so each tap visibly lands (odometer feel). */
+@Composable
+private fun RollingCount(quantity: Int, style: TextStyle, color: Color = Color.Unspecified) {
+    AnimatedContent(
+        targetState = quantity,
+        transitionSpec = {
+            val up = targetState > initialState
+            (slideInVertically { if (up) it else -it } + fadeIn()) togetherWith
+                (slideOutVertically { if (up) -it else it } + fadeOut())
+        },
+        label = "quantity"
+    ) { n ->
+        Text(n.toString(), style = style, color = color, textAlign = TextAlign.Center)
     }
 }
 
