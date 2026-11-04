@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -37,6 +38,7 @@ fun TransaksiItemTransaksi(
 ) {
     val pending = transaction.status.equals("pending", ignoreCase = true)
     val undelivered = transaction.is_delivered.equals("no", ignoreCase = true)
+    val delivered = transaction.is_delivered.equals("yes", ignoreCase = true)
     val method = transaction.payment_method.orEmpty().lowercase()
     val icon = when (method) {
         "tunai", "cash" -> AppIcons.cash
@@ -60,11 +62,19 @@ fun TransaksiItemTransaksi(
                     style = AppTheme.typography.paragraph1Semibold,
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    "${formatJamSaja(transaction.created_at)}, ${if (pending) "belum dibayar" else "lunas"}",
-                    style = AppTheme.typography.paragraph2,
-                    color = if (pending) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "${formatJamSaja(transaction.created_at)}, ${if (pending) "belum dibayar" else "lunas"}",
+                        style = AppTheme.typography.paragraph2,
+                        color = if (pending) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    // Takes the place of the "Sudah diantar" button once the order is delivered
+                    if (delivered) {
+                        Text(" · ", style = AppTheme.typography.paragraph2, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                        Text("Sudah diantar", style = AppTheme.typography.paragraph2Semibold, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+                    }
+                }
             }
             Text(formatRupiah(transaction.total_amount).replace("Rp ", "Rp"), style = AppTheme.typography.paragraph1Bold)
         }

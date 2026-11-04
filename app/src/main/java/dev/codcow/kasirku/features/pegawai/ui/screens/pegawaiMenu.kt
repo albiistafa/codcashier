@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.pegawai.ui.screens
+import dev.codcow.kasirku.ui.components.AppIcons
 import dev.codcow.kasirku.ui.components.readableWidth
 import dev.codcow.kasirku.ui.components.ListHint
 import dev.codcow.kasirku.ui.components.AddFab
@@ -159,7 +160,7 @@ fun PegawaiManager(
 
                             }
                             error != null -> item {
-                                ErrorState(message = error ?: "", onRetry = { viewModel.fetchPegawaiItems() })
+                                ErrorState(message = error ?: "", onRetry = { viewModel.fetchPegawaiItems() }, icon = AppIcons.pegawai)
                             }
                             else -> {
                                 item { ListHint("Pegawai bisa membuka Kasir, Transaksi, dan Rekap") }

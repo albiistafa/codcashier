@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.kategoriManager.ui.screens
+import dev.codcow.kasirku.ui.components.AppIcons
 import dev.codcow.kasirku.ui.components.readableWidth
 import dev.codcow.kasirku.ui.components.ListHint
 import dev.codcow.kasirku.ui.components.AddFab
@@ -155,7 +156,7 @@ fun KategoriManager(
 
                             }
                             error != null -> item {
-                                ErrorState(message = error ?: "", onRetry = { viewModel.fetchKategoriItems() })
+                                ErrorState(message = error ?: "", onRetry = { viewModel.fetchKategoriItems() }, icon = AppIcons.kategori)
                             }
                             else -> {
                                 item { ListHint("Ketuk kategori untuk mengganti namanya") }

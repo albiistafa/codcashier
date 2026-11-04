@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.kategoriManager.ui.screens
+import dev.codcow.kasirku.ui.components.AppIcons
 import dev.codcow.kasirku.ui.components.readableWidth
 import dev.codcow.kasirku.features.kategoriManager.ui.screens.KategoriManagerViewModel
 import dev.codcow.kasirku.ui.components.ListHint
@@ -167,7 +168,7 @@ fun SubKategoriManager(
                         // Display error message if there is an error
                         else if (error != null) {
                             item {
-                                ErrorState(message = error ?: "", onRetry = { viewModel.fetchSubKategoriItems() })
+                                ErrorState(message = error ?: "", onRetry = { viewModel.fetchSubKategoriItems() }, icon = AppIcons.subkategori)
                             }
                         }
                         // Display subkategori items

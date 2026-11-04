@@ -1,4 +1,6 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import dev.codcow.kasirku.ui.components.AppIcons
+import dev.codcow.kasirku.ui.components.EmptyState
 import dev.codcow.kasirku.ui.components.readableWidth
 import dev.codcow.kasirku.ui.components.ErrorState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -522,9 +524,9 @@ fun TransaksiManager(
                         ) {
                             // "Tidak ada data transaksi" is the API's empty answer, not a failure
                             if (error == "Tidak ada data transaksi") {
-                                Text("Belum ada transaksi", style = AppTheme.typography.paragraph1, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                EmptyState(AppIcons.transaksi, "Belum ada transaksi", body = "Transaksi dan pengeluaran pada tanggal ini muncul di sini.")
                             } else {
-                                ErrorState(message = error.orEmpty(), onRetry = ::refreshData)
+                                ErrorState(message = error.orEmpty(), onRetry = ::refreshData, icon = AppIcons.transaksi)
                             }
                         }
                     } else {

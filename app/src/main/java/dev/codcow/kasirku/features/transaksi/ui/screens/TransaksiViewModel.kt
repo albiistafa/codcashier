@@ -497,17 +497,21 @@ class TransaksiViewModel @Inject constructor(
         }
     }
 
+    // Guards a second tap on the same update only: a list or detail load in progress must not
+    // swallow the update (confirming "Sudah diantar" used to load the order first, so nothing was sent)
+    private var statusUpdate: Job? = null
+
     fun updateStatus(
         id: Int,
         status: String,
         is_delivered: String,
         paymentMethod: String?
     ) {
-        if (_isLoading.value) return
+        if (statusUpdate?.isActive == true) return
         _isLoading.value = true
         _error.value = null
         _isSuccess.value = false
-        viewModelScope.launch {
+        statusUpdate = viewModelScope.launch {
             transaksiRepository.updateStatus(id, TransactionUpdateStatus(status, is_delivered))
                 .onSuccess {
                     _allTransactions.update { transactions ->

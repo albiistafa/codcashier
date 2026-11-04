@@ -1,5 +1,6 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
 
+import dev.codcow.kasirku.ui.components.SuccessMark
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -186,12 +187,7 @@ fun DetailPembayaran(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Box(
-                    Modifier.size(60.dp).background(AppTheme.colors.money, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Check, contentDescription = null, tint = AppTheme.colors.onMoney, modifier = Modifier.size(30.dp))
-                }
+                SuccessMark()
                 Spacer(Modifier.height(4.dp))
                 val showChange = change != null && change > 0
                 Text(if (showChange) "Kembalian" else "Lunas", style = AppTheme.typography.paragraph1, color = onHero.copy(alpha = 0.85f))

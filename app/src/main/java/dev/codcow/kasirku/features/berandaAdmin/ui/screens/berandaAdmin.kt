@@ -1,4 +1,5 @@
 package dev.codcow.kasirku.features.berandaAdmin.ui.screens
+import dev.codcow.kasirku.ui.components.EmptyState
 import androidx.compose.ui.platform.LocalDensity
 import dev.codcow.kasirku.ui.components.readableWidth
 
@@ -23,6 +24,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import dev.codcow.kasirku.ui.components.SkeletonBlock
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -180,9 +183,11 @@ fun beranda(
             Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
                 when {
                     state.loading && state.recent.isEmpty() ->
-                        Text("Memuat…", style = AppTheme.typography.paragraph1, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
+                        Column(Modifier.semantics(mergeDescendants = true) { contentDescription = "Memuat penjualan terakhir" }) {
+                            repeat(3) { SaleRowSkeleton() }
+                        }
                     state.recent.isEmpty() ->
-                        Text("Belum ada penjualan hari ini. Tekan Mulai jualan untuk mencatat pesanan pertama.", style = AppTheme.typography.paragraph1, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
+                        EmptyState(AppIcons.receipt, "Belum ada penjualan hari ini", body = "Tekan Mulai jualan untuk mencatat pesanan pertama.")
                     else -> state.recent.forEachIndexed { i, trx ->
                         SaleRow(trx, divider = i < state.recent.lastIndex) {
                             navController.navigate(Screen.DetailSelesai.createRoute(trx.id))
@@ -396,6 +401,21 @@ private fun PendingCard(trx: Transaction, onLunasi: () -> Unit) {
                 Text("Lunasi", style = AppTheme.typography.paragraph2.copy(fontWeight = FontWeight.Bold))
             }
         }
+    }
+}
+
+/** SaleRow's shape while today's sales load: icon tile, name and time, amount. */
+@Composable
+private fun SaleRowSkeleton() {
+    Row(Modifier.heightIn(min = 64.dp).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        SkeletonBlock(Modifier.size(40.dp), RoundedCornerShape(14.dp))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            SkeletonBlock(Modifier.fillMaxWidth(0.6f).height(14.dp))
+            SkeletonBlock(Modifier.fillMaxWidth(0.35f).height(12.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        SkeletonBlock(Modifier.width(64.dp).height(16.dp))
     }
 }
 

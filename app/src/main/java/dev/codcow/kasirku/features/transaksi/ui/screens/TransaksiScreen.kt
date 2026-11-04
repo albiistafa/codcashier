@@ -1,4 +1,7 @@
 package dev.codcow.kasirku.features.transaksi.ui.screens
+import dev.codcow.kasirku.ui.components.AppIcons
+import dev.codcow.kasirku.ui.components.EmptyState
+import dev.codcow.kasirku.ui.components.ErrorState
 import dev.codcow.kasirku.ui.components.ConfirmDialog
 
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -88,7 +91,6 @@ fun TransaksiScreen(
     val coroutineScope = rememberCoroutineScope()
 
 
-    var isUpdatingStatus by remember { mutableStateOf(false) }
 
 
     fun refresh() {
@@ -126,12 +128,8 @@ fun TransaksiScreen(
         }
     }
 
-    LaunchedEffect(isUpdatingStatus) {
-        if (isUpdatingStatus) {
-            viewModel.fetchAllTransaksiNoFilter()
-            isUpdatingStatus = false
-        }
-    }
+    // No reload after a status change: updateStatus updates the row once the server confirms it,
+    // and a parallel reload could land first with the old status (and dropped the active chips)
 
     if (showFinishTransactionDialog && currentSelectedTransaction != null) {
         if (currentSelectedTransaction?.status == "pending") {
@@ -143,16 +141,12 @@ fun TransaksiScreen(
                 onDismiss = { showFinishTransactionDialog = false },
                 onConfirm = {
                             currentSelectedTransaction?.let { transaction ->
-                                viewModel.getTransactionById(transaction.id)
-
-                                Log.d("TRANSACTION_DETAILS", "Details: ${transaction.transaction_details}")
                                 viewModel.updateStatus(
                                     id = transaction.id,
                                     status = "lunas",
                                     paymentMethod = transaction.payment_method,
                                     is_delivered = transaction.is_delivered
                                 )
-                                isUpdatingStatus = true
                             }
                             showFinishTransactionDialog = false
                 }
@@ -170,16 +164,12 @@ fun TransaksiScreen(
                 onDismiss = { showAntarTransactionDialog = false },
                 onConfirm = {
                             currentSelectedTransaction?.let { transaction ->
-                                viewModel.getTransactionById(transaction.id)
-
-                                Log.d("TRANSACTION_DETAILS", "Details: ${transaction.transaction_details}")
                                 viewModel.updateStatus(
                                     id = transaction.id,
                                     status = transaction.status,
                                     paymentMethod = transaction.payment_method,
                                     is_delivered = "yes"
                                 )
-                                isUpdatingStatus = true
                             }
                             showAntarTransactionDialog = false
                 }
@@ -242,13 +232,12 @@ fun TransaksiScreen(
                     .pullToRefresh(isRefreshing = refreshing, state = pullRefreshState, onRefresh = ::refresh)
             ) {
                 if (error != null && !isLoading) {
-                    Text(
-                        text = if (error == "Tidak ada data transaksi") "Belum ada transaksi" else error.orEmpty(),
-                        style = AppTheme.typography.paragraph1,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(top = 32.dp, start = 20.dp, end = 20.dp)
-                    )
+                    // "Tidak ada data transaksi" is the API's empty answer, not a failure
+                    if (error == "Tidak ada data transaksi") {
+                        EmptyState(AppIcons.transaksi, "Belum ada transaksi", body = "Pesanan dari Kasir muncul di sini.")
+                    } else {
+                        ErrorState(message = error.orEmpty(), onRetry = ::refresh, icon = AppIcons.transaksi)
+                    }
                 } else if (!isLoading) {
                     val visibleTransactions = allTransactions.filter {
                         it.nama_transaksi?.contains(query, ignoreCase = true) ?: false
@@ -259,13 +248,8 @@ fun TransaksiScreen(
                     ) {
                         if (visibleTransactions.isEmpty()) {
                             item {
-                                Text(
-                                    text = if (query.isBlank()) "Belum ada transaksi" else "Tidak ada transaksi untuk \"$query\"",
-                                    style = AppTheme.typography.paragraph1,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
-                                )
+                                if (query.isBlank()) EmptyState(AppIcons.transaksi, "Belum ada transaksi", body = "Pesanan dari Kasir muncul di sini.")
+                                else EmptyState(AppIcons.transaksi, "Tidak ada transaksi untuk \"$query\"", body = "Periksa ejaan nama, atau hapus pencarian.")
                             }
                         }
                         itemsIndexed(visibleTransactions, key = { _, t -> t.id }) { i, transaction ->
