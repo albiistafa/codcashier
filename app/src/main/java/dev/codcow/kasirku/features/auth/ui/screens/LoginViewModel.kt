@@ -16,12 +16,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import okhttp3.Cache
 import dagger.hilt.android.qualifiers.ApplicationContext
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val loginRepository: LoginRepository,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val httpCache: Cache
 
 ) : ViewModel() {
 
@@ -142,6 +144,7 @@ class LoginViewModel @Inject constructor(
                 if (authResult != null) {
                     // This account may be another warung: drop menus saved for the previous one
                     ListCache(context).clear()
+                    runCatching { httpCache.evictAll() } // saved API replies belong to the previous account too
                     Log.d("LoginViewModel", "Login Berhasil! AuthResult: $authResult, Status: 200")
                     Log.d("LoginViewModel", "Role to save: ${authResult.role}")
                     val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
@@ -178,6 +181,7 @@ class LoginViewModel @Inject constructor(
 
     fun logout() {
         ListCache(context).clear()
+        runCatching { httpCache.evictAll() } // saved API replies belong to the previous account too
         val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         with(sharedPreferences.edit()) {
             remove("auth_token")

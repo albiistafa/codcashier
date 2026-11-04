@@ -37,7 +37,9 @@ import dev.codcow.kasirku.core.domain.repository.TransaksiRepository
 import dev.codcow.kasirku.core.domain.repository.WarungRepository
 import dev.codcow.kasirku.data.repository.MenuRepository
 import dev.codcow.kasirku.features.warung.ui.screens.WarungPreferences
+import okhttp3.Cache
 import okhttp3.OkHttpClient
+import java.io.File
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
@@ -80,13 +82,21 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideHttpCache(@ApplicationContext context: Context): Cache =
+        // The API sends ETag but no Cache-Control, so OkHttp never serves from here without asking:
+        // it revalidates every GET with If-None-Match and an unchanged list comes back as a body-less 304.
+        Cache(File(context.cacheDir, "http"), 10L * 1024 * 1024)
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(cache: Cache): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             // Bodies carry the login password and Bearer token: never log them outside debug builds
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
         }
 
         return OkHttpClient.Builder()
+            .cache(cache)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
