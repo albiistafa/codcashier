@@ -250,6 +250,8 @@ fun MenuPegawai(
                                             }
                                         }
                                     },
+                                    // updateItemQuantity takes 0 as "remove from the order"
+                                    onSetQuantity = { selectedMenu, n -> viewModel.updateCartItemQuantity(selectedMenu.id, n) },
                                 )
                             }
                         }

@@ -10,10 +10,25 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
+import dev.codcow.kasirku.ui.util.QUANTITY_MAX_DIGITS
+import dev.codcow.kasirku.ui.util.parseQuantity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -62,6 +77,7 @@ fun MenuCardPemesanan(
     quantity: Int,
     onIncrement: (DataMenu) -> Unit,
     onDecrement: (DataMenu) -> Unit,
+    onSetQuantity: (DataMenu, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val selected = quantity > 0
@@ -90,7 +106,7 @@ fun MenuCardPemesanan(
                 )
                 if (selected) {
                     Text(price, style = AppTheme.typography.paragraph1Bold)
-                    Stepper(menu, quantity, onIncrement, onDecrement)
+                    Stepper(menu, quantity, onIncrement, onDecrement, onSetQuantity)
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(price, style = AppTheme.typography.paragraph1Bold, modifier = Modifier.weight(1f))
@@ -117,7 +133,15 @@ fun MenuCardPemesanan(
 }
 
 @Composable
-private fun Stepper(menu: DataMenu, quantity: Int, onIncrement: (DataMenu) -> Unit, onDecrement: (DataMenu) -> Unit) {
+private fun Stepper(
+    menu: DataMenu,
+    quantity: Int,
+    onIncrement: (DataMenu) -> Unit,
+    onDecrement: (DataMenu) -> Unit,
+    onSetQuantity: (DataMenu, Int) -> Unit
+) {
+    var typing by remember { mutableStateOf(false) }
+    if (typing) QuantityDialog(menu.name, quantity, onSave = { onSetQuantity(menu, it); typing = false }, onDismiss = { typing = false })
     Row(
         Modifier
             .fillMaxWidth()
@@ -129,12 +153,60 @@ private fun Stepper(menu: DataMenu, quantity: Int, onIncrement: (DataMenu) -> Un
         RoundButton(Icons.Default.Remove, "Kurangi ${menu.name}", MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.onPrimaryContainer, 40) {
             onDecrement(menu)
         }
-        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            RollingCount(quantity, AppTheme.typography.paragraph1Bold, MaterialTheme.colorScheme.onPrimaryContainer)
+        // The count is also a field: 20 es teh is one tap and two digits, not twenty taps on +
+        // The whole 44dp-tall middle is the target; the white pill is only how it looks
+        Box(
+            Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .clip(CircleShape)
+                .clickable(onClickLabel = "Ketik jumlah ${menu.name}") { typing = true },
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                Modifier.padding(horizontal = 6.dp).fillMaxWidth().height(32.dp).background(MaterialTheme.colorScheme.surface, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                RollingCount(quantity, AppTheme.typography.paragraph1Bold, MaterialTheme.colorScheme.onSurface)
+            }
         }
         RoundButton(Icons.Default.Add, "Tambah ${menu.name}", MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary, 40) {
             onIncrement(menu)
         }
+    }
+}
+
+/** Type the amount instead of tapping + many times. 0 takes the menu off the order. */
+@Composable
+private fun QuantityDialog(name: String, quantity: Int, onSave: (Int) -> Unit, onDismiss: () -> Unit) {
+    val current = quantity.toString()
+    // Starts fully selected, so typing replaces the old amount instead of appending to it
+    var field by remember { mutableStateOf(TextFieldValue(current, TextRange(0, current.length))) }
+    val focus = remember { FocusRequester() }
+    val parsed = parseQuantity(field.text)
+    fun save() { parsed?.let(onSave) }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    ConfirmDialog(
+        title = "Jumlah $name",
+        message = "Ketik jumlah pesanan. Isi 0 untuk menghapusnya dari pesanan.",
+        confirmLabel = if (parsed == 0) "Hapus dari pesanan" else "Simpan",
+        onConfirm = ::save,
+        onDismiss = onDismiss,
+        destructive = parsed == 0
+    ) {
+        OutlinedTextField(
+            value = field,
+            onValueChange = { if (it.text.length <= QUANTITY_MAX_DIGITS && it.text.all(Char::isDigit)) field = it },
+            label = { Text("Jumlah") },
+            singleLine = true,
+            isError = parsed == null,
+            supportingText = if (parsed == null) {{ Text("Isi angka, misalnya 2") }} else null,
+            textStyle = AppTheme.typography.heading5Bold,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { save() }),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth().focusRequester(focus)
+        )
     }
 }
 
@@ -191,7 +263,8 @@ fun PreviewMenuCardPemesanan() {
             menu = sampleMenu,
             quantity = quantity,
             onIncrement = { quantity++ },
-            onDecrement = { if (quantity > 0) quantity-- }
+            onDecrement = { if (quantity > 0) quantity-- },
+            onSetQuantity = { _, n -> quantity = n }
         )
     }
 }
