@@ -124,7 +124,12 @@ fun PaymentSheet(
         }
     }
 
-    val busy = isLoading && submitted != null
+    // Set the moment Bayar/Simpan is tapped, not when the request starts: isLoading only turns on after
+    // the cart is read, and drops again before the cart is cleared, so a second tap in either gap
+    // used to create the same transaction twice. Only a failed send lets the cashier try again.
+    var sending by remember { mutableStateOf(false) }
+    LaunchedEffect(error) { if (error != null) sending = false }
+    val busy = sending
     val canPay = !busy && total > 0 && when (method) {
         "tunai" -> change != null && change >= 0
         "deposit" -> deposit != null && depositBalance >= total
@@ -138,6 +143,8 @@ fun PaymentSheet(
             "Pesanan " + SimpleDateFormat("HH.mm", Locale("id", "ID")).format(Date())
         }
         transaksiViewModel.addToCustomerNameHistory(name.trim())
+        if (sending) return
+        sending = true
         submitted = pending
         scope.launch {
             menuViewModel.setPaymentMethod(method)
