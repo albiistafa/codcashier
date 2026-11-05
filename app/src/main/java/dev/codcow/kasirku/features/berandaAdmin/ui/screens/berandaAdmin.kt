@@ -225,9 +225,9 @@ private fun Header(name: String, onLogout: () -> Unit) {
         Box {
             IconButton(
                 onClick = { menuOpen = true },
-                modifier = Modifier.size(44.dp).clip(CircleShape).background(onHero.copy(alpha = 0.16f))
+                modifier = Modifier.semantics { contentDescription = "Akun" }.size(44.dp).clip(CircleShape).background(onHero.copy(alpha = 0.16f))
             ) {
-                Icon(Icons.Default.Person, contentDescription = "Akun", tint = onHero)
+                DuoIcon(AppIcons.akun, 28.dp, fill = AppTheme.colors.money, stroke = onHero)
             }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 DropdownMenuItem(text = { Text("Keluar") }, onClick = { menuOpen = false; onLogout() })

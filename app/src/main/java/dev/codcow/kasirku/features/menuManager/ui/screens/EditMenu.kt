@@ -1,4 +1,6 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
+import dev.codcow.kasirku.ui.components.DuoIcon
+import dev.codcow.kasirku.ui.components.AppIcons
 import androidx.compose.ui.semantics.Role
 import dev.codcow.kasirku.ui.components.BandTopBar
 
@@ -355,11 +357,7 @@ fun EditMenuScreen(
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Icon(
-                                    Icons.Default.Panorama,
-                                    contentDescription = "Pilih foto menu",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                DuoIcon(AppIcons.foto, 32.dp)
                                 Text("Pilih Foto", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }

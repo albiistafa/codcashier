@@ -83,5 +83,10 @@ object AppIcons {
         listOf("M5.5 4h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 4 8.5v-3A1.5 1.5 0 0 1 5.5 4z"),
         listOf("M14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2M20 14v1M14 20h2M18 18h2v2"), box = 24f
     )
+    val akun = Duo(listOf("M10.5 11a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0-11 0z", "M6 27c1.2-5 5.2-8 10-8s8.8 3 10 8z"))
+    val foto = Duo(
+        listOf("M8 6h16a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V10a4 4 0 0 1 4-4z"),
+        listOf("M4 21l7-7 6 6 3-3 8 8", "M19 12.5a2 2 0 1 0 4 0a2 2 0 1 0-4 0")
+    )
     val card = Duo(listOf("M6 6h12a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3z"), listOf("M3 10h18M15 15h2"), box = 24f)
 }

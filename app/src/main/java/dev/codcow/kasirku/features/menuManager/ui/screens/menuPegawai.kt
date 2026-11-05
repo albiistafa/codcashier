@@ -1,5 +1,7 @@
 package dev.codcow.kasirku.features.menuManager.ui.screens
 
+import dev.codcow.kasirku.ui.components.DuoIcon
+import dev.codcow.kasirku.ui.components.AppIcons
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -347,8 +349,8 @@ private fun KasirBand(
             if (onLogout != null) {
                 var open by remember { mutableStateOf(false) }
                 Box {
-                    IconButton(onClick = { open = true }, modifier = Modifier.size(40.dp).background(onHero.copy(alpha = 0.18f), CircleShape)) {
-                        Icon(Icons.Default.Person, contentDescription = "Akun", tint = onHero)
+                    IconButton(onClick = { open = true }, modifier = Modifier.semantics { contentDescription = "Akun" }.size(40.dp).background(onHero.copy(alpha = 0.18f), CircleShape)) {
+                        DuoIcon(AppIcons.akun, 28.dp, fill = AppTheme.colors.money, stroke = onHero)
                     }
                     DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                         DropdownMenuItem(text = { Text("Keluar") }, onClick = { open = false; onLogout() })

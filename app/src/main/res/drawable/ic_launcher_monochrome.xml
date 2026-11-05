@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kasirku mark, one colour for themed icons (same drawing as StrukMark): the struk under the printer slot, inside the 66dp safe zone -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFFF" android:pathData="M34.4,37.55H73.6V71.15L71.43,72.9L69.24,71.15L67.07,72.9L64.89,71.15L62.71,72.9L60.53,71.15L58.36,72.9L56.17,71.15L54,72.9L51.83,71.15L49.64,72.9L47.47,71.15L45.29,72.9L43.11,71.15L40.93,72.9L38.76,71.15L36.57,72.9L34.4,71.15Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M33.35,35.1H74.65A2.45,2.45 0 0 1 74.65,40H33.35A2.45,2.45 0 0 1 33.35,35.1Z"/>
+</vector>
